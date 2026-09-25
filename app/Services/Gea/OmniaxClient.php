@@ -3,6 +3,7 @@
 namespace App\Services\Gea;
 
 use App\Exceptions\OmniaxApiException;
+use App\Support\Integrations\IntegrationRegistry;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -11,6 +12,8 @@ class OmniaxClient
 {
     public function token(): string
     {
+        IntegrationRegistry::assertConfigured('omniax');
+
         return Cache::remember('gea_omniax_access_token', 60 * 60 * 12, function () {
             $base = rtrim(config('services.gea_omniax.base_url'), '/');
             $response = Http::acceptJson()

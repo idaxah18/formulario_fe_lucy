@@ -94,7 +94,17 @@ export function buildGeaNodes() {
             gea: { enter: 'ubicacion_put' },
         },
 
-        gea_prov_contacto_id: idAsistenciaInput('gea_prov_contacto_ask', 'Menú oculto proveedores'),
+        gea_prov_contacto_id: idAsistenciaInput('gea_prov_valida_contacto', 'Menú oculto proveedores'),
+        gea_prov_valida_contacto: {
+            jelou: 'Menu Oculto Asistencia Valida',
+            say: ['Validando asistencia…'],
+            skipSay: true,
+            gea: {
+                enter: 'prov_valida',
+                provOpcion: 'contacto',
+                afterProvValidaNext: 'gea_prov_contacto_ask',
+            },
+        },
         gea_prov_contacto_ask: proveedorSiNo(
             'gea_prov_contacto_send',
             '¿El proveedor se comunicó contigo?',
@@ -105,7 +115,17 @@ export function buildGeaNodes() {
             gea: { enter: 'prov_contacto' },
         },
 
-        gea_prov_termino_id: idAsistenciaInput('gea_prov_termino_ask', 'Menú oculto proveedores'),
+        gea_prov_termino_id: idAsistenciaInput('gea_prov_valida_termino', 'Menú oculto proveedores'),
+        gea_prov_valida_termino: {
+            jelou: 'Menu Oculto Asistencia Valida',
+            say: ['Validando asistencia…'],
+            skipSay: true,
+            gea: {
+                enter: 'prov_valida',
+                provOpcion: 'termino',
+                afterProvValidaNext: 'gea_prov_termino_ask',
+            },
+        },
         gea_prov_termino_ask: proveedorSiNo(
             'gea_prov_termino_send',
             '¿Confirmas el término del servicio con el proveedor?',

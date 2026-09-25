@@ -24,7 +24,16 @@
                     GEA · Lo hacemos fácil
                 </p>
             </div>
+            <button
+                v-if="showWebviewClose"
+                type="button"
+                class="chat-header__close"
+                @click="$emit('webview-close')"
+            >
+                WhatsApp
+            </button>
             <span
+                v-else
                 class="chat-header__status"
                 aria-label="En línea"
             />
@@ -34,6 +43,12 @@
 
 <script setup>
 import { ref } from 'vue';
+
+defineProps({
+    showWebviewClose: { type: Boolean, default: false },
+});
+
+defineEmits(['webview-close']);
 
 const avatarFailed = ref(false);
 

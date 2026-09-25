@@ -1,6 +1,7 @@
 import { LUCY_FLOW_NODES } from './lucyFlowGraph.js';
 
 const AUTH_ITEMS = [
+    { title: 'Teléfono', description: 'Celular de prueba' },
     { title: 'Cédula', description: 'Identificación' },
     { title: 'Nombre', description: 'Datos personales' },
 ];
@@ -157,10 +158,11 @@ export function getFlowStepper(state) {
         };
     }
 
-    if (nodeId === 'auth_cedula' || nodeId === 'auth_nombre') {
+    if (nodeId === 'auth_telefono' || nodeId === 'auth_cedula' || nodeId === 'auth_nombre') {
+        const indexMap = { auth_telefono: 0, auth_cedula: 1, auth_nombre: 2 };
         return {
             visible: true,
-            currentIndex: nodeId === 'auth_cedula' ? 0 : 1,
+            currentIndex: indexMap[nodeId] ?? 0,
             items: AUTH_ITEMS,
         };
     }
@@ -190,5 +192,5 @@ export function getFlowStepper(state) {
 }
 
 export function isAuthFlowStep(nodeId) {
-    return nodeId === 'auth_cedula' || nodeId === 'auth_nombre';
+    return nodeId === 'auth_telefono' || nodeId === 'auth_cedula' || nodeId === 'auth_nombre';
 }

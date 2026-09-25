@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\IntegrationNotConfiguredException;
 use App\Exceptions\OmniaxApiException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -14,9 +15,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->alias([
+            'integration' => \App\Http\Middleware\EnsureIntegrationConfigured::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->render(function (IntegrationNotConfiguredException $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json($e->payload(), $e->statusCode());
+            }
+        });
+
         $exceptions->render(function (OmniaxApiException $e, Request $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json($e->payload(), $e->statusCode());

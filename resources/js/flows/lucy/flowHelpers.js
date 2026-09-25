@@ -58,7 +58,12 @@ export function crearAsistenciaChain(
     returnNode = 'menu_solucion_24_7',
     options = {},
 ) {
-    const { idServicio = null, requiresPlaca = false } = options;
+    const {
+        idServicio = null,
+        requiresPlaca = false,
+        tipoServicio = 'HOGAR',
+        planAsistencia = 'ASISTENCIAS',
+    } = options;
     const base = slugify(`${jelouRef}_${serviceLabel}`);
     const locId = `asist_loc_${base}`;
     const dirId = `asist_dir_${base}`;
@@ -101,9 +106,11 @@ export function crearAsistenciaChain(
         say: ['Registrando tu solicitud de asistencia…'],
         skipSay: true,
         gea: {
-            enter: 'crear',
+            enter: 'cabina_gate',
             idServicio,
             serviceLabel,
+            tipoServicio,
+            planAsistencia,
             afterCrearNext: 'gea_crear_exit',
         },
     };

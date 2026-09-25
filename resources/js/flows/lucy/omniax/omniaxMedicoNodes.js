@@ -7,6 +7,27 @@ export const OMX_MED_BENEF_FORM_NODE = 'omx_med_benef_form';
 
 export function buildOmniaxMedicoNodes() {
     return {
+        omx_med_cabina: {
+            jelou: 'Notificar Cabina Asistencia en Proceso',
+            say: ['Validando asistencias en curso…'],
+            skipSay: true,
+            omniax: {
+                enter: 'cabina_gate',
+                kind: 'medico',
+                tipoServicio: 'MEDICO',
+                afterCabinaNext: 'omx_med_start',
+            },
+        },
+        omx_med_reag_cabina: {
+            jelou: 'Notificar Cabina Asistencia en Proceso',
+            skipSay: true,
+            omniax: {
+                enter: 'cabina_gate',
+                kind: 'medico',
+                tipoServicio: 'MEDICO',
+                afterCabinaNext: 'omx_med_reag_start',
+            },
+        },
         omx_med_start: {
             jelou: '2.2 Agendar cita médica - Omniax',
             skipSay: true,

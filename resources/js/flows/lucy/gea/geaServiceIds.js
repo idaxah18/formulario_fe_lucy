@@ -40,13 +40,21 @@ export function resolveGeaIdServicio(serviceLabel) {
     return import.meta.env.VITE_GEA_ID_SERVICIO_DEFAULT || null;
 }
 
+const TIPO_SERVICIO_BY_JELOU_REF = {
+    '2.3 Hogar': 'HOGAR',
+    '2.4 Vial': 'VIAL',
+    '2.2 Médico': 'MEDICO',
+};
+
 /** Opciones para crearAsistenciaChain (WF 4220). */
-export function geaChainOptions(serviceLabel, jelouRef) {
+export function geaChainOptions(serviceLabel, jelouRef, extra = {}) {
     const idServicio = resolveGeaIdServicio(serviceLabel);
-    const vial = jelouRef === '2.4 Vial';
+    const vial = jelouRef === '2.4 Vial' || jelouRef === 'V2 Aseguradora - Inicio';
     return {
         idServicio,
-        requiresPlaca: vial,
+        requiresPlaca: vial || Boolean(extra.requiresPlaca),
         serviceLabel,
+        tipoServicio: extra.tipoServicio || TIPO_SERVICIO_BY_JELOU_REF[jelouRef] || 'HOGAR',
+        planAsistencia: extra.planAsistencia || 'ASISTENCIAS',
     };
 }

@@ -1,13 +1,72 @@
 <?php
 
+use App\Http\Controllers\Api\AseguradoraAsapController;
+use App\Http\Controllers\Api\GeaToolsController;
+use App\Http\Controllers\Api\IntegrationsController;
+use App\Http\Controllers\Api\JelouDatumController;
+use App\Http\Controllers\Api\JelouPayController;
+use App\Http\Controllers\Api\LucyIaController;
 use App\Http\Controllers\Api\OmniaxDentalController;
 use App\Http\Controllers\Api\OmniaxGeaController;
 use App\Http\Controllers\Api\OmniaxMedicoController;
+use App\Support\Integrations\IntegrationRegistry;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/health', fn () => response()->json(['ok' => true, 'service' => 'lucy-webview']));
+Route::get('/health', function () {
+    return response()->json([
+        'ok' => true,
+        'service' => 'lucy-webview',
+        'core_ready' => IntegrationRegistry::coreReady(),
+    ]);
+});
 
-Route::prefix('v1/omniax/medico')->group(function () {
+Route::get('/v1/integrations/status', [IntegrationsController::class, 'status']);
+
+Route::middleware('integration:jelou_datum')->prefix('v1/jelou/datum')->group(function () {
+    Route::get('/venta/lead', [JelouDatumController::class, 'ventaLead']);
+    Route::post('/venta/contrato', [JelouDatumController::class, 'ventaMarcarContrato']);
+    Route::post('/derivacion', [JelouDatumController::class, 'derivacionLead']);
+    Route::post('/ia-router/terms', [JelouDatumController::class, 'iaRouterTerms']);
+    Route::get('/{tableKey}/rows', [JelouDatumController::class, 'queryRows']);
+    Route::post('/{tableKey}/rows', [JelouDatumController::class, 'createRow']);
+    Route::patch('/{tableKey}/rows/{rowId}', [JelouDatumController::class, 'patchRow']);
+});
+
+Route::middleware('integration:jelou_pay')->prefix('v1/jelou/pay')->group(function () {
+    Route::get('/plans', [JelouPayController::class, 'plans']);
+    Route::post('/checkout-link', [JelouPayController::class, 'checkoutLink']);
+});
+
+Route::prefix('v1/lucy/ia')->group(function () {
+    Route::get('/profiles', [LucyIaController::class, 'profiles']);
+    Route::post('/bootstrap', [LucyIaController::class, 'bootstrap']);
+    Route::post('/message', [LucyIaController::class, 'message']);
+});
+
+Route::middleware('integration:omniax')->prefix('v1/aseguradora')->group(function () {
+    Route::post('/consulta-placa-vial', [AseguradoraAsapController::class, 'consultaPlacaVial']);
+    Route::post('/consulta-placa-siniestro', [AseguradoraAsapController::class, 'consultaPlacaSiniestro']);
+    Route::get('/provincias', [AseguradoraAsapController::class, 'provincias']);
+    Route::get('/provincias/{idProvincia}/ciudades', [AseguradoraAsapController::class, 'ciudadesPorProvincia']);
+    Route::get('/parentesco', [AseguradoraAsapController::class, 'parentesco']);
+    Route::post('/inspeccion/buscar-aseguradora', [AseguradoraAsapController::class, 'inspeccionBuscarAseguradora']);
+    Route::post('/siniestro/colision', [AseguradoraAsapController::class, 'reporteColision']);
+    Route::post('/siniestro/robo-total', [AseguradoraAsapController::class, 'reporteRoboTotal']);
+    Route::post('/siniestro/robo-parcial', [AseguradoraAsapController::class, 'reporteRoboParcial']);
+});
+
+Route::prefix('v1/gea/tools')->group(function () {
+    Route::post('/validacion-cedula', [GeaToolsController::class, 'validacionCedula']);
+    Route::middleware('integration:lopdp')->post('/aceptacion-lopdp', [GeaToolsController::class, 'aceptacionLopdp']);
+    Route::middleware('integration:omniax')->group(function () {
+        Route::post('/asistencia-en-curso', [GeaToolsController::class, 'asistenciaEnCurso']);
+        Route::post('/notificar-cabina', [GeaToolsController::class, 'notificarCabina']);
+        Route::get('/menu-proveedor/asistencias/{idAsistencia}', [GeaToolsController::class, 'menuProveedorValida']);
+        Route::post('/asistencia-reagendar', [GeaToolsController::class, 'asistenciaReagendar']);
+    });
+});
+
+Route::middleware('integration:omniax')->prefix('v1/omniax/medico')->group(function () {
     Route::post('/asistencias/en-proceso', [OmniaxMedicoController::class, 'asistenciasEnProceso']);
     Route::get('/especialidades', [OmniaxMedicoController::class, 'especialidades']);
     Route::post('/aplica-asignacion', [OmniaxMedicoController::class, 'aplicaAsignacion']);
@@ -19,7 +78,7 @@ Route::prefix('v1/omniax/medico')->group(function () {
     Route::post('/asistencias/reagendar', [OmniaxMedicoController::class, 'reagendarAsistencia']);
 });
 
-Route::prefix('v1/omniax/gea')->group(function () {
+Route::middleware('integration:omniax')->prefix('v1/omniax/gea')->group(function () {
     Route::put('/asistencias/{idAsistencia}/ubicacion', [OmniaxGeaController::class, 'actualizarUbicacion']);
     Route::get('/cuestionarios/asistencias/{idAsistencia}', [OmniaxGeaController::class, 'cuestionario']);
     Route::post('/cuestionarios/calificar', [OmniaxGeaController::class, 'calificarCuestionario']);
@@ -33,7 +92,7 @@ Route::prefix('v1/omniax/gea')->group(function () {
     Route::post('/asistencias/{idAsistencia}/evaluacion-confirmada', [OmniaxGeaController::class, 'evaluacionConfirmada']);
 });
 
-Route::prefix('v1/omniax/dental')->group(function () {
+Route::middleware('integration:omniax')->prefix('v1/omniax/dental')->group(function () {
     Route::post('/asistencias/en-proceso', [OmniaxDentalController::class, 'asistenciasEnProceso']);
     Route::post('/aplica-asignacion', [OmniaxDentalController::class, 'aplicaAsignacion']);
     Route::post('/establecimientos', [OmniaxDentalController::class, 'establecimientos']);

@@ -1,7 +1,33 @@
 import { LUCY_ENTRY_NODE, LUCY_FLOW_NODES } from './lucyFlowGraph.js';
+import {
+    applyLucyTelefonoToContext,
+    getTelefonoFromQuery,
+    isValidLucyTelefono,
+    resolveLucyTelefono,
+    shouldSkipTelefonoPrompt,
+} from '@/lib/lucyTelefono.js';
 
 import { bot, user } from './flowHelpers.js';
 
+import {
+    applyComQuickMeta,
+    clearComMenu,
+    getComEnterTask,
+    getComMenuActions,
+    syncComFromNode,
+} from './comercial/comercialEngine.js';
+import {
+    endIaSession,
+    getIaEnterTask,
+    syncIaFromNode,
+} from './ia/iaEngine.js';
+import {
+    applyAsegQuickMeta,
+    clearAsegMenu,
+    getAsegEnterTask,
+    getAsegMenuActions,
+    syncAsegFromNode,
+} from './aseguradora/aseguradoraEngine.js';
 import {
     applyGeaQuickMeta,
     clearGeaMenu,
@@ -22,6 +48,9 @@ function packEnter(enter) {
         scroll: enter.scroll !== false,
         omniaxEnter: enter.omniaxEnter ?? null,
         geaEnter: enter.geaEnter ?? null,
+        asegEnter: enter.asegEnter ?? null,
+        comEnter: enter.comEnter ?? null,
+        iaEnter: enter.iaEnter ?? null,
     };
 }
 
@@ -63,11 +92,15 @@ export function getComposerPlaceholder(state) {
 
     if (state.pendingLocationNext) return 'Usa el botón de ubicación ↑';
 
+    if (node?.useIaChat && state.context?.ia?.active) return 'Escribe a Lucy…';
+
     if (node?.input) {
 
         if (node.input.field === 'plate') return 'Ej: GYE1234';
 
         if (node.input.field === 'cedula') return '10 dígitos';
+
+        if (node.input.field === 'telefono') return 'Ej: 0991234567';
 
         return 'Escribe tu respuesta…';
 
@@ -84,6 +117,8 @@ export function isComposerEnabled(state) {
     const node = getNode(state.nodeId);
 
     if (state.pendingLocationNext) return false;
+
+    if (node?.useIaChat && state.context?.ia?.active) return true;
 
     return Boolean(node?.input);
 
@@ -108,6 +143,28 @@ export function getQuickActions(state) {
     const dynamicGea = getGeaMenuActions(state);
     if (node?.useGeaMenu && dynamicGea?.length) {
         return dynamicGea.map((a) => ({
+            id: a.id,
+            label: a.label,
+            type: a.type,
+            next: a.next,
+            meta: a.meta,
+        }));
+    }
+
+    const dynamicAseg = getAsegMenuActions(state);
+    if (node?.useAsegMenu && dynamicAseg?.length) {
+        return dynamicAseg.map((a) => ({
+            id: a.id,
+            label: a.label,
+            type: a.type,
+            next: a.next,
+            meta: a.meta,
+        }));
+    }
+
+    const dynamicCom = getComMenuActions(state);
+    if (node?.useComMenu && dynamicCom?.length) {
+        return dynamicCom.map((a) => ({
             id: a.id,
             label: a.label,
             type: a.type,
@@ -188,14 +245,41 @@ function enterNode(state, nodeId, messages) {
 
     state.pendingLocationNext = null;
 
+    const queryTel = getTelefonoFromQuery();
+    if (queryTel) {
+        applyLucyTelefonoToContext(state.context, queryTel);
+    }
+
+    if (nodeId === 'auth_telefono' && shouldSkipTelefonoPrompt()) {
+        const next = node.input?.next || 'auth_cedula';
+        return enterNode(state, next, messages);
+    }
+
+    if (nodeId === 'auth_cedula' && !resolveLucyTelefono(state.context)) {
+        return enterNode(state, 'auth_telefono', messages);
+    }
+
     syncOmniaxKind(state, node);
     syncGeaFromNode(state, node);
+    syncAsegFromNode(state, node);
+    syncComFromNode(state, node);
+    syncIaFromNode(state, node);
+
+    if (!node.useIaChat) {
+        endIaSession(state.context);
+    }
 
     if (!node.useOmniaxMenu) {
         clearOmniaxMenu(state.context);
     }
     if (!node.useGeaMenu) {
         clearGeaMenu(state.context);
+    }
+    if (!node.useAsegMenu) {
+        clearAsegMenu(state.context);
+    }
+    if (!node.useComMenu) {
+        clearComMenu(state.context);
     }
 
     if (!node.skipSay) {
@@ -210,8 +294,11 @@ function enterNode(state, nodeId, messages) {
 
     const omniaxEnter = getOmniaxEnterTask(state, node);
     const geaEnter = getGeaEnterTask(state, node);
+    const asegEnter = getAsegEnterTask(state, node);
+    const comEnter = getComEnterTask(state, node);
+    const iaEnter = getIaEnterTask(state, node);
 
-    return { scroll: true, omniaxEnter, geaEnter };
+    return { scroll: true, omniaxEnter, geaEnter, asegEnter, comEnter, iaEnter };
 
 }
 
@@ -275,10 +362,19 @@ export function reduceLucyChat(state, messages, event) {
 
 
 
-    if (event.type === 'omniaxResult' || event.type === 'geaResult') {
+    if (
+        event.type === 'omniaxResult'
+        || event.type === 'geaResult'
+        || event.type === 'asegResult'
+        || event.type === 'comResult'
+        || event.type === 'iaResult'
+    ) {
 
         const { result } = event;
         const isGea = event.type === 'geaResult';
+        const isAseg = event.type === 'asegResult';
+        const isCom = event.type === 'comResult';
+        const isIa = event.type === 'iaResult';
 
         if (result.messages?.length) newMessages.push(...result.messages);
 
@@ -294,7 +390,15 @@ export function reduceLucyChat(state, messages, event) {
 
                 scroll: true,
 
-                ...(isGea ? { geaEnter: result.rerunTask } : { omniaxEnter: result.rerunTask }),
+                ...(isGea
+                    ? { geaEnter: result.rerunTask }
+                    : isAseg
+                      ? { asegEnter: result.rerunTask }
+                      : isCom
+                        ? { comEnter: result.rerunTask }
+                        : isIa
+                          ? { iaEnter: result.rerunTask }
+                          : { omniaxEnter: result.rerunTask }),
 
             };
 
@@ -395,6 +499,38 @@ export function reduceLucyChat(state, messages, event) {
         };
     }
 
+    if (event.type === 'asegError') {
+        const detail = String(event.message || 'No pudimos completar la operación ASAP.').trim();
+        newMessages.push(bot(`⚠️ ${detail}`));
+        const enter = enterNode(nextState, 'menu_aseguradora', newMessages);
+        return {
+            state: nextState,
+            messages: [...messages, ...newMessages],
+            ...packEnter(enter),
+        };
+    }
+
+    if (event.type === 'comError') {
+        const detail = String(event.message || 'No pudimos completar la operación comercial.').trim();
+        newMessages.push(bot(`⚠️ ${detail}`));
+        const enter = enterNode(nextState, 'menu_principal', newMessages);
+        return {
+            state: nextState,
+            messages: [...messages, ...newMessages],
+            ...packEnter(enter),
+        };
+    }
+
+    if (event.type === 'iaError') {
+        const detail = String(event.message || 'No pudimos completar la conversación IA.').trim();
+        newMessages.push(bot(`⚠️ ${detail}`));
+        return {
+            state: nextState,
+            messages: [...messages, ...newMessages],
+            scroll: true,
+        };
+    }
+
     if (event.type === 'omniaxError') {
 
         const detail = String(event.message || 'No pudimos completar la operación.').trim();
@@ -445,6 +581,25 @@ export function reduceLucyChat(state, messages, event) {
         }
         if (action.meta?.gea) {
             applyGeaQuickMeta(nextState, action);
+        }
+        if (action.meta?.aseg) {
+            applyAsegQuickMeta(nextState, action);
+        }
+        if (action.meta?.com) {
+            applyComQuickMeta(nextState, action);
+        }
+
+        if (action.type === 'webview_close') {
+            newMessages.push(user(action.label || 'Volver a WhatsApp'));
+            return {
+                state: nextState,
+                messages: [...messages, ...newMessages],
+                scroll: true,
+                webviewClose: {
+                    nodeId: nextState.nodeId,
+                    reason: 'user_action',
+                },
+            };
         }
 
         if (action.meta?.gea?.encuestaAnswer) {
@@ -556,6 +711,17 @@ export function reduceLucyChat(state, messages, event) {
 
         if (!text) return { state: nextState, messages, scroll: false };
 
+        const iaNode = getNode(nextState.nodeId);
+        if (iaNode?.useIaChat && nextState.context?.ia?.active) {
+            newMessages.push(user(text));
+            return {
+                state: nextState,
+                messages: [...messages, ...newMessages],
+                scroll: true,
+                iaUserMessage: text,
+            };
+        }
+
         const geaCtx = nextState.context.gea;
         if (geaCtx?.awaitingMotivo) {
             geaCtx.lastMotivoText = text;
@@ -614,6 +780,26 @@ export function reduceLucyChat(state, messages, event) {
 
 
 
+        if (node.input.field === 'telefono' && !isValidLucyTelefono(text)) {
+
+            newMessages.push(
+                bot('Ingresa un celular válido de Ecuador (10 dígitos, empieza con 09). Ej: 0991234567.'),
+            );
+
+            return {
+
+                state: nextState,
+
+                messages: [...messages, ...newMessages],
+
+                scroll: true,
+
+            };
+
+        }
+
+
+
         if (node.input.field === 'cedula' && !CEDULA_RE.test(text)) {
 
             newMessages.push(bot('La cédula debe tener 10 dígitos. Intenta de nuevo.'));
@@ -658,6 +844,10 @@ export function reduceLucyChat(state, messages, event) {
 
 
 
+        if (node.input.field === 'telefono') {
+            applyLucyTelefonoToContext(nextState.context, text);
+        }
+
         if (node.input.field === 'cedula') nextState.context.cedula = text;
 
         if (node.input.field === 'plate') nextState.context.plate = text.toUpperCase();
@@ -668,6 +858,16 @@ export function reduceLucyChat(state, messages, event) {
             const gea = nextState.context.gea || {};
             gea.direccion = text;
             nextState.context.gea = gea;
+        }
+        if (node.input.asegField) {
+            const aseg = nextState.context.aseg || {};
+            aseg[node.input.asegField] = text;
+            nextState.context.aseg = aseg;
+        }
+        if (node.input.comField) {
+            const com = nextState.context.com || {};
+            com[node.input.comField] = text;
+            nextState.context.com = com;
         }
         if (node.input.geaField === 'id_asistencia_evaluar') {
             const gea = nextState.context.gea || {};

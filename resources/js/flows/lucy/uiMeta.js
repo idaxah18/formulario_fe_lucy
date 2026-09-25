@@ -1,4 +1,6 @@
 import { LUCY_FLOW_NODES } from './lucyFlowGraph.js';
+import { getComDockCopy } from './comercial/comercialEngine.js';
+import { getAsegDockCopy } from './aseguradora/aseguradoraEngine.js';
 import { getGeaDockCopy } from './gea/geaEngine.js';
 import { getOmniaxDockCopy } from './omniax/omniaxMedicoRunner.js';
 
@@ -23,6 +25,14 @@ export function getDockPrompt(state) {
     if (node?.useGeaMenu && geaDock?.headline) {
         return { headline: geaDock.headline, hint: geaDock.hint || '' };
     }
+    const asegDock = getAsegDockCopy(state);
+    if (node?.useAsegMenu && asegDock?.headline) {
+        return { headline: asegDock.headline, hint: asegDock.hint || '' };
+    }
+    const comDock = getComDockCopy(state);
+    if (node?.useComMenu && comDock?.headline) {
+        return { headline: comDock.headline, hint: comDock.hint || '' };
+    }
 
     if (!node?.say?.length) return null;
     const lines = node.say.map((l) => l.replace(/\*\*/g, ''));
@@ -46,6 +56,14 @@ export function getInputFormConfig(state) {
     const hint = lines.slice(1).join('\n') || '';
 
     const configs = {
+        telefono: {
+            label: 'Número de celular',
+            type: 'tel',
+            inputmode: 'tel',
+            autocomplete: 'tel',
+            maxlength: 13,
+            placeholder: 'Ej: 0991234567',
+        },
         cedula: {
             label: 'Número de cédula',
             type: 'tel',

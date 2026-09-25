@@ -36,6 +36,12 @@ export function syncOmniaxKind(state, node) {
     if (node?.omniax?.reagendar != null) {
         ctx.omniax.reagendar = Boolean(node.omniax.reagendar);
     }
+    if (node?.omniax?.afterCabinaNext) {
+        ctx.omniax.afterCabinaNext = node.omniax.afterCabinaNext;
+    }
+    if (node?.omniax?.tipoServicio) {
+        ctx.omniax.tipoServicio = node.omniax.tipoServicio;
+    }
 }
 
 export function getOmniaxEnterTask(state, node) {

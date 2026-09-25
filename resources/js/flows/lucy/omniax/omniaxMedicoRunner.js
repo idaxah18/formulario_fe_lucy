@@ -29,7 +29,9 @@ import {
     mensajeSinCitasReagendar,
 } from './omniaxAsistencias.js';
 import { botFromOmniaxResponse } from './omniaxNoticias.js';
+import { runCabinaGateOrBlock } from '../gea/cabinaGate.js';
 import { bot } from '../flowHelpers.js';
+import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
 
 function parseOmniaxBool(value) {
     if (value === true || value === 1 || value === '1' || value === 'true') return true;
@@ -40,11 +42,6 @@ function parseOmniaxBool(value) {
 function ensureOmx(ctx) {
     if (!ctx.omniax) ctx.omniax = {};
     return ctx.omniax;
-}
-
-function telefonoFromRoute() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('telefono') || '0999999999';
 }
 
 function setMenu(ctx, headline, hint, actions) {
@@ -114,6 +111,24 @@ export async function runOmniaxMedicoEnter(task, state) {
     clearMenu(ctx);
 
     switch (task) {
+        case 'cabina_gate': {
+            const gate = await runCabinaGateOrBlock(ctx, omx.tipoServicio || 'MEDICO', 'menu_medico', 'ASISTENCIAS', {
+                allowVigenteForAppointments: true,
+            });
+            if (gate.blocked) {
+                return {
+                    messages: gate.messages,
+                    nextNodeId: gate.nextNodeId,
+                    patchContext: { omniax: omx },
+                };
+            }
+            return {
+                messages: [],
+                nextNodeId: omx.afterCabinaNext || 'omx_med_start',
+                patchContext: { omniax: omx },
+            };
+        }
+
         case 'en_proceso': {
             const res = await fetchAsistenciasEnProceso(cedula, false);
             omx.aplica_seguimiento_dental = Boolean(res.data?.aplica_seguimiento_dental);
@@ -446,7 +461,7 @@ export async function runOmniaxMedicoEnter(task, state) {
             omx.longitud = coords.longitud;
             const payload = withBeneficiarioFields(
                 {
-                    telefono: telefonoFromRoute(),
+                    telefono: requireLucyTelefono(ctx),
                     identificacion_titular: cedula,
                     nombre_titular: nombre,
                     latitud: coords.latitud,
@@ -478,7 +493,7 @@ export async function runOmniaxMedicoEnter(task, state) {
         case 'reagendar': {
             const res = await reagendarAsistencia(
                 buildReagendarPayload({
-                    telefono: telefonoFromRoute(),
+                    telefono: requireLucyTelefono(ctx),
                     omx,
                 }),
             );

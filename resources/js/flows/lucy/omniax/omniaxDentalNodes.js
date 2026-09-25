@@ -7,6 +7,27 @@ export const OMX_DEN_BENEF_FORM_NODE = 'omx_den_benef_form';
 
 export function buildOmniaxDentalNodes() {
     return {
+        omx_den_cabina: {
+            jelou: 'Notificar Cabina Asistencia en Proceso',
+            say: ['Validando asistencias en curso…'],
+            skipSay: true,
+            omniax: {
+                enter: 'cabina_gate',
+                kind: 'dental',
+                tipoServicio: 'DENTAL',
+                afterCabinaNext: 'omx_den_start',
+            },
+        },
+        omx_den_reag_cabina: {
+            jelou: 'Notificar Cabina Asistencia en Proceso',
+            skipSay: true,
+            omniax: {
+                enter: 'cabina_gate',
+                kind: 'dental',
+                tipoServicio: 'DENTAL',
+                afterCabinaNext: 'omx_den_reag_start',
+            },
+        },
         omx_den_start: {
             jelou: '2.1.1 Agendar cita dental - Omniax',
             skipSay: true,

@@ -10,7 +10,7 @@ Usuario WhatsApp
   → ?telefono={wa_id}&flow=... (opcional)
   → VPS: Laravel sirve SPA Vue (chat)
   → Laravel proxy: /api/v1/omniax/*  →  Omniax (GEA) con Bearer
-  → Usuario cierra webview → vuelve a WhatsApp → mensaje de cierre en Jelou (POR IMPLEMENTAR en Jelou + bridge JS)
+  → Usuario cierra webview → `jelou:webview:close` vía `postMessage` (Fase 4 — ver `docs/PHASE4_TEST.md`; skill Jelou debe escuchar el evento)
 ```
 
 Jelou **no ejecuta** el flujo de negocio dentro de la webview; solo abre el link. La lógica Omniax vive en **este repo** (motor de chat + proxy).
@@ -43,7 +43,8 @@ npm run build          # producción local; en dev usar npm run dev
 php artisan serve      # http://localhost:8000
 ```
 
-Prueba: `http://localhost:8000/?telefono=0999999999` → cédula QA → menús.
+Prueba web: abrir `http://localhost:8000/` → **Teléfono** (QA) → cédula → menús.  
+Producción WhatsApp: `http://localhost:8000/?telefono=0999999999` omite el paso teléfono.
 
 ### Verificar APIs (con credenciales en `.env`)
 
@@ -65,7 +66,12 @@ curl http://localhost:8000/api/health
 | `APP_TIMEZONE` | `America/Guayaquil` |
 | `DB_CONNECTION` | `sqlite` (sesión en file; DB mínima) |
 | `JELOU_PROJECT_ID` | Referencia `01j5661e5gaf6330435zh3bzjx` (no modifica Jelou desde aquí) |
-| `JELOU_API_BASE_URL`, `JELOU_API_TOKEN` | Futuro webhook/Jelou API |
+| `JELOU_API_TOKEN` | Datum (venta, derivación, IA Router) |
+| `JELOU_PAY_BEARER`, `JELOU_PAY_APP_ID` | Jelou Pay |
+| `GEA_LOPDP_API_KEY` | Tool 2620 LOPDP (header `api-key`, no Bearer) |
+| `LUCY_IA_API_KEY` | Chat IA (opcional) |
+| `GEA_JELOU_FUNCTION_USER/PASSWORD` | Legacy function asistencia-en-curso (opcional) |
+| Diagnóstico | `php scripts/check_integrations.php` o `GET /api/v1/integrations/status` |
 | `GEA_OMNIAX_BASE_URL` | `https://api.geainternacional.com/test-ec` o prod `/ec` |
 | `GEA_OMNIAX_CLIENT_ID` | Omniax OAuth |
 | `GEA_OMNIAX_CLIENT_SECRET` | Omniax OAuth |

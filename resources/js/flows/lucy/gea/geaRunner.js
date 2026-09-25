@@ -1,10 +1,15 @@
 import {
+    aceptarLopdp,
+    fetchAsistenciaEnCurso,
+    fetchMenuProveedorValida,
+} from '@/api/geaToolsApi.js';
+import { runCabinaGateOrBlock } from './cabinaGate.js';
+import {
     actualizarUbicacionAsistencia,
     calificarCuestionario,
     cancelarAsistencia,
     crearAsistenciaGea,
     evaluacionConfirmada,
-    fetchAsistenciasEnProcesoRemitente,
     fetchCuestionario,
     fetchListadoChatbotTelefono,
     reenviarEvaluacion,
@@ -19,15 +24,11 @@ import {
     normalizePreguntas,
     pushEncuestaRespuesta,
 } from './geaEncuesta.js';
+import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
 
 function ensureGea(ctx) {
     if (!ctx.gea) ctx.gea = {};
     return ctx.gea;
-}
-
-function telefonoFromRoute() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('telefono') || '0999999999';
 }
 
 function setMenu(ctx, headline, hint, actions) {
@@ -143,7 +144,7 @@ export async function runGeaEnter(task, state) {
     const gea = ensureGea(ctx);
     const cedula = ctx.cedula;
     const nombre = ctx.nombre;
-    const telefono = telefonoFromRoute();
+    const telefono = requireLucyTelefono(ctx);
     gea.telefono = telefono;
 
     if (!String(task).startsWith('encuesta_')) {
@@ -151,6 +152,73 @@ export async function runGeaEnter(task, state) {
     }
 
     switch (task) {
+        case 'lopdp': {
+            if (!cedula) {
+                throw new Error('Falta la cédula para registrar LOPDP.');
+            }
+            const lopdpMessages = [];
+            try {
+                const res = await aceptarLopdp(cedula);
+                if (res.branch && res.branch !== 'success') {
+                    lopdpMessages.push(
+                        bot(`⚠️ LOPDP: ${res.message || 'No se pudo registrar aceptación.'}`),
+                    );
+                }
+            } catch (e) {
+                const msg =
+                    e.response?.data?.noticias?.mensaje
+                    || e.response?.data?.message
+                    || e.message
+                    || 'Configura GEA_LOPDP_API_KEY en el servidor (.env).';
+                lopdpMessages.push(bot(`⚠️ LOPDP: ${msg}`));
+            }
+            return {
+                messages: lopdpMessages,
+                nextNodeId: gea.afterLopdpNext || 'truncal_en_curso',
+                patchContext: { gea },
+            };
+        }
+
+        case 'cabina_gate': {
+            const gate = await runCabinaGateOrBlock(
+                ctx,
+                gea.tipoServicio || 'HOGAR',
+                'menu_solucion_24_7',
+                gea.planAsistencia || 'ASISTENCIAS',
+            );
+            if (gate.blocked) {
+                return {
+                    messages: gate.messages,
+                    nextNodeId: gate.nextNodeId,
+                    patchContext: { gea },
+                };
+            }
+            return { rerunTask: 'crear' };
+        }
+
+        case 'prov_valida': {
+            const id = resolveIdAsistencia(gea);
+            if (!id) throw new Error('Indica el número de asistencia.');
+            const valida = await fetchMenuProveedorValida(id, gea.provOpcion || 'contacto');
+            if (valida.branch !== 'successOutput') {
+                return {
+                    messages: [
+                        bot(
+                            valida.message ||
+                                'La asistencia ingresada no es válida o no tiene proveedor asignado.',
+                        ),
+                    ],
+                    nextNodeId: 'menu_utilidades',
+                    patchContext: { gea },
+                };
+            }
+            return {
+                messages: [],
+                nextNodeId: gea.afterProvValidaNext || 'menu_utilidades',
+                patchContext: { gea },
+            };
+        }
+
         case 'crear': {
             const serviceId = String(gea.idServicio || '').trim();
             if (!cedula || !nombre) {
@@ -192,13 +260,16 @@ export async function runGeaEnter(task, state) {
         }
 
         case 'en_proceso_remitente': {
-            const res = await fetchAsistenciasEnProcesoRemitente(telefono);
-            const list = normalizeAsistenciaRows(res);
-            if (!list.length) {
+            const tool = await fetchAsistenciaEnCurso(telefono);
+            const list =
+                tool.branch === 'exito_consulta' && Array.isArray(tool.data)
+                    ? tool.data
+                    : normalizeAsistenciaRows(tool.raw);
+            if (tool.branch === 'sinAsistencias' || !list.length) {
                 return {
                     messages: [
                         bot(
-                            res?.noticias?.mensaje ||
+                            tool.raw?.noticias?.mensaje ||
                                 'Al momento no tienes asistencias en proceso con este número.',
                         ),
                     ],

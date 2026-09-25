@@ -34,6 +34,38 @@
             >
                 <form
                     v-if="activeTab === 0"
+                    key="telefono"
+                    class="chat-tabs__panel"
+                    @submit.prevent="submitTelefono"
+                >
+                    <p class="chat-tabs__headline">
+                        Ingresa tu número de celular (pruebas en web). En WhatsApp se usa tu número automáticamente.
+                    </p>
+                    <label class="chat-field">
+                        <span class="chat-field__label">Celular</span>
+                        <input
+                            ref="telefonoInput"
+                            v-model="telefono"
+                            type="tel"
+                            inputmode="tel"
+                            maxlength="13"
+                            autocomplete="tel"
+                            placeholder="Ej: 0991234567"
+                            class="chat-field__input"
+                            :disabled="disabled || activeTab !== 0"
+                        >
+                    </label>
+                    <button
+                        type="submit"
+                        class="chat-btn chat-btn--primary"
+                        :disabled="disabled || !telefono.trim()"
+                    >
+                        Continuar
+                    </button>
+                </form>
+
+                <form
+                    v-else-if="activeTab === 1"
                     key="cedula"
                     class="chat-tabs__panel"
                     @submit.prevent="submitCedula"
@@ -52,7 +84,7 @@
                             autocomplete="off"
                             placeholder="Ej: 1712345678"
                             class="chat-field__input"
-                            :disabled="disabled || activeTab !== 0"
+                            :disabled="disabled || activeTab !== 1"
                         >
                     </label>
                     <button
@@ -100,6 +132,7 @@
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
+import { readPersistedLucyTelefono } from '@/lib/lucyTelefono.js';
 
 const props = defineProps({
     nodeId: { type: String, required: true },
@@ -109,34 +142,49 @@ const props = defineProps({
 const emit = defineEmits(['submit']);
 
 const tabs = [
+    { id: 'telefono', label: 'Teléfono' },
     { id: 'cedula', label: 'Cédula' },
     { id: 'nombre', label: 'Nombre' },
 ];
 
+const NODE_TAB = {
+    auth_telefono: 0,
+    auth_cedula: 1,
+    auth_nombre: 2,
+};
+
 const activeTab = ref(0);
 const transitionName = ref('tab-slide-forward');
+const telefono = ref(readPersistedLucyTelefono() || '');
 const cedula = ref('');
 const nombre = ref('');
+const telefonoInput = ref(null);
 const cedulaInput = ref(null);
 const nombreInput = ref(null);
 
-const maxTab = computed(() => (props.nodeId === 'auth_nombre' ? 1 : 0));
+const maxTab = computed(() => NODE_TAB[props.nodeId] ?? 0);
 
 const sliderStyle = computed(() => ({
     width: `${100 / tabs.length}%`,
     transform: `translateX(${activeTab.value * 100}%)`,
 }));
 
+function focusForTab(index) {
+    nextTick(() => {
+        if (index === 0) telefonoInput.value?.focus();
+        if (index === 1) cedulaInput.value?.focus();
+        if (index === 2) nombreInput.value?.focus();
+    });
+}
+
 watch(
     () => props.nodeId,
     (id) => {
-        const next = id === 'auth_nombre' ? 1 : 0;
+        const next = NODE_TAB[id] ?? 0;
         if (next > activeTab.value) transitionName.value = 'tab-slide-forward';
         else if (next < activeTab.value) transitionName.value = 'tab-slide-back';
         activeTab.value = next;
-        if (id === 'auth_nombre') {
-            nextTick(() => nombreInput.value?.focus());
-        }
+        focusForTab(next);
     },
     { immediate: true },
 );
@@ -145,6 +193,12 @@ function goTab(index) {
     if (index > maxTab.value) return;
     transitionName.value = index > activeTab.value ? 'tab-slide-forward' : 'tab-slide-back';
     activeTab.value = index;
+}
+
+function submitTelefono() {
+    const text = telefono.value.trim();
+    if (!text || props.disabled) return;
+    emit('submit', text);
 }
 
 function submitCedula() {
@@ -158,12 +212,4 @@ function submitNombre() {
     if (!text || props.disabled) return;
     emit('submit', text);
 }
-
-watch(
-    () => props.nodeId,
-    (id) => {
-        if (id === 'auth_cedula') nextTick(() => cedulaInput.value?.focus());
-    },
-    { immediate: true },
-);
 </script>

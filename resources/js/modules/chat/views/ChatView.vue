@@ -1,5 +1,5 @@
 <template>
-    <ChatShell>
+    <ChatShell :show-webview-close="showWebviewClose" @webview-close="onWebviewClose">
         <template
             v-if="flowStepper.visible"
             #stepper
@@ -74,6 +74,12 @@
                     @submit="onText"
                 />
 
+                <ChatIaComposer
+                    v-else-if="isIaChatStep"
+                    :disabled="busy"
+                    @submit="onIaText"
+                />
+
                 <template v-else-if="quickActions.length || busy">
                     <p
                         v-if="busy"
@@ -131,10 +137,14 @@ import ChatOmniaxBeneficiarioPanel from '@/components/chat/ChatOmniaxBeneficiari
 import ChatFlowStepper from '@/components/chat/ChatFlowStepper.vue';
 import ChatDockIntro from '@/components/chat/ChatDockIntro.vue';
 import ChatAppFooter from '@/components/chat/ChatAppFooter.vue';
+import ChatIaComposer from '@/components/chat/ChatIaComposer.vue';
+import { closeWebview, isEmbeddedWebview } from '@/lib/webviewBridge.js';
+import { isIaChatActive, runIaEnter, runIaUserMessage } from '@/flows/lucy/ia/iaEngine.js';
 import { LUCY_ENTRY_NODE } from '@/flows/lucy/lucyFlowGraph.js';
 import {
     createLucyChatState,
     getQuickActions,
+    isComposerEnabled,
     reduceLucyChat,
 } from '@/flows/lucy/lucyChatEngine.js';
 import { getFlowStepper, isAuthFlowStep } from '@/flows/lucy/flowStepper.js';
@@ -146,6 +156,8 @@ import {
     isNpsMenu,
 } from '@/flows/lucy/uiMeta.js';
 import { formatOmniaxErrorMessage } from '@/api/omniaxMedicoErrors.js';
+import { runComEnter } from '@/flows/lucy/comercial/comercialEngine.js';
+import { runAsegEnter } from '@/flows/lucy/aseguradora/aseguradoraEngine.js';
 import { runGeaEnter } from '@/flows/lucy/gea/geaEngine.js';
 import { runOmniaxEnter } from '@/flows/lucy/omniax/omniaxEngine.js';
 
@@ -175,6 +187,10 @@ const OMNX_BENEF_NODES = [OMX_MED_BENEF_FORM_NODE, OMX_DEN_BENEF_FORM_NODE];
 
 const isOmniaxFechaHoraStep = computed(() => OMNX_FECHA_HORA_NODES.includes(state.value.nodeId));
 const isOmniaxBeneficiarioStep = computed(() => OMNX_BENEF_NODES.includes(state.value.nodeId));
+const isIaChatStep = computed(
+    () => isIaChatActive(state.value) && isComposerEnabled(state.value),
+);
+const showWebviewClose = computed(() => isEmbeddedWebview());
 
 const dockStepActive = computed(() =>
     isDockStepActive(
@@ -199,6 +215,7 @@ const visibleMessages = computed(() => {
 function resolveEntryNode() {
     const flow = route.query.flow;
     if (flow === 'hsm') return 'hsm_root';
+    if (flow === 'ia' || flow === 'ia_router') return 'ia_router';
     if (flow === 'aseguradora') return LUCY_ENTRY_NODE;
     return LUCY_ENTRY_NODE;
 }
@@ -254,17 +271,89 @@ async function runGeaTask(task) {
     }
 }
 
+async function runAsegTask(task) {
+    if (!task || busy.value) return;
+    busy.value = true;
+    try {
+        const result = await runAsegEnter(task, state.value);
+        applyReduce({ type: 'asegResult', result });
+    } catch (e) {
+        applyReduce({ type: 'asegError', message: formatOmniaxErrorMessage(e) });
+    } finally {
+        busy.value = false;
+    }
+}
+
+async function runIaTask(task) {
+    if (!task || busy.value) return;
+    busy.value = true;
+    try {
+        const result = await runIaEnter(task, state.value);
+        applyReduce({ type: 'iaResult', result });
+    } catch (e) {
+        applyReduce({ type: 'iaError', message: formatOmniaxErrorMessage(e) });
+    } finally {
+        busy.value = false;
+    }
+}
+
+function onIaText(text) {
+    applyReduce({ type: 'text', text });
+}
+
+function onWebviewClose() {
+    closeWebview({ nodeId: state.value.nodeId, reason: 'header_button' });
+}
+
+async function runComTask(task) {
+    if (!task || busy.value) return;
+    busy.value = true;
+    try {
+        const result = await runComEnter(task, state.value);
+        applyReduce({ type: 'comResult', result });
+    } catch (e) {
+        applyReduce({ type: 'comError', message: formatOmniaxErrorMessage(e) });
+    } finally {
+        busy.value = false;
+    }
+}
+
 function applyReduce(event) {
     const result = reduceLucyChat(state.value, messages.value, event);
     state.value = result.state;
     messages.value = result.messages;
     if (result.scroll) scrollToBottom();
     if (result.requestLocation) requestLocation();
+    if (result.webviewClose) {
+        closeWebview({
+            nodeId: result.webviewClose.nodeId,
+            reason: result.webviewClose.reason || 'flow',
+        });
+    }
+    if (result.iaUserMessage) {
+        const iaText = result.iaUserMessage;
+        nextTick(async () => {
+            if (busy.value) return;
+            busy.value = true;
+            try {
+                const iaResult = await runIaUserMessage(state.value, iaText);
+                applyReduce({ type: 'iaResult', result: iaResult });
+            } catch (e) {
+                applyReduce({ type: 'iaError', message: formatOmniaxErrorMessage(e) });
+            } finally {
+                busy.value = false;
+            }
+        });
+        return;
+    }
     nextTick(() => {
         measureMenuOverlay();
         setupDockObserver();
         if (result.omniaxEnter) runOmniaxTask(result.omniaxEnter);
         if (result.geaEnter) runGeaTask(result.geaEnter);
+        if (result.asegEnter) runAsegTask(result.asegEnter);
+        if (result.comEnter) runComTask(result.comEnter);
+        if (result.iaEnter) runIaTask(result.iaEnter);
     });
 }
 

@@ -6,6 +6,8 @@ import {
     stubRegistered,
     wizardTextSteps,
 } from './flowHelpers.js';
+import { buildAseguradoraSiniestroNodes } from './aseguradora/aseguradoraNodes.js';
+import { buildIaNodes } from './ia/iaNodes.js';
 import { buildGeaNodes } from './gea/geaNodes.js';
 import { geaChainOptions } from './gea/geaServiceIds.js';
 import { buildOmniaxDentalNodes } from './omniax/omniaxDentalNodes.js';
@@ -19,7 +21,7 @@ function merge(...parts) {
     return Object.assign({}, ...parts);
 }
 
-function buildServiceChains(labels, jelouRef, returnNode) {
+function buildServiceChains(labels, jelouRef, returnNode, chainExtra = {}) {
     let nodes = {};
     const actions = [];
     for (const label of labels) {
@@ -27,7 +29,7 @@ function buildServiceChains(labels, jelouRef, returnNode) {
             label,
             jelouRef,
             returnNode,
-            geaChainOptions(label, jelouRef),
+            geaChainOptions(label, jelouRef, chainExtra),
         );
         nodes = merge(nodes, chain.nodes);
         actions.push({ id: slugify(label), label, next: chain.entry });
@@ -38,6 +40,13 @@ function buildServiceChains(labels, jelouRef, returnNode) {
 function buildCore() {
     return merge(
         {
+            auth_telefono: {
+                jelou: 'Telefono prueba webview',
+                say: [
+                    'Antes de continuar, ingresa tu **número de celular** (solo para pruebas en web; en WhatsApp se usa tu número automáticamente).',
+                ],
+                input: { field: 'telefono', next: 'auth_cedula' },
+            },
             auth_cedula: {
                 jelou: 'Proteccion datos cedula',
                 say: ['Hola, soy Lucy. Para ayudarte, ingresa tu número de cédula.'],
@@ -46,7 +55,13 @@ function buildCore() {
             auth_nombre: {
                 jelou: 'Proteccion datos nombre',
                 say: ['Gracias. Ahora confirma tu nombre completo.'],
-                input: { field: 'nombre', next: 'truncal_en_curso' },
+                input: { field: 'nombre', next: 'auth_lopdp' },
+            },
+            auth_lopdp: {
+                jelou: 'Aceptacion LOPDP',
+                say: ['Registrando aceptación de protección de datos…'],
+                skipSay: true,
+                gea: { enter: 'lopdp', afterLopdpNext: 'truncal_en_curso' },
             },
         },
         menuNode(
@@ -124,12 +139,22 @@ function buildSolucion247() {
             ],
         ),
         menuNode(
+            'reagendar_asistencia',
+            'reagendar asistencia',
+            '¿Qué tipo de cita deseas reagendar?',
+            [
+                { id: 'den', label: 'Dental', next: 'omx_den_reag_start' },
+                { id: 'med', label: 'Médico', next: 'omx_med_reag_start' },
+                { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' },
+            ],
+        ),
+        menuNode(
             'menu_dental',
             '2.1 Dental',
             'Dental 🦷 ¿Qué deseas?',
             [
-                { id: 'ag', label: 'Agendar cita', next: 'omx_den_start' },
-                { id: 're', label: 'Reagendar cita', next: 'omx_den_reag_start' },
+                { id: 'ag', label: 'Agendar cita', next: 'omx_den_cabina' },
+                { id: 're', label: 'Reagendar cita', next: 'omx_den_reag_cabina' },
                 { id: 'ia', label: 'Dental IA', next: 'dental_ia' },
                 { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' },
             ],
@@ -139,8 +164,8 @@ function buildSolucion247() {
             '2.1.1 Agendar cita',
             '¿Qué tipo de cita deseas agendar?',
             [
-                { id: 'cd', label: '🦷 Cita dental', next: 'omx_den_start' },
-                { id: 'cm', label: '👨🏻‍⚕️ Cita médica', next: 'omx_med_start' },
+                { id: 'cd', label: '🦷 Cita dental', next: 'omx_den_cabina' },
+                { id: 'cm', label: '👨🏻‍⚕️ Cita médica', next: 'omx_med_cabina' },
                 { id: 'ia', label: 'Agendar cita IA', next: 'agendar_cita_ia' },
             ],
         ),
@@ -152,8 +177,8 @@ function buildSolucion247() {
             [
                 { id: 'amb', label: 'Ambulancia', next: medicoAsist.actions[0].next },
                 { id: 'ori', label: 'Orientación Médica Telf.', next: 'leaf_orientacion_medica' },
-                { id: 'ag', label: 'Agendar cita médica', next: 'omx_med_start' },
-                { id: 're', label: 'Reagendar cita médica', next: 'omx_med_reag_start' },
+                { id: 'ag', label: 'Agendar cita médica', next: 'omx_med_cabina' },
+                { id: 're', label: 'Reagendar cita médica', next: 'omx_med_reag_cabina' },
                 { id: 'dom', label: 'Médico a domicilio', next: medicoAsist.actions[1].next },
                 { id: 'nut', label: 'Bienestar y nutrición', next: 'bienestar_nutricion' },
                 { id: 'edo', label: 'E-doctor', next: 'activar_edoctor_inicio' },
@@ -162,19 +187,17 @@ function buildSolucion247() {
         ),
         {
             leaf_orientacion_medica: stubRegistered('Orientación médica telefónica', '2.2 Médico'),
-            reagendar_asistencia: stubRegistered('Reagendar asistencia', 'reagendar asistencia'),
-            agendar_cita_ia: stubRegistered('Agendar cita IA', 'Agendar cita IA'),
-            reagendar_cita_ia: stubRegistered('Reagendar cita IA', 'reagendar cita IA'),
-            dental_ia: stubRegistered('Dental IA', 'Dental IA'),
-            hogar_ia: stubRegistered('Hogar IA', 'Hogar IA'),
-            vial_ia: stubRegistered('Vial IA', 'vial IA'),
             bienestar_nutricion: stubRegistered('Bienestar y nutrición', '2.2.6 Bienestar y nutrición'),
         },
         menuNode(
             'menu_hogar',
             '2.3 Hogar',
             'Hogar 🏡 Elige el servicio:',
-            [...hogar.actions, { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' }],
+            [
+                ...hogar.actions,
+                { id: 'ia', label: 'Hogar IA', next: 'hogar_ia' },
+                { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' },
+            ],
         ),
         hogar.nodes,
         medicoAsist.nodes,
@@ -253,25 +276,58 @@ function buildSolucion247() {
             { id: 'lla', label: 'Quiero llamar', next: 'derivacion_asesor' },
         ]),
         {
-            venta_contratar: stubRegistered('Contratación de asistencia', 'Venta Asistencias - Contratar'),
+            venta_contratar: {
+                jelou: 'Venta Asistencias - Contratar',
+                skipSay: true,
+                com: { enter: 'venta_contratar' },
+            },
+            venta_contratar_ok: {
+                say: ['¿Qué deseas hacer ahora?'],
+                actions: standardExitActions('menu_solucion_24_7'),
+            },
+            derivacion_asesor: {
+                jelou: 'Derivación a asesor',
+                say: ['Te conectamos con un asesor comercial.'],
+                actions: [{ id: 'go', label: 'Solicitar contacto', next: 'derivacion_asesor_load' }],
+            },
+            derivacion_asesor_load: {
+                skipSay: true,
+                com: { enter: 'derivacion_asesor', afterDerivacion: 'menu_principal' },
+            },
         },
     );
 }
 
 function buildAseguradora() {
+    const asegExtra = {
+        planAsistencia: 'ASEGURADORA',
+        tipoServicio: 'VIAL',
+        requiresPlaca: true,
+    };
     const asegChains = buildServiceChains(
         ['Grúa', 'Cambio de llanta', 'Suministro de gasolina', 'Paso de corriente', 'Cerrajería para apertura'],
         'V2 Aseguradora - Inicio',
         'menu_aseguradora',
+        asegExtra,
     );
     const plateNodes = {};
     const asegMenu = [];
     for (const action of asegChains.actions) {
         const plateId = `aseg_placa_${action.id}`;
+        const cabId = `aseg_cab_${action.id}`;
+        const valId = `aseg_val_${action.id}`;
         plateNodes[plateId] = {
             jelou: 'V2 Aseguradora - Inicio',
             say: ['Por favor envíame el número de la placa (ej: GYE1234).'],
-            input: { field: 'plate', next: action.next },
+            input: { field: 'plate', next: cabId },
+        };
+        plateNodes[cabId] = {
+            skipSay: true,
+            aseg: { enter: 'cabina_aseguradora', afterCabinaNext: valId },
+        };
+        plateNodes[valId] = {
+            skipSay: true,
+            aseg: { enter: 'consulta_placa_vial', afterOkNext: action.next },
         };
         asegMenu.push({ id: action.id, label: action.label, next: plateId });
     }
@@ -295,9 +351,22 @@ function buildAseguradora() {
             aseg_placa_legal: {
                 jelou: 'V2 Aseguradora - Inicio',
                 say: ['Por favor envíame el número de la placa (ej: GYE1234).'],
-                input: { field: 'plate', next: 'leaf_aseg_legal' },
+                input: { field: 'plate', next: 'aseg_legal_load' },
             },
-            leaf_aseg_legal: stubRegistered('Asistencia legal', 'V2 Aseguradora - Inicio', 'menu_aseguradora'),
+            aseg_legal_load: {
+                skipSay: true,
+                aseg: {
+                    enter: 'consulta_placa_vial',
+                    afterOkNext: 'leaf_aseg_legal',
+                },
+            },
+            leaf_aseg_legal: {
+                jelou: 'V2 Aseguradora - Inicio',
+                say: [
+                    'Placa validada. Para asistencia legal un asesor continuará el caso por el canal oficial.',
+                ],
+                actions: standardExitActions('menu_aseguradora'),
+            },
         },
         menuNode('menu_siniestro', 'Siniestro', 'Reporte de siniestro. Selecciona el tipo:', [
             { id: 'col', label: 'Colisión', next: 'siniestro_colision' },
@@ -306,38 +375,47 @@ function buildAseguradora() {
             { id: 'post', label: 'Postergar', next: 'siniestro_postergar' },
             { id: 'back', label: 'Volver', next: 'menu_aseguradora' },
         ]),
-        menuNode(
-            'siniestro_colision',
-            'Siniestro - Colisión - Empezar',
-            '¿Dónde ocurrió la colisión?',
-            [
-                { id: 'pub', label: 'Una propiedad pública', next: 'sin_col_docs' },
-                { id: 'priv', label: 'Una propiedad privada', next: 'sin_col_docs' },
-                { id: 'otro', label: 'Otro vehículo', next: 'sin_col_docs' },
-            ],
-        ),
-        {
-            sin_col_docs: {
-                jelou: 'Siniestro - Colisión - Conductor - Documentos',
-                say: ['Adjunta fotos de documentos y del vehículo (simulado: escribe "foto enviada").'],
-                input: { next: 'biometria_siniestro', echoUser: true },
-            },
-            biometria_siniestro: stubRegistered('Biometría siniestro', 'Biometría Siniestro', 'menu_aseguradora'),
-            siniestro_robo_total: stubRegistered('Robo total', 'Siniestro - Robo Total - Empezar', 'menu_aseguradora'),
-            siniestro_robo_parcial: stubRegistered('Robo parcial', 'Siniestro - Robo Parcial - Empezar', 'menu_aseguradora'),
-            siniestro_postergar: stubRegistered('Postergar siniestro', 'Siniestro - Postergar', 'menu_aseguradora'),
-            inspeccion: stubRegistered('Inspección vehicular', 'Inspección', 'menu_aseguradora'),
-        },
+        buildAseguradoraSiniestroNodes(),
     );
 }
 
 function buildComercial() {
     return merge(
         menuNode('asistencias_vip', '3 - Asistencias VIP - Inicio', 'Asistencias VIP:', [
-            { id: 'si', label: 'Sí', next: 'leaf_vip' },
+            { id: 'si', label: 'Sí', next: 'vip_intro_load' },
             { id: 'no', label: 'No', next: 'menu_principal' },
         ]),
-        { leaf_vip: stubRegistered('Asistencias VIP', '3 - Asistencias VIP - Inicio') },
+        {
+            vip_intro_load: {
+                jelou: '3 - Asistencias VIP - Inicio',
+                skipSay: true,
+                com: { enter: 'vip_info', afterVipInfo: 'vip_codigo' },
+            },
+            vip_codigo: {
+                jelou: '3 - Asistencias VIP - Inicio',
+                say: ['Ingresa el **código exclusivo** que recibiste (ej: VCX893).'],
+                input: { next: 'vip_codigo_load', echoUser: true, comField: 'codigo_vip' },
+            },
+            vip_codigo_load: {
+                skipSay: true,
+                com: { enter: 'vip_codigo_stub', afterVipInfo: 'vip_registro_empresa' },
+            },
+            vip_registro_empresa: {
+                say: ['Escribe el nombre de tu **empresa**.'],
+                input: { next: 'vip_registro_cargo', echoUser: true, comField: 'empresa' },
+            },
+            vip_registro_cargo: {
+                say: ['Escribe tu **cargo** en la empresa.'],
+                input: { next: 'vip_registro_done', echoUser: true, comField: 'cargo' },
+            },
+            vip_registro_done: {
+                say: [
+                    '✅ Datos de registro VIP guardados en esta sesión.',
+                    'La activación final (afiliación Omniax) se completa en WhatsApp con el mismo código.',
+                ],
+                actions: standardExitActions('menu_principal'),
+            },
+        },
         menuNode('servicios_proteccion', '4 - Servicios Protección - Inicio', 'Servicios de protección:', [
             { id: 'si', label: 'Sí', next: 'leaf_proteccion' },
             { id: 'no', label: 'No', next: 'menu_principal' },
@@ -351,37 +429,67 @@ function buildComercial() {
             edoctor_info: stubRegistered('Más información E-Doctor', 'Activar e-doctor - Quiero Más Información'),
             edoctor_registro: {
                 jelou: 'Activar e-doctor - Registrar Datos',
-                say: ['Ingresa tu correo electrónico:'],
-                input: { next: 'edoctor_pago', echoUser: true },
+                say: ['Ingresa tu **correo electrónico**:'],
+                input: { next: 'edoctor_pago_load', echoUser: true, comField: 'email_edoctor' },
             },
-            edoctor_pago: {
+            edoctor_pago_load: {
                 jelou: 'Activar e-doctor -  Solicitud de Pago',
-                say: ['Simulación de pasarela de pago. Escribe "Pagar" para continuar.'],
-                input: { next: 'edoctor_confirm', echoUser: true },
+                skipSay: true,
+                com: {
+                    enter: 'pay_checkout',
+                    payProduct: 'edoctor',
+                    afterPayOk: 'edoctor_confirm',
+                    afterPayFail: 'activar_edoctor_inicio',
+                },
             },
-            edoctor_confirm: stubRegistered('E-Doctor activado', 'Activar e-doctor - Confirmacion'),
+            edoctor_confirm: {
+                jelou: 'Activar e-doctor - Confirmacion',
+                say: [
+                    'Cuando el pago se confirme, recibirás instrucciones para usar e-doctor.',
+                    'App: bit.ly/app-e-doctor — Web: https://www.e-doctorgea.com/',
+                ],
+                actions: standardExitActions('menu_solucion_24_7'),
+            },
         },
         menuNode('compra_viaja', 'Asis. Compra y Viaja Seguro - Inicio', 'Compra y viaja seguro:', [
-            { id: 'go', label: 'Empezar', next: 'compra_viaja_pago' },
+            { id: 'go', label: 'Empezar', next: 'compra_viaja_pago_load' },
         ]),
         {
-            compra_viaja_pago: {
+            compra_viaja_pago_load: {
                 jelou: 'Asis. Compra y Viaja Seguro - Solicitud de Pago',
-                say: ['Simulación de pago del seguro de viaje.'],
-                input: { next: 'compra_viaja_ok', echoUser: true },
+                skipSay: true,
+                com: {
+                    enter: 'pay_checkout',
+                    payProduct: 'viaja',
+                    afterPayOk: 'compra_viaja_ok',
+                    afterPayFail: 'compra_viaja',
+                },
             },
-            compra_viaja_ok: stubRegistered('Seguro de viaje', 'Asis. Compra y Viaja Seguro - Confirmación'),
+            compra_viaja_ok: {
+                jelou: 'Asis. Compra y Viaja Seguro - Confirmación',
+                say: ['Gracias. Tras el pago, tu activación se procesará como en WhatsApp.'],
+                actions: standardExitActions('menu_solucion_24_7'),
+            },
         },
         menuNode('asistencia_inmediata', 'Asistencia Inmediata - Inicio', 'Asistencia inmediata:', [
-            { id: 'go', label: 'Continuar', next: 'inmediata_pago' },
+            { id: 'go', label: 'Continuar', next: 'inmediata_pago_load' },
         ]),
         {
-            inmediata_pago: {
+            inmediata_pago_load: {
                 jelou: 'Asistencia Inmediata - Solicitud de Pago',
-                say: ['Simulación de pago.'],
-                input: { next: 'inmediata_ok', echoUser: true },
+                skipSay: true,
+                com: {
+                    enter: 'pay_checkout',
+                    payProduct: 'inmediata',
+                    afterPayOk: 'inmediata_ok',
+                    afterPayFail: 'asistencia_inmediata',
+                },
             },
-            inmediata_ok: stubRegistered('Asistencia inmediata', 'Asistencia Inmediata - Confirmación'),
+            inmediata_ok: {
+                jelou: 'Asistencia Inmediata - Confirmación',
+                say: ['Tu solicitud de asistencia inmediata continúa tras confirmar el pago.'],
+                actions: standardExitActions('menu_solucion_24_7'),
+            },
         },
         menuNode('pycca', 'Asistencia Cuidado Familiar Pycca - Inicio', 'Cuidado familiar Pycca:', [
             { id: 'con', label: 'Contratar', next: 'leaf_pycca' },
@@ -435,17 +543,16 @@ function buildUtils() {
             expiracion: {
                 jelou: 'Expiracion',
                 say: ['Tu sesión expiró. Escribe "Empezar" para reiniciar.'],
-                actions: [{ id: 'start', label: 'Empezar', next: 'auth_cedula' }],
+                actions: [{ id: 'start', label: 'Empezar', next: 'auth_telefono' }],
             },
             adios: {
                 jelou: 'Adios',
                 say: ['Gracias por usar Lucy. ¡Hasta pronto!'],
-                actions: [{ id: 'start', label: 'Empezar', next: 'auth_cedula' }],
+                actions: [{ id: 'start', label: 'Empezar', next: 'auth_telefono' }],
             },
             desvincular: stubRegistered('Desvinculación', 'Desvincular', 'menu_utilidades'),
             pma: stubRegistered('PMA', 'PMA', 'menu_utilidades'),
             pma_retencion: stubRegistered('PMA Retención', 'PMA - Retención', 'menu_utilidades'),
-            derivacion_asesor: stubRegistered('Derivación a asesor', 'Derivación a asesor'),
         },
         menuNode('menu_proveedores', 'Menú oculto proveedores', 'Proveedor:', [
             { id: 'c', label: 'Marcación de contacto', next: 'gea_prov_contacto_id' },
@@ -477,7 +584,8 @@ function buildUtils() {
             info_productos: stubRegistered('Información productos', 'Informacion productos'),
         },
         menuNode('ia_router', 'IA Router', 'IA Router — ¿Cómo deseas continuar?', [
-            { id: 'reg', label: 'Registro', next: 'auth_cedula' },
+            { id: 'reg', label: 'Registro', next: 'auth_telefono' },
+            { id: 'terms', label: 'Aceptar términos IA', next: 'ia_router_terms_load' },
             { id: 'sin', label: 'Sin registro', next: 'choose_plan' },
         ]),
     );
@@ -551,11 +659,12 @@ export const LUCY_FLOW_NODES = merge(
     buildComercial(),
     buildUtils(),
     buildHsm(),
+    buildIaNodes(),
     buildOmniaxMedicoNodes(),
     buildOmniaxDentalNodes(),
 );
 
-export const LUCY_ENTRY_NODE = 'auth_cedula';
+export const LUCY_ENTRY_NODE = 'auth_telefono';
 
 export const JELOU_SKILL_INDEX = Object.values(LUCY_FLOW_NODES)
     .map((n) => n.jelou)
