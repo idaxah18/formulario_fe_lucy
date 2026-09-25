@@ -1,0 +1,18 @@
+:root {
+    /* Gradientes marca (manual de estilo) */
+    --lucy-gradient-blue: linear-gradient(90deg, #202246 0%, #292c5d 50%, #1b5a9e 100%);
+    --lucy-gradient-green: linear-gradient(90deg, #174225 0%, #136733 50%, #7d9533 100%);
+    --lucy-gradient-warm: linear-gradient(90deg, #9c1c2d 0%, #9c1c2d 50%, #e2682f 100%);
+
+    --lucy-navy: #202246;
+    --lucy-indigo: #292c5d;
+    --lucy-blue: #1b5a9e;
+    --lucy-forest: #174225;
+    --lucy-green: #136733;
+    --lucy-olive: #7d9533;
+    --lucy-burgundy: #9c1c2d;
+    --lucy-orange: #e2682f;
+
+    --lucy-radius-card: 1.25rem;
+    --lucy-shadow-card: 0 8px 24px rgba(32, 34, 70, 0.12);
+}

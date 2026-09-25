@@ -1,0 +1,21 @@
+$kind: http-request
+name: 'Servicio 12 — reagendar cita (PDF)'
+order: 2000
+method: POST
+url: '{{omniax_base}}/v1/chatbot/medico-dental/asistencias/reagendar'
+headers:
+  - key: Accept
+    value: application/json
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{omniax_access_token}}'
+body:
+  type: json
+  content: |-
+    {
+      "telefono": "{{telefono_qa}}",
+      "id_asistencia": {{id_asistencia_reag}},
+      "fecha": "2026-10-02",
+      "hora": "10:00"
+    }

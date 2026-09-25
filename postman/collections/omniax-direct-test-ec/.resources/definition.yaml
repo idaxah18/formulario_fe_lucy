@@ -1,0 +1,3 @@
+$kind: collection
+name: Omniax Direct (test-ec)
+description: Llamadas directas a api.geainternacional.com. Ejecutar primero Auth token; completar omniax_client_id y omniax_client_secret en el entorno.

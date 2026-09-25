@@ -1,0 +1,27 @@
+$kind: http-request
+name: 'Servicio 1 — asistencias en proceso'
+order: 1000
+method: POST
+url: '{{omniax_base}}/v1/chatbot/medico-dental/asistencias/en-proceso'
+headers:
+  - key: Accept
+    value: application/json
+  - key: Content-Type
+    value: application/json
+  - key: Authorization
+    value: 'Bearer {{omniax_access_token}}'
+body:
+  type: json
+  content: |-
+    {
+      "identificacion_titular": "{{cedula_qa}}",
+      "id_servicio": {{id_servicio_medico}},
+      "para_reagendar": false
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP 200', () => pm.response.to.have.status(200));
+      const j = pm.response.json();
+      pm.test('estado Omniax 200', () => pm.expect(j.estado).to.eql(200));

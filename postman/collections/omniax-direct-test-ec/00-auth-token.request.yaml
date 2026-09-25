@@ -1,0 +1,28 @@
+$kind: http-request
+name: Auth — obtener access_token
+order: 500
+method: POST
+url: '{{omniax_base}}/v1/auth/token'
+headers:
+  - key: Accept
+    value: application/json
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "client_id": "{{omniax_client_id}}",
+      "client_secret": "{{omniax_client_secret}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('HTTP OK', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));
+      const j = pm.response.json();
+      const token = j.data && j.data.access_token;
+      if (token) {
+          pm.environment.set('omniax_access_token', token);
+          pm.test('token guardado en omniax_access_token', () => pm.expect(token).to.be.a('string'));
+      }

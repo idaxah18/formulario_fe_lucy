@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Servicio 12 — reagendar cita (PDF)'
+order: 2000
+method: POST
+url: '{{lucy_base}}/asistencias/reagendar'
+headers:
+  - key: Accept
+    value: application/json
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "telefono": "{{telefono_qa}}",
+      "id_asistencia": {{id_asistencia_reag}},
+      "fecha": "2026-10-01",
+      "hora": "09:00"
+    }

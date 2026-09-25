@@ -1,0 +1,22 @@
+name: lucy-local
+values:
+  - key: lucy_base
+    value: 'http://127.0.0.1:8000/api/v1/omniax/medico'
+    enabled: true
+    type: default
+  - key: cedula_qa
+    value: '0979461382'
+    enabled: true
+    type: default
+  - key: id_servicio_medico
+    value: '297'
+    enabled: true
+    type: default
+  - key: telefono_qa
+    value: '0999999999'
+    enabled: true
+    type: default
+  - key: id_asistencia_reag
+    value: '3069147'
+    enabled: true
+    type: default

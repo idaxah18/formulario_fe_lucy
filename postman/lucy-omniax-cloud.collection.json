@@ -1,0 +1,161 @@
+{
+  "info": {
+    "name": "Lucy Omniax (Proxy + Direct)",
+    "description": "PDF Omniax médico/dental — servicios 1 y 12. Direct: GEA test-ec. Proxy: Laravel local.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Direct — test-ec",
+      "description": "Ejecutar Auth primero; completar client_id y client_secret en el entorno.",
+      "item": [
+        {
+          "name": "Auth — obtener access_token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const token = j.data && j.data.access_token;",
+                  "if (token) {",
+                  "  pm.environment.set('omniax_access_token', token);",
+                  "  pm.test('token guardado', () => pm.expect(token).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_id\": \"{{omniax_client_id}}\",\n  \"client_secret\": \"{{omniax_client_secret}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{omniax_base}}/v1/auth/token"
+          }
+        },
+        {
+          "name": "Servicio 1 — asistencias en proceso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('estado 200', () => pm.expect(pm.response.json().estado).to.eql(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{omniax_access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identificacion_titular\": \"{{cedula_qa}}\",\n  \"id_servicio\": {{id_servicio_medico}},\n  \"para_reagendar\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{omniax_base}}/v1/chatbot/medico-dental/asistencias/en-proceso"
+          }
+        },
+        {
+          "name": "Servicio 12 — reagendar cita (PDF)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('estado 200', () => pm.expect(pm.response.json().estado).to.eql(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{omniax_access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefono\": \"{{telefono_qa}}\",\n  \"id_asistencia\": {{id_asistencia_reag}},\n  \"fecha\": \"2026-10-02\",\n  \"hora\": \"10:00\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{omniax_base}}/v1/chatbot/medico-dental/asistencias/reagendar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Proxy — Laravel local",
+      "description": "Requiere php artisan serve en :8000.",
+      "item": [
+        {
+          "name": "Servicio 1 — asistencias en proceso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identificacion_titular\": \"{{cedula_qa}}\",\n  \"id_servicio\": {{id_servicio_medico}},\n  \"para_reagendar\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{lucy_base}}/asistencias/en-proceso"
+          }
+        },
+        {
+          "name": "Servicio 12 — reagendar cita (PDF)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefono\": \"{{telefono_qa}}\",\n  \"id_asistencia\": {{id_asistencia_reag}},\n  \"fecha\": \"2026-10-02\",\n  \"hora\": \"10:00\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{lucy_base}}/asistencias/reagendar"
+          }
+        }
+      ]
+    }
+  ]
+}
