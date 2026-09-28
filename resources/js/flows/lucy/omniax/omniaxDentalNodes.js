@@ -2,6 +2,8 @@
  * Subgrafo Omniax — agendar / reagendar cita dental.
  */
 
+import { advisorHandoffSay } from '../advisorHandoffCopy.js';
+
 export const OMX_DEN_FECHA_HORA_NODE = 'omx_den_fecha_hora';
 export const OMX_DEN_BENEF_FORM_NODE = 'omx_den_benef_form';
 
@@ -154,17 +156,33 @@ export function buildOmniaxDentalNodes() {
         },
         omx_den_sin_asignacion: {
             jelou: 'Sin asignación dental',
-            say: [
-                'Listo, en breve un asesor se comunicará contigo para darte detalles de tu servicio.',
+            skipSay: true,
+            useOmniaxMenu: true,
+        },
+        omx_den_asesor_load: {
+            jelou: 'Derivación asesor — cita dental',
+            skipSay: true,
+            com: {
+                enter: 'derivacion_asesor',
+                producto: 'Agendar cita dental',
+                notas: 'Omniax: no aplica asignación de establecimiento',
+                afterDerivacion: 'omx_den_asesor_done',
+            },
+        },
+        omx_den_asesor_done: {
+            jelou: 'Derivación asesor — cita dental',
+            say: advisorHandoffSay('cita_agenda'),
+            actions: [
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
+                { id: 'den', label: 'Menú dental', next: 'menu_dental' },
             ],
-            actions: [{ id: 'menu', label: 'Menú principal', next: 'menu_principal' }],
         },
         omx_den_sin_fechas: {
             jelou: 'Sin fechas dental',
             say: ['Lo sentimos. No existen fechas disponibles. Por favor, escoge otro establecimiento.'],
             actions: [
                 { id: 'volver', label: 'Elegir otro establecimiento', next: 'omx_den_donde' },
-                { id: 'menu', label: 'Menú principal', next: 'menu_principal' },
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
             ],
         },
         omx_den_verificar_disponibilidad_load: {
@@ -193,7 +211,7 @@ export function buildOmniaxDentalNodes() {
             jelou: 'Cita dental confirmada',
             skipSay: true,
             actions: [
-                { id: 'menu', label: 'Menú principal', next: 'menu_principal' },
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
                 { id: 'den', label: 'Menú dental', next: 'menu_dental' },
             ],
         },
@@ -202,7 +220,7 @@ export function buildOmniaxDentalNodes() {
             skipSay: true,
             actions: [
                 { id: 'retry', label: 'Reintentar', next: 'omx_den_start' },
-                { id: 'menu', label: 'Menú principal', next: 'menu_principal' },
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
             ],
         },
     };

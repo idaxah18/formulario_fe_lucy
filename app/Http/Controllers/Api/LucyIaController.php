@@ -24,7 +24,7 @@ class LucyIaController extends Controller
     public function bootstrap(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'profile' => 'required|string|in:dental,hogar,vial,agendar,reagendar,router',
+            'profile' => 'required|string|in:dental,hogar,vial,agendar,reagendar,router,proteccion',
         ]);
 
         try {
@@ -42,7 +42,7 @@ class LucyIaController extends Controller
     public function message(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'profile' => 'required|string|in:dental,hogar,vial,agendar,reagendar,router',
+            'profile' => 'required|string|in:dental,hogar,vial,agendar,reagendar,router,proteccion',
             'message' => 'required|string|max:4000',
             'history' => 'nullable|array',
             'history.*.role' => 'required_with:history|string|in:user,assistant',
@@ -72,6 +72,7 @@ class LucyIaController extends Controller
             'vial' => 'Hola, soy Lucy 🚗. ¿En qué puedo ayudarte con tu vehículo?',
             'agendar' => 'Hola, soy Lucy. Te ayudo a **agendar** cita médica o dental.',
             'reagendar' => 'Hola, soy Lucy. Te ayudo a **reagendar** tu cita.',
+            'proteccion' => 'Cuéntame qué producto de protección consultas o qué situación viviste, y te indico los documentos que necesitas.',
             default => 'Hola, soy Lucy. ¿En qué puedo ayudarte hoy?',
         };
     }

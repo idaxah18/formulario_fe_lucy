@@ -1,0 +1,132 @@
+{
+  "workflowId": 18794,
+  "workflowName": "Venta Asistencias - Contactar Asesor",
+  "workflowDescription": "Skill para contactar a un asesor",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "-nkUytkiMzxk-piAG0Ld9",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        818,
+        338
+      ]
+    },
+    {
+      "id": "hUeKcnW0uUKZ5XAkt0LM6",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "4VKZlbnBpdB_JvjZWQl5W",
+            "text": "Lo sentimos, actualmente no constamos con asesores disponibles para su atención. Por favor, inténtalo nuevamente más tarde.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1878,
+        769
+      ]
+    },
+    {
+      "id": "jqtUhinGptD_qA0P9Ci8J",
+      "title": "Conectar asesor",
+      "configuration": {
+        "teamId": 1032,
+        "priority": 0,
+        "assignment": {
+          "by": "team",
+          "type": "direct"
+        }
+      },
+      "type": "CONNECT",
+      "position": [
+        1332,
+        119
+      ]
+    },
+    {
+      "id": "NWojZQ_YiFykyetRyRJAR",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "AuRcpGfjbFiFtNXbwfE9m",
+            "text": "Lo sentimos, el horario de atención de nuestros asesores es de Lunes a Viernes de 8:00 Am - 20:00 Pm. Por favor, inténtalo nuevamente en el horario permitido.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2073,
+        436
+      ]
+    },
+    {
+      "id": "qDHt4eE_CtKcvXpKbDO7y",
+      "title": "WhatsApp Flow",
+      "configuration": {
+        "messages": [
+          {
+            "id": "_doQzdor5Tw71_vbTGgJ7",
+            "text": "",
+            "type": "flow",
+            "title": "",
+            "caption": "",
+            "payload": {},
+            "settings": {
+              "variable": ""
+            },
+            "parameters": {
+              "flow_id": "",
+              "flow_cta": "",
+              "flow_name": "",
+              "flow_action_payload": {
+                "data": {
+                  "value": "",
+                  "enabled": false
+                },
+                "screen": ""
+              }
+            }
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1012,
+        812
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "gzcr6lOmSTTvi3iB2FCYj",
+      "sourceId": "jqtUhinGptD_qA0P9Ci8J",
+      "targetId": "hUeKcnW0uUKZ5XAkt0LM6",
+      "branch": "output:OPERATORS_NOT_IN_SCHEDULER:failed"
+    },
+    {
+      "id": "hvimAeTwYPDWohLFJNazd",
+      "sourceId": "-nkUytkiMzxk-piAG0Ld9",
+      "targetId": "jqtUhinGptD_qA0P9Ci8J",
+      "branch": "default"
+    },
+    {
+      "id": "UvBSfutBVEjilo83OCSR7",
+      "sourceId": "jqtUhinGptD_qA0P9Ci8J",
+      "targetId": "NWojZQ_YiFykyetRyRJAR",
+      "branch": "output:OPERATOR_NOT_FOUND:failed"
+    },
+    {
+      "id": "xn0X9k5hBFfLhrjJb5puR",
+      "sourceId": "jqtUhinGptD_qA0P9Ci8J",
+      "targetId": "NWojZQ_YiFykyetRyRJAR",
+      "branch": "output:UNKNOWN_ERROR:failed"
+    }
+  ]
+}

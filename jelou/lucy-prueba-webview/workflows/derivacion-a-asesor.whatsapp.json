@@ -1,0 +1,628 @@
+{
+  "workflowId": 41101,
+  "workflowName": "Derivación a asesor",
+  "workflowDescription": "Derivación a asesor en caso de ayuda.",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "1hRGnxQWJuuyGP3Ynj-g0",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "8681"
+      },
+      "type": "SKILL",
+      "position": [
+        1037,
+        1687
+      ]
+    },
+    {
+      "id": "5VHBsMhlhIeDL3CSpS3EW",
+      "title": "Texto",
+      "configuration": {
+        "title": "Texto",
+        "messages": [
+          {
+            "id": "XHVNoH3c_EY0wE4ZIWBGm",
+            "text": "En este momento todos nuestros asesores se encuentran ocupados, tan pronto tengamos un asesor disponible nos comunicaremos contigo.",
+            "type": "text"
+          }
+        ],
+        "collapsed": false,
+        "workflowId": 16633
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        6945,
+        6664
+      ]
+    },
+    {
+      "id": "7fHGNwe9wZTOaG4l_xFTG",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "--1dV-kOi_2S93Q5COOjy",
+            "text": "En un momento, uno de nuestros agentes te atenderá directamente para gestionar tu solicitud.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2916,
+        90
+      ]
+    },
+    {
+      "id": "a7Ynppcd-VpX91bEx-fP4",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "xcAuVz1tABIUN2_yO5oCr",
+            "text": "Ups! No se logro iniciar la asistencia, intenta más tarde.",
+            "type": "text",
+            "contentTouched": true
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1596,
+        -442
+      ]
+    },
+    {
+      "id": "Af4hw1zgRBzzfO3iRevml",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "DZLHuLQ3sRnvAj4wO0Wil",
+            "text": "El horario de atención de nuestros asesores es de 8am a 5pm, tan pronto tengamos un asesor disponible nos comunicaremos contigo. Si deseas hacer uso de un servicio o te encuentras en una emergencia, comunícate con nosotros al número 1700247000 o al 0958972400",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        3197,
+        477
+      ]
+    },
+    {
+      "id": "C1C4ijJC8QLb0VoEBVkmn",
+      "title": "Jelou",
+      "configuration": {
+        "teamId": 603,
+        "priority": 0,
+        "assignment": {
+          "by": "team",
+          "type": "direct"
+        }
+      },
+      "type": "CONNECT",
+      "position": [
+        2535,
+        203
+      ]
+    },
+    {
+      "id": "dsgT3aZdF13EMhgF_-bR6",
+      "title": "Webhook",
+      "configuration": {
+        "method": "GET",
+        "oneTimeOnly": false
+      },
+      "type": "WEBHOOK",
+      "position": [
+        542,
+        854
+      ]
+    },
+    {
+      "id": "e_zQGvP-H8_W0MLr50lMR",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "zLl6d90Gl2XXNyoL3g2sQ",
+            "text": "Veo que ya tienes una asistencia en curso y estamos trabajando en ella. Para continuar de la mejor manera, un especialista se pondrá en contacto contigo pronto.",
+            "type": "text",
+            "contentTouched": true
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2191,
+        194
+      ]
+    },
+    {
+      "id": "EHaaZGNI07r7nLUrJI7uI",
+      "title": "Human Handoff",
+      "configuration": {
+        "teamId": 1156,
+        "priority": 0,
+        "assignment": {
+          "by": "team",
+          "type": "direct"
+        }
+      },
+      "type": "CONNECT",
+      "position": [
+        2195,
+        -400
+      ]
+    },
+    {
+      "id": "i0TaeVb839xV6ZEktYIpc",
+      "title": "Skill",
+      "configuration": {
+        "title": "Skill",
+        "skillId": "5065",
+        "collapsed": false,
+        "workflowId": 26969
+      },
+      "type": "SKILL",
+      "position": [
+        1494,
+        467
+      ]
+    },
+    {
+      "id": "Io8q-PcVSDjGoymBby_mS",
+      "title": "Texto",
+      "configuration": {
+        "title": "Texto",
+        "messages": [
+          {
+            "id": "DZLHuLQ3sRnvAj4wO0Wil",
+            "text": "El horario de atención de nuestros asesores es de 8am a 5pm, tan pronto tengamos un asesor disponible nos comunicaremos contigo. Si deseas hacer uso de un servicio o te encuentras en una emergencia, comunícate con nosotros al número 1700247000 o al 0958972400",
+            "type": "text"
+          }
+        ],
+        "collapsed": false,
+        "workflowId": 16633
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        7025,
+        6990
+      ]
+    },
+    {
+      "id": "j4CyINrVBgupmFnA-RKdZ",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "DZLHuLQ3sRnvAj4wO0Wil",
+            "text": "El horario de atención de nuestros asesores es de 8am a 5pm, tan pronto tengamos un asesor disponible nos comunicaremos contigo. Si deseas hacer uso de un servicio o te encuentras en una emergencia, comunícate con nosotros al número 1700247000 o al 0958972400",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        3299,
+        -275
+      ]
+    },
+    {
+      "id": "Jnvd38mUA5Jc_hOjATjJM",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "XHVNoH3c_EY0wE4ZIWBGm",
+            "text": "En este momento todos nuestros asesores se encuentran ocupados, tan pronto tengamos un asesor disponible nos comunicaremos contigo.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2603,
+        -202
+      ]
+    },
+    {
+      "id": "jrYExfj53pyKBZC0sQnm7",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        -69,
+        208
+      ]
+    },
+    {
+      "id": "N59NVz7_XqkwZsgKjYHV2",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "--1dV-kOi_2S93Q5COOjy",
+            "text": "En un momento, uno de nuestros agentes te atenderá directamente para gestionar tu solicitud.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2543,
+        -378
+      ]
+    },
+    {
+      "id": "RRQUPKFCam6_NXMPKSdJ4",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "xcAuVz1tABIUN2_yO5oCr",
+            "text": "Ups! No se logro iniciar la asistencia, intenta más tarde.",
+            "type": "text",
+            "contentTouched": true
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2193,
+        424
+      ]
+    },
+    {
+      "id": "rvWk2bzb3oAPYIp0V8dFl",
+      "title": "Notificar Cabina Asistencia en Proceso",
+      "configuration": {
+        "input": {
+          "pais": "ec",
+          "cveafiliado": "{{$memory.identificacion}}",
+          "tipo_servicio": "HOGAR",
+          "plan_asistencia": "ASISTENCIAS"
+        },
+        "version": "6",
+        "toolData": {
+          "toolId": 6224,
+          "toolName": "Notificar Cabina Asistencia en Proceso",
+          "packageId": "01KBFS2X4VMKMDHJA4P3KMN3WT",
+          "thumbnail": "https://s3.us-west-2.amazonaws.com/cdn.devlabs.tech/company-5/jelouLogo.jpeg",
+          "workflowId": 29962,
+          "versionIndex": 6,
+          "principalColor": "#56AFC2",
+          "complementaryColor": "#FFFFFF"
+        },
+        "variable": "identificacion",
+        "inputDisplayName": {
+          "pais": "ec",
+          "cveafiliado": "{{$memory.identificacion}}",
+          "tipo_servicio": "HOGAR",
+          "plan_asistencia": "ASISTENCIAS"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        1743,
+        91
+      ]
+    },
+    {
+      "id": "sWc4J7KKa8LQTOI35l4jv",
+      "title": "Auth",
+      "configuration": {
+        "input": {
+          "ambiente": {
+            "value": "PRODUCCION"
+          }
+        },
+        "version": "private 2.0.4",
+        "toolData": {
+          "toolId": 1946,
+          "toolName": "Auth",
+          "thumbnail": 7,
+          "workflowId": 6821,
+          "versionIndex": 0,
+          "principalColor": "#3c4e9e",
+          "complementaryColor": "#ffffff"
+        },
+        "variable": "accessToken"
+      },
+      "type": "TOOL",
+      "position": [
+        1092,
+        -345
+      ]
+    },
+    {
+      "id": "t5C9AZaCrJXRDwANMaDWY",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "T7_7oUlXbkwNhkuupjFHA",
+            "text": "Derivación a asesor.",
+            "type": "text",
+            "contentTouched": true
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1063,
+        1442
+      ]
+    },
+    {
+      "id": "TOK1pt6DJaf_Z4N4yVPIQ",
+      "title": "Pruebas Notificación Cabina",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "WWyTeG5GSXBRlrVi5PHvL",
+            "name": "esTesterMed",
+            "terms": [
+              {
+                "id": "doaZDSueV0qaMOJngLSSF",
+                "value1": "{{$memory.esTesterMed}}",
+                "value2": "true",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.esTesterMed}}",
+                  "value2": "true"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        666,
+        1397
+      ]
+    },
+    {
+      "id": "TrXFAPAW5_NAVN4joy1mu",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "XHVNoH3c_EY0wE4ZIWBGm",
+            "text": "En este momento todos nuestros asesores se encuentran ocupados, tan pronto tengamos un asesor disponible nos comunicaremos contigo.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        3151,
+        248
+      ]
+    },
+    {
+      "id": "W3IKd6G_b4QXXfHUZqBJ8",
+      "title": "Texto",
+      "configuration": {
+        "title": "Texto",
+        "messages": [
+          {
+            "id": "--1dV-kOi_2S93Q5COOjy",
+            "text": "En un momento, uno de nuestros agentes te atenderá directamente para gestionar tu solicitud.",
+            "type": "text"
+          }
+        ],
+        "collapsed": false,
+        "workflowId": 16633
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        6985,
+        6432
+      ]
+    },
+    {
+      "id": "wWrPclvBoUlKMWqUUsrWW",
+      "title": "brain.nodes.code_name",
+      "configuration": {
+        "content": "const data = $memory.getJson(\"busquedaTermino\");\n\nconst nombre = data[0].Nombre;\nconst identificacion = data[0].Identificación;\n\n$memory.set(\"nombreGEA\", nombre, 86400)\n$memory.set(\"identificacion\", identificacion, 86400)\n\n$utils.logger.log(\"identificacion\", identificacion)",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        623,
+        111
+      ]
+    },
+    {
+      "id": "XucTzfVYaCFTAVbrC8Df4",
+      "title": "Datum",
+      "configuration": {
+        "row": {
+          "data": {}
+        },
+        "query": [
+          {
+            "id": "baqUa6RQz_XD2eWo_zvup",
+            "type": "text",
+            "field": "Usuario",
+            "value": "{{$user.id}}",
+            "operator": "equal_match_phrase",
+            "displayName": "{{$user.id}}",
+            "displayNameField": "Usuario"
+          }
+        ],
+        "action": "search",
+        "variable": "busquedaTermino",
+        "databaseId": 2756,
+        "displayName": "busquedaTermino"
+      },
+      "type": "DATUM",
+      "position": [
+        254,
+        170
+      ]
+    },
+    {
+      "id": "Z_e00-z6GfXNj-xPPytdE",
+      "title": "Notificar Cabina Asistencia en Proceso",
+      "configuration": {
+        "version": "7",
+        "toolData": {
+          "toolId": 6224,
+          "toolName": "Notificar Cabina Asistencia en Proceso",
+          "packageId": "01KBFS2X4VMKMDHJA4P3KMN3WT",
+          "thumbnail": "https://s3.us-west-2.amazonaws.com/cdn.devlabs.tech/company-5/jelouLogo.jpeg",
+          "workflowId": 29962,
+          "versionIndex": 7,
+          "principalColor": "#56AFC2",
+          "complementaryColor": "#FFFFFF"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        -608,
+        -756
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "0RObu5lguJHou8ahIXdsb",
+      "sourceId": "TOK1pt6DJaf_Z4N4yVPIQ",
+      "targetId": "t5C9AZaCrJXRDwANMaDWY",
+      "branch": "condition:WWyTeG5GSXBRlrVi5PHvL"
+    },
+    {
+      "id": "98cgq5L5OzTORoEgydV4t",
+      "sourceId": "sWc4J7KKa8LQTOI35l4jv",
+      "targetId": "rvWk2bzb3oAPYIp0V8dFl",
+      "branch": "output:dCbSEWstx811FGWQruk5z:success"
+    },
+    {
+      "id": "bhJzTzJVJkwms1ZmDE-C2",
+      "sourceId": "XucTzfVYaCFTAVbrC8Df4",
+      "targetId": "rvWk2bzb3oAPYIp0V8dFl",
+      "branch": "failed"
+    },
+    {
+      "id": "BSlfVCN1oXQ6grGynG1Ol",
+      "sourceId": "sWc4J7KKa8LQTOI35l4jv",
+      "targetId": "a7Ynppcd-VpX91bEx-fP4",
+      "branch": "output:gW8ioMIcWsrMVEu9yNkgJ:failed"
+    },
+    {
+      "id": "D_-K91GsRoWW5Z2bnjuma",
+      "sourceId": "rvWk2bzb3oAPYIp0V8dFl",
+      "targetId": "EHaaZGNI07r7nLUrJI7uI",
+      "branch": "output:cMbClaWngxTw_WNJw4bZf:success"
+    },
+    {
+      "id": "DdaJvTp2Y9q_v5cJDx4J8",
+      "sourceId": "XucTzfVYaCFTAVbrC8Df4",
+      "targetId": "wWrPclvBoUlKMWqUUsrWW",
+      "branch": "success"
+    },
+    {
+      "id": "DkIQU2NJC354LY1GpbirE",
+      "sourceId": "wWrPclvBoUlKMWqUUsrWW",
+      "targetId": "rvWk2bzb3oAPYIp0V8dFl",
+      "branch": "failed"
+    },
+    {
+      "id": "Ge8I6e_9mSRQXBJlzw33y",
+      "sourceId": "sWc4J7KKa8LQTOI35l4jv",
+      "targetId": "a7Ynppcd-VpX91bEx-fP4",
+      "branch": "output:pIFMZsYfP-fEFuqFHJTKU:failed"
+    },
+    {
+      "id": "hDB5vKKsYS_lOelStIzKQ",
+      "sourceId": "C1C4ijJC8QLb0VoEBVkmn",
+      "targetId": "TrXFAPAW5_NAVN4joy1mu",
+      "branch": "output:OPERATOR_NOT_FOUND:failed"
+    },
+    {
+      "id": "j_C2Fvzl5tWBo6Oi8Y6Cc",
+      "sourceId": "rvWk2bzb3oAPYIp0V8dFl",
+      "targetId": "e_zQGvP-H8_W0MLr50lMR",
+      "branch": "output:berd99i-k3_Q-bVNiUmM7:failed"
+    },
+    {
+      "id": "J7okftKtp-oW0IgKy9D2u",
+      "sourceId": "rvWk2bzb3oAPYIp0V8dFl",
+      "targetId": "RRQUPKFCam6_NXMPKSdJ4",
+      "branch": "output:0UZvK6m6iogBdy8PppRP6:failed"
+    },
+    {
+      "id": "k5DKDghTPB04W0ayP4Kks",
+      "sourceId": "EHaaZGNI07r7nLUrJI7uI",
+      "targetId": "j4CyINrVBgupmFnA-RKdZ",
+      "branch": "output:OPERATORS_NOT_IN_SCHEDULER:failed"
+    },
+    {
+      "id": "kbewNVj49xT9d__o6TGL6",
+      "sourceId": "EHaaZGNI07r7nLUrJI7uI",
+      "targetId": "N59NVz7_XqkwZsgKjYHV2",
+      "branch": "output:JelouConnect:success"
+    },
+    {
+      "id": "O7-3KPmf1hpAE-RGDFsh7",
+      "sourceId": "TOK1pt6DJaf_Z4N4yVPIQ",
+      "targetId": "1hRGnxQWJuuyGP3Ynj-g0",
+      "branch": "else"
+    },
+    {
+      "id": "QonxiGLXwRHS3p8UHCj3w",
+      "sourceId": "jrYExfj53pyKBZC0sQnm7",
+      "targetId": "XucTzfVYaCFTAVbrC8Df4",
+      "branch": "default"
+    },
+    {
+      "id": "qZkiCSpiwe7qlwirxM4Xv",
+      "sourceId": "C1C4ijJC8QLb0VoEBVkmn",
+      "targetId": "Af4hw1zgRBzzfO3iRevml",
+      "branch": "output:OPERATORS_NOT_IN_SCHEDULER:failed"
+    },
+    {
+      "id": "u4QdvNIihQbDVUwDlUXN5",
+      "sourceId": "rvWk2bzb3oAPYIp0V8dFl",
+      "targetId": "RRQUPKFCam6_NXMPKSdJ4",
+      "branch": "output:GhBsBdkNuBfCX5UdnfiE1:failed"
+    },
+    {
+      "id": "utQ4rU6x_XIJkouOvbzNT",
+      "sourceId": "sWc4J7KKa8LQTOI35l4jv",
+      "targetId": "a7Ynppcd-VpX91bEx-fP4",
+      "branch": "output:ceRk0XpZzt-Xj5ly5EfX1:failed"
+    },
+    {
+      "id": "uW2fLfSuxr4YX6OriKTUn",
+      "sourceId": "EHaaZGNI07r7nLUrJI7uI",
+      "targetId": "Jnvd38mUA5Jc_hOjATjJM",
+      "branch": "output:OPERATOR_NOT_FOUND:failed"
+    },
+    {
+      "id": "x1r8zJur6Lbkem1KB8GL9",
+      "sourceId": "C1C4ijJC8QLb0VoEBVkmn",
+      "targetId": "7fHGNwe9wZTOaG4l_xFTG",
+      "branch": "output:JelouConnect:success"
+    },
+    {
+      "id": "X5ucLZy3TzxpSZrPTdd6G",
+      "sourceId": "e_zQGvP-H8_W0MLr50lMR",
+      "targetId": "C1C4ijJC8QLb0VoEBVkmn",
+      "branch": "default"
+    },
+    {
+      "id": "XJMCrfB2_L4xPUaih55KD",
+      "sourceId": "wWrPclvBoUlKMWqUUsrWW",
+      "targetId": "sWc4J7KKa8LQTOI35l4jv",
+      "branch": "success"
+    }
+  ]
+}

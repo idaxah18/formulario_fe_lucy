@@ -1,6 +1,7 @@
 # Handoff — Lucy Ecuador Webview (`formulario_fe_lucy`)
 
-**Keyword Cursor / Obsidian:** `lucy_webview` (alias: `lucy-webview`)
+**Keyword Cursor / Obsidian:** `lucy_webview` (alias: `lucy-webview`)  
+**Skill WhatsApp prueba webview:** `prueba_webview` — ver `docs/PRUEBA_WEBVIEW.md`
 
 ## Arquitectura objetivo (producción)
 

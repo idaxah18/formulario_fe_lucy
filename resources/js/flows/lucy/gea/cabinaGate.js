@@ -34,13 +34,16 @@ export async function runCabinaGateOrBlock(
         if (options.allowVigenteForAppointments) {
             return { blocked: false };
         }
+        const fromApi =
+            cabina.raw?.noticias?.mensaje ||
+            cabina.raw?.data?.noticias?.mensaje ||
+            cabina.raw?.message;
+        const vigenteText =
+            (typeof fromApi === 'string' && fromApi.trim()) ||
+            'Veo que ya tienes una asistencia en curso y estamos trabajando en ella. Para continuar de la mejor manera, un especialista se pondrá en contacto contigo pronto.';
         return {
             blocked: true,
-            messages: [
-                bot(
-                    'Veo que ya tienes una asistencia en curso y estamos trabajando en ella. Para continuar de la mejor manera, un especialista se pondrá en contacto contigo pronto.',
-                ),
-            ],
+            messages: [bot(vigenteText)],
             nextNodeId: returnNode,
         };
     }

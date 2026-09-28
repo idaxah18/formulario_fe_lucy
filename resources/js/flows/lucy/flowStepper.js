@@ -75,8 +75,14 @@ function omniaxMedicoStepIndex(nodeId, state) {
     const direct = omx?.agenda_completa === false;
 
     if (direct) {
-        if (nodeId === 'omx_med_start' || nodeId === 'omx_med_who') return 0;
-        if (nodeId.includes('especialidad') || nodeId === 'omx_med_aplica_load') return 1;
+        if (nodeId === 'omx_med_start' || nodeId === 'omx_med_who' || nodeId === 'omx_med_benef_form') return 0;
+        if (
+            nodeId.includes('especialidad')
+            || nodeId === 'omx_med_aplica_load'
+            || nodeId === 'omx_med_sin_asignacion'
+        ) {
+            return 1;
+        }
         if (nodeId === 'omx_med_done') return 4;
         if (nodeId.includes('fecha') || nodeId.includes('hora') || nodeId === 'omx_med_verificar_disponibilidad_load') {
             return 3;
@@ -92,8 +98,14 @@ function omniaxMedicoStepIndex(nodeId, state) {
         return -1;
     }
 
-    if (nodeId === 'omx_med_start' || nodeId === 'omx_med_who') return 0;
-    if (nodeId.includes('especialidad') || nodeId === 'omx_med_aplica_load') return 1;
+    if (nodeId === 'omx_med_start' || nodeId === 'omx_med_who' || nodeId === 'omx_med_benef_form') return 0;
+    if (
+        nodeId.includes('especialidad')
+        || nodeId === 'omx_med_aplica_load'
+        || nodeId === 'omx_med_sin_asignacion'
+    ) {
+        return 1;
+    }
     if (
         nodeId.includes('donde') ||
         nodeId.includes('location') ||
@@ -126,7 +138,7 @@ function omniaxDentalStepIndex(nodeId, state) {
     }
 
     if (nodeId === 'omx_den_start' || nodeId === 'omx_den_who' || nodeId === 'omx_den_benef_form') return 0;
-    if (nodeId === 'omx_den_aplica_load') return 1;
+    if (nodeId === 'omx_den_aplica_load' || nodeId === 'omx_den_sin_asignacion') return 1;
     if (nodeId.includes('donde') || nodeId.includes('location') || nodeId.includes('est_') || nodeId.includes('ciudad') || nodeId.includes('zona')) {
         return 2;
     }

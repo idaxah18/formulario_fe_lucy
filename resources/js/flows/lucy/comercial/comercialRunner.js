@@ -1,6 +1,7 @@
 import { createPayCheckoutLink, crearDerivacionLead, fetchVentaLead, marcarVentaContrato } from '@/api/comercialApi.js';
 import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
-import { bot, standardExitActions } from '../flowHelpers.js';
+import { isAdvisorHandoffDoneNode } from '../advisorHandoffCopy.js';
+import { bot, LUCY_HOME_NODE, standardExitActions } from '../flowHelpers.js';
 
 function ensureCom(ctx) {
     if (!ctx.com) ctx.com = {};
@@ -69,7 +70,7 @@ export async function runComEnter(task, state) {
                                 'No pudimos generar el enlace de pago. Intenta desde WhatsApp o más tarde.',
                             ),
                         ],
-                        nextNodeId: com.afterPayFail || 'menu_principal',
+                        nextNodeId: com.afterPayFail || LUCY_HOME_NODE,
                         patchContext: { com },
                     };
                 }
@@ -101,7 +102,7 @@ export async function runComEnter(task, state) {
                                 '(Modo prueba: configura JELOU_PAY_BEARER en el servidor para enlaces reales.)',
                             ),
                         ],
-                        nextNodeId: com.afterPayFail || 'menu_principal',
+                        nextNodeId: com.afterPayFail || LUCY_HOME_NODE,
                         patchContext: { com },
                     };
                 }
@@ -149,19 +150,31 @@ export async function runComEnter(task, state) {
         case 'derivacion_asesor': {
             if (!cedula) throw new Error('Ingresa tu cédula al inicio.');
             const producto = com.producto || 'general';
-            await crearDerivacionLead({
+            const derivacion = await crearDerivacionLead({
                 identificacion: cedula,
                 nombre: nombre || '',
                 telefono,
                 producto,
                 notas: com.notas || '',
             });
+            const simulated = Boolean(derivacion?.simulated);
+            const nextNodeId = com.afterDerivacion || LUCY_HOME_NODE;
+            if (simulated) {
+                com.advisorHandoffSimulated = true;
+            }
+            const messages = isAdvisorHandoffDoneNode(nextNodeId)
+                ? []
+                : [
+                      bot('Muy bien, enseguida te contactaré con un asesor comercial.'),
+                      bot(
+                          simulated
+                              ? '(Solicitud registrada en modo simulación — configura JELOU_DATUM_VENTA_BASIC_* en .env para Datum real.)'
+                              : '(Solicitud registrada en sistema.)',
+                      ),
+                  ];
             return {
-                messages: [
-                    bot('Muy bien, enseguida te contactaré con un asesor comercial.'),
-                    bot('(Solicitud registrada en sistema.)'),
-                ],
-                nextNodeId: com.afterDerivacion || 'menu_principal',
+                messages,
+                nextNodeId,
                 patchContext: { com },
             };
         }
@@ -203,7 +216,7 @@ export async function runComEnter(task, state) {
     }
 }
 
-export function buildPayConfirmNode(id, jelouRef, returnNode = 'menu_principal') {
+export function buildPayConfirmNode(id, jelouRef, returnNode = LUCY_HOME_NODE) {
     return {
         [id]: {
             say: ['¿Necesitas algo más?'],

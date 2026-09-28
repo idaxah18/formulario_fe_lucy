@@ -1,0 +1,1850 @@
+{
+  "workflowId": 7676,
+  "workflowName": "2.4 Vial",
+  "workflowDescription": "Asistencias viales y servicios automotores GEA Ecuador",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "_I-49L6iGREMnvLKLKxG0",
+      "title": "Notificar Cabina Asistencia en Proceso",
+      "configuration": {
+        "input": {
+          "pais": "ec",
+          "placa": "{{$memory.placa}}",
+          "chasis": "{{$memory.chasis}}",
+          "cveafiliado": "{{$memory.identificacion}}",
+          "tipo_servicio": "VIAL",
+          "plan_asistencia": "ASISTENCIAS"
+        },
+        "version": "6",
+        "toolData": {
+          "toolId": 6224,
+          "toolName": "Notificar Cabina Asistencia en Proceso",
+          "packageId": "01KBFS2X4VMKMDHJA4P3KMN3WT",
+          "thumbnail": "https://s3.us-west-2.amazonaws.com/cdn.devlabs.tech/company-5/jelouLogo.jpeg",
+          "workflowId": 29962,
+          "versionIndex": 1,
+          "principalColor": "#56AFC2",
+          "complementaryColor": "#FFFFFF"
+        },
+        "inputDisplayName": {
+          "pais": "ec",
+          "placa": "{{$memory.placa}}",
+          "chasis": "{{$memory.chasis}}",
+          "cveafiliado": "{{$memory.identificacion}}",
+          "tipo_servicio": "VIAL",
+          "plan_asistencia": "ASISTENCIAS"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        7814,
+        1766
+      ]
+    },
+    {
+      "id": "-4ZrJ4IXF5NoAsh3OCBA6",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "plan_asistencia": "ASISTENCIAS"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        8626,
+        2110
+      ]
+    },
+    {
+      "id": "0_McnZfbwqh77VLr_yqAO",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "asisstanceType": "VIAL",
+          "plan_asistencia": "ASISTENCIAS",
+          "assistanceManagement": "Servicios Solución 24/7"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        2130,
+        274
+      ]
+    },
+    {
+      "id": "039QOyyyNGLLwCXQYyyEm",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "const listaAsistencia = $memory.getJson(\"ListaAsistencia\", {});\r\n\r\nconst asist_curso_id = listaAsistencia[0].id_asistencia;\r\nconst asist_curso_cedula = listaAsistencia[0].identificacion;\r\nconst asist_curso_servicio = listaAsistencia[0].nombre_servicio;\r\nconst asist_curso_expediente = listaAsistencia[0].id_expediente;\r\n\r\n$memory.set(\"id_asistencia\", asist_curso_id, 86400);\r\n$memory.set(\"cveafiliado\", asist_curso_cedula, 86400);\r\n$memory.set(\"service\", asist_curso_servicio, 86400);\r\n$memory.set(\"id_expediente\", asist_curso_expediente, 86400);",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        12956,
+        799
+      ]
+    },
+    {
+      "id": "0GsHeUG44iknZZBPgjMZX",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "IoV6jBprJMdlxOO9cTYUp",
+            "text": "Lo sentimos el servicio no está disponible, por favor intenta más tarde.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        10806,
+        152
+      ]
+    },
+    {
+      "id": "5sOiHjjI4HZL5OWXOB225",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "lmbYm4dHS7jLiKp_OoD58",
+            "name": "placa vehiculo",
+            "terms": [
+              {
+                "id": "W6mYz5tilSl4LgE61a1iW",
+                "type": "",
+                "value1": "{{$memory.placa}}",
+                "value2": "^[A-Za-z]{3}[0-9]{4}$",
+                "operator": "regex_match",
+                "inputDisplayName": {
+                  "value1": "{{$memory.placa}}",
+                  "value2": "^[A-Za-z]{3}[0-9]{4}$"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          },
+          {
+            "id": "06qm6JkUY2g00CLrzWTSL",
+            "name": "placa moto",
+            "terms": [
+              {
+                "id": "Q1IAuofLhdNsTRb5Yq8x5",
+                "value1": "{{$memory.placa}}",
+                "value2": "^[A-Za-z]{2}[0-9]{3}[A-Za-z]$",
+                "operator": "regex_match",
+                "inputDisplayName": {
+                  "value1": "{{$memory.placa}}",
+                  "value2": "^[A-Za-z]{2}[0-9]{3}[A-Za-z]$"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        5378,
+        1439
+      ]
+    },
+    {
+      "id": "8fKqdTlk9Yr_NL99tC62Z",
+      "title": "Lista",
+      "configuration": {
+        "messages": [
+          {
+            "id": "kRP2pE1SlsatyNg2xKdt2",
+            "text": "Bienvenid@ a tu solución vial 🚗",
+            "type": "list",
+            "title": "",
+            "button": "",
+            "options": [
+              {
+                "id": "kRP2pE1SlsatyNg2xKdt2",
+                "url": "",
+                "type": "postback",
+                "title": "Grúa",
+                "payload": {
+                  "type": "edge",
+                  "memory": {},
+                  "skillId": "4225",
+                  "targetId": "eDVvjNmnkII7JJLL9ltnc"
+                },
+                "description": ""
+              },
+              {
+                "id": "a946f24e-9ebd-414d-9513-382b07012a3c",
+                "url": "",
+                "type": "postback",
+                "title": "Cambio de llanta",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4225",
+                  "targetId": "Zf6PRMKH0_BgnnAoiDegE"
+                },
+                "description": ""
+              },
+              {
+                "id": "e8d1c6b7-974e-4052-b8d6-8c4f8cbb056b",
+                "url": "",
+                "type": "postback",
+                "title": "Suministro de gasolina",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4225",
+                  "targetId": "MFoKDMMHboVPjLjqSeDY3"
+                },
+                "description": ""
+              },
+              {
+                "id": "f034efc9-47f7-4769-80fa-45b95a488c48",
+                "url": "",
+                "type": "postback",
+                "title": "Paso de corriente",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4225",
+                  "targetId": "z2V4OBtRo4PbKML3hAhSE"
+                },
+                "description": ""
+              },
+              {
+                "id": "9e53e3de-c21b-459d-87e9-ca6992c5baf1",
+                "url": "",
+                "type": "postback",
+                "title": "Cerrajería de puertas",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4225",
+                  "targetId": "HYuB-4sMv9AA-LTmftowh"
+                },
+                "description": ""
+              },
+              {
+                "id": "09d099b4-3a33-4655-9292-e7ffd2befe4f",
+                "url": "",
+                "type": "postback",
+                "title": "Inspector in situ",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4225",
+                  "targetId": "nOmJLimyqV20NZFP9KON8"
+                },
+                "description": ""
+              },
+              {
+                "id": "6d53ff61-40b4-4b94-9b45-db590dd3cfd3",
+                "url": "",
+                "type": "postback",
+                "title": "Asistencia Legal Telf.",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4225",
+                  "targetId": "EbYw6OnTzAyTc0Du3f_Fc"
+                },
+                "description": ""
+              }
+            ],
+            "settings": {
+              "isBlockingEnabled": false
+            }
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        3754,
+        499
+      ]
+    },
+    {
+      "id": "9AfBlzYYdcVSXwmZwZd9n",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "5065"
+      },
+      "type": "SKILL",
+      "position": [
+        2966,
+        375
+      ]
+    },
+    {
+      "id": "9z79enNUlsk8BGX9is47z",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "MKvtWZBkchVwQqFD60DJD",
+            "text": "La placa ingresada no es correcta. *Has alcanzado el límite de intentos*. Por favor realiza nuevamente el procedimiento.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        7408,
+        2035
+      ]
+    },
+    {
+      "id": "AiiqxSijD5zUvHnQ7ZB02",
+      "title": "Notificar Cabina Asistencia en Proceso",
+      "configuration": {
+        "input": {
+          "pais": "ec",
+          "placa": "{{$memory.placa}}",
+          "chasis": "{{$memory.chasis}}",
+          "cveafiliado": "{{$memory.identificacion}}",
+          "tipo_servicio": "VIAL",
+          "plan_asistencia": "ASISTENCIAS"
+        },
+        "version": "3",
+        "toolData": {
+          "toolId": 6224,
+          "toolName": "Notificar Cabina Asistencia en Proceso",
+          "packageId": "01KBFS2X4VMKMDHJA4P3KMN3WT",
+          "thumbnail": "https://s3.us-west-2.amazonaws.com/cdn.devlabs.tech/company-5/jelouLogo.jpeg",
+          "workflowId": 29962,
+          "versionIndex": 1,
+          "principalColor": "#56AFC2",
+          "complementaryColor": "#FFFFFF"
+        },
+        "inputDisplayName": {
+          "pais": "ec",
+          "placa": "{{$memory.placa}}",
+          "chasis": "{{$memory.chasis}}",
+          "cveafiliado": "{{$memory.identificacion}}",
+          "tipo_servicio": "VIAL",
+          "plan_asistencia": "ASISTENCIAS"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        7828,
+        898
+      ]
+    },
+    {
+      "id": "B3HuUS9C3C2V_54NCBjL2",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "PWDegvYEGCzXqumiq1BoJ",
+            "name": "",
+            "terms": [
+              {
+                "id": "tbjJxRrWlKhRARGupcESK",
+                "type": "",
+                "value1": "{{$memory.mantenimiento}}",
+                "value2": "ON",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.mantenimiento}}",
+                  "value2": "ON"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        912,
+        50
+      ]
+    },
+    {
+      "id": "b4GiPg9hZ-QE5ggT3ikgg",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "7258"
+      },
+      "type": "SKILL",
+      "position": [
+        12024,
+        1093
+      ]
+    },
+    {
+      "id": "bg1J1FqeVjp7WUvaDsNgu",
+      "title": "Sticky Note",
+      "configuration": {
+        "colorPalette": "yellow"
+      },
+      "comments": "Implementacion derivacion a cabina",
+      "type": "NOTE",
+      "position": [
+        50,
+        800
+      ]
+    },
+    {
+      "id": "brd2ju4MDAyPyc4t0WDQi",
+      "title": "Auth",
+      "configuration": {
+        "input": {
+          "ambiente": {
+            "value": "PRODUCCION"
+          }
+        },
+        "version": "private 2.0.4",
+        "toolData": {
+          "toolId": 1946,
+          "toolName": "Auth",
+          "thumbnail": 7,
+          "toolkitId": 431,
+          "workflowId": 6821,
+          "principalColor": "#3c4e9e",
+          "complementaryColor": "#ffffff"
+        },
+        "variable": "accessToken"
+      },
+      "type": "TOOL",
+      "position": [
+        10400,
+        50
+      ]
+    },
+    {
+      "id": "bZbHrz3snpj37ZazuX6j0",
+      "title": "Sticky Note",
+      "configuration": {
+        "colorPalette": "yellow"
+      },
+      "comments": "FLUJO ANTERIOR\n",
+      "type": "NOTE",
+      "position": [
+        10124,
+        -51
+      ]
+    },
+    {
+      "id": "c2HCSTIm84vE4Nt1gr_rm",
+      "title": "Botones",
+      "configuration": {
+        "messages": [
+          {
+            "id": "EdF1wN3f_Lbq8ADVh-lR2",
+            "text": "Ya tienes asistencias generadas en proceso de atención.\n\n¿Deseas generar una nueva asistencia?",
+            "type": "buttons",
+            "title": "",
+            "caption": "",
+            "options": [
+              {
+                "id": "beded54f-2ad5-450a-b0a7-b774724c26aa",
+                "url": "",
+                "type": "postback",
+                "title": "Si",
+                "payload": {},
+                "description": ""
+              },
+              {
+                "id": "c8e6ce70-88d1-494d-a623-59b2aedf00a1",
+                "url": "",
+                "type": "postback",
+                "title": "No",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4225",
+                  "targetId": "EiZMkwjQYqBxXZ5sls0_I"
+                },
+                "description": ""
+              }
+            ],
+            "settings": {
+              "isBlockingEnabled": false,
+              "oneTimeUseButtons": true
+            }
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        11212,
+        757
+      ]
+    },
+    {
+      "id": "DUJY5EAU6ubDyyuun3XDe",
+      "title": "Datum",
+      "configuration": {
+        "row": {
+          "data": {}
+        },
+        "query": [
+          {
+            "id": "baqUa6RQz_XD2eWo_zvup",
+            "type": "text",
+            "field": "Usuario",
+            "value": "{{$user.id}}",
+            "operator": "equal_match_phrase",
+            "displayName": "{{$user.id}}",
+            "displayNameField": "Usuario"
+          }
+        ],
+        "action": "search",
+        "variable": "busquedaTermino",
+        "databaseId": 2756,
+        "displayName": "busquedaTermino"
+      },
+      "type": "DATUM",
+      "position": [
+        1318,
+        321
+      ]
+    },
+    {
+      "id": "DUO6iCgsWT3unITY7blgm",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "7258"
+      },
+      "type": "SKILL",
+      "position": [
+        13242,
+        831
+      ]
+    },
+    {
+      "id": "EbYw6OnTzAyTc0Du3f_Fc",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "service": "Asistencia Legal telefónica",
+          "id_servicio": "322"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        6596,
+        601
+      ]
+    },
+    {
+      "id": "eDVvjNmnkII7JJLL9ltnc",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "service": "Grúa",
+          "id_servicio": "256"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        4160,
+        1808
+      ]
+    },
+    {
+      "id": "EiZMkwjQYqBxXZ5sls0_I",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "let asistenciasActuales = $memory.getJson(\"asistenciaCurso\", {})|| null;\r\nlet tamanio =  asistenciasActuales ? asistenciasActuales.length : 0;\r\n\r\nif (tamanio > 1){\r\n    asistenciasActuales = asistenciasActuales.slice(0, 9);//toma los 10 ultimo\r\n}\r\n\r\nasistenciasActuales = asistenciasActuales.map((item, index) =>({\r\n    ...item,\r\n    numero: index + 1,\r\n    texto_opcion: `Asistencia No ${item.id_asistencia}`\r\n}))\r\n\r\n$memory.setJson('ListaAsistencia', asistenciasActuales, 86400);\r\n$memory.set('tamanio', tamanio);\r\n    \r\n    ",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        11738,
+        799
+      ]
+    },
+    {
+      "id": "EtWbbyDJDkDvmTZPS3He-",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4186"
+      },
+      "type": "SKILL",
+      "position": [
+        50,
+        1054
+      ]
+    },
+    {
+      "id": "f3RsN_1DA5lQ3jpXOgwX6",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Cerrajería de puertas",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        4566,
+        2533
+      ]
+    },
+    {
+      "id": "fmvBztkzBjocyQ34hg2qN",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "d7xFqJmIJReznuWTT9K7P",
+            "text": "Tu consulta está fuera de mi alcance 🤖❗\nEnseguida te conectaré con un agente humano 👩‍💼👨‍💼 para que te ayude con lo que necesitas. Dame 1 minuto por favor ⏱️.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        13242,
+        1228
+      ]
+    },
+    {
+      "id": "fYBRYFjwwRN9YgIgPjOKk",
+      "title": "Pregunta",
+      "configuration": {
+        "prompt": "Por favor envíame el número de la placa de tu vehículo o moto. \nPor ejemplo: *GYE1234* para vehículos / *GA001A* para motos",
+        "variable": "placa"
+      },
+      "type": "INPUT",
+      "position": [
+        5032,
+        1461
+      ]
+    },
+    {
+      "id": "gq3MniJ1fbAQ4zZ5vaeEy",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Grúa",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        4566,
+        1850
+      ]
+    },
+    {
+      "id": "GrcTz88cM-qD8DViXT2O_",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "XmaHNVvZi26lNaNxHRGeU",
+            "text": "Ups! No se logro iniciar la asistencia, intenta más tarde.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        8223,
+        1663
+      ]
+    },
+    {
+      "id": "gxSnATFnI9aARMZbx87hh",
+      "title": "Lista",
+      "configuration": {
+        "messages": [
+          {
+            "id": "bbKRXG8FafQ9YS_V0dd5J",
+            "text": "Tienes estos servicios en proceso. \n\n¿Con qué servicio necesitas ayuda?",
+            "type": "list",
+            "title": "",
+            "button": "Asistencia",
+            "options": [
+              {
+                "id": "dynamic-button",
+                "url": "",
+                "type": "postback",
+                "title": "{{$item.numero}}. {{$item.id_asistencia}}",
+                "payload": {
+                  "type": "edge",
+                  "memory": {
+                    "asist_curso_id": "{{$item.id_asistencia}}",
+                    "asist_curso_cedula": "{{$item.identificacion}}",
+                    "asist_curso_servicio": "{{$item.nombre_servicio}}",
+                    "asist_curso_expediente": "{{$item.id_expediente}}"
+                  },
+                  "skillId": "4225",
+                  "targetId": "J665DNl3IHj5_TvTgCasP"
+                },
+                "iterable": "{{$memory.ListaAsistencia}}",
+                "description": "{{$item.nombre_servicio}}"
+              },
+              {
+                "id": "742b61ea-2d5e-4bac-8869-2e4e0adbd020",
+                "url": "",
+                "type": "postback",
+                "title": "0. Salir del menú",
+                "payload": {},
+                "description": ""
+              }
+            ],
+            "settings": {
+              "isBlockingEnabled": false
+            }
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        12430,
+        1210
+      ]
+    },
+    {
+      "id": "h3EgalwF1g6uqn8UlBYIb",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Inspector in situ",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        4632,
+        694
+      ]
+    },
+    {
+      "id": "HYuB-4sMv9AA-LTmftowh",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "service": "Cerrajería para apertura de puertas del carro",
+          "id_servicio": "299"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        4160,
+        2480
+      ]
+    },
+    {
+      "id": "IvAFymLelkl20Ca1FLlew",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        100,
+        57
+      ]
+    },
+    {
+      "id": "iYVGGfnES2VoIY5TNPX40",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "3UhEZ5NLV33Ch9CdRu3_X",
+            "name": "Servicio ",
+            "terms": [
+              {
+                "id": "R_JDgTLF5KOV-Ehi8rxk_",
+                "type": "",
+                "value1": "{{$memory.id_servicio}}",
+                "value2": "322",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.id_servicio}}",
+                  "value2": "322"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        9032,
+        2081
+      ]
+    },
+    {
+      "id": "J665DNl3IHj5_TvTgCasP",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "service": "{{$memory.asist_curso_servicio}}",
+          "cveafiliado": "{{$memory.asist_curso_cedula}}",
+          "id_asistencia": "{{$memory.asist_curso_id}}",
+          "id_expediente": "{{$memory.asist_curso_expediente}}"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        12836,
+        1115
+      ]
+    },
+    {
+      "id": "ja_iw_fRUxF5SudRAikiM",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Suministro gasolina",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        4566,
+        1178
+      ]
+    },
+    {
+      "id": "jKyJE0KkzJquTQ6XmTRIe",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4220"
+      },
+      "type": "SKILL",
+      "position": [
+        9438,
+        2109
+      ]
+    },
+    {
+      "id": "K6vKn5r-v39XYMzma3kAO",
+      "title": "brain.nodes.code_name",
+      "configuration": {
+        "content": "const data = $memory.getJson(\"busquedaTermino\");\n\nconst nombre = data[0].Nombre;\nconst identificacion = data[0].Identificación;\n\n$memory.set(\"nombreGEA\", nombre, 86400)\n$memory.set(\"identificacion\", identificacion, 86400)",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        1724,
+        327
+      ]
+    },
+    {
+      "id": "K6z3DSPRQ2nPcs5T7kJl6",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4602"
+      },
+      "type": "SKILL",
+      "position": [
+        1318,
+        69
+      ]
+    },
+    {
+      "id": "kG9StZNs-qAm_OwifwgOx",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "placa": "",
+          "chasis": "",
+          "cveafiliado": "{{$memory.identificacion}}",
+          "id_vehiculo": ""
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        3348,
+        547
+      ]
+    },
+    {
+      "id": "KKce9ZdYgjjWzvXyzY2oh",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Asistencia Legal Telf",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        7002,
+        643
+      ]
+    },
+    {
+      "id": "kYyr9j5ZUbWE2Neec6np5",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "IoV6jBprJMdlxOO9cTYUp",
+            "text": "Lo sentimos el servicio no está disponible, por favor intenta más tarde.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        7814,
+        1514
+      ]
+    },
+    {
+      "id": "lML-hm_h978IXzZvg0iec",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "9LSlkpTDNwlV9tBdvc3E7",
+            "name": "",
+            "terms": [
+              {
+                "id": "p4ny2Tg2QFwcsSToa7qiL",
+                "type": "",
+                "value1": "{{$memory.placa}}",
+                "value2": "^[A-Za-z]{3}[0-9]{4}$",
+                "operator": "regex_match",
+                "inputDisplayName": {
+                  "value1": "{{$memory.placa}}",
+                  "value2": "^[A-Za-z]{3}[0-9]{4}$"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          },
+          {
+            "id": "8ob1kI2YnBKaTCE7M_a9y",
+            "name": "",
+            "terms": [
+              {
+                "id": "oV5Tcd3qbK5qIiDFCtJsR",
+                "value1": "{{$memory.placa}}",
+                "value2": "^[A-Za-z]{2}[0-9]{3}[A-Za-z]$",
+                "operator": "regex_match",
+                "inputDisplayName": {
+                  "value1": "{{$memory.placa}}",
+                  "value2": "^[A-Za-z]{2}[0-9]{3}[A-Za-z]$"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        7002,
+        1965
+      ]
+    },
+    {
+      "id": "MFoKDMMHboVPjLjqSeDY3",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "service": "Suministro de gasolina",
+          "id_servicio": "258"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        4160,
+        1136
+      ]
+    },
+    {
+      "id": "MHVKdFNVb7gFyvhixAdCd",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "5231"
+      },
+      "type": "SKILL",
+      "position": [
+        9438,
+        2361
+      ]
+    },
+    {
+      "id": "mwydIvikgixAlK5OYh2as",
+      "title": "Pregunta",
+      "configuration": {
+        "prompt": "La placa ingresada no es correcta. Recuerda que la placa debe tener el siguiente formato: Caracteres alfanuméricos (letras y/o números).  3 letras + 4 números. Por favor intenta nuevamente.",
+        "variable": "placa"
+      },
+      "type": "INPUT",
+      "position": [
+        5784,
+        1650
+      ]
+    },
+    {
+      "id": "nOmJLimyqV20NZFP9KON8",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "service": "Inspector in situ en caso de accidente",
+          "id_servicio": "295"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        4239,
+        620
+      ]
+    },
+    {
+      "id": "OA6PSl6K6hLQFUmwfEspH",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "0Hgpjkb--90B6x1D5A0uk",
+            "name": "",
+            "terms": [
+              {
+                "id": "aYvy5SlvfwV-kIEUY-RyH",
+                "type": "",
+                "value1": "{{$memory.tamanio}}",
+                "value2": "1",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.tamanio}}",
+                  "value2": "1"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        12024,
+        821
+      ]
+    },
+    {
+      "id": "oP3oSWCoE6Le1ZVH_1m17",
+      "title": "Sticky Note",
+      "configuration": {
+        "colorPalette": "yellow"
+      },
+      "comments": "Estaba configurada la versión:3 \nVersión actual: 6",
+      "type": "NOTE",
+      "position": [
+        7640,
+        2233
+      ]
+    },
+    {
+      "id": "peV3Zv_mhj0dx7cnwVJVn",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "k4dOP-bNa6K2cnHImAdP-",
+            "name": "",
+            "terms": [
+              {
+                "id": "dSLk4ReKgvhdvA0IPhVuU",
+                "type": "",
+                "value1": "{{$user.id}}",
+                "value2": "593968001323",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$user.id}}",
+                  "value2": "593968001323"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          },
+          {
+            "id": "RRGGu4Nr-FRbRTeo7owvz",
+            "name": "",
+            "terms": [
+              {
+                "id": "N7FcxMFiBv43cBnFe9t-G",
+                "type": "",
+                "value1": "{{$user.id}}",
+                "value2": "593984977737",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$user.id}}",
+                  "value2": "593984977737"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        9994,
+        95
+      ]
+    },
+    {
+      "id": "Q3JKrksv0XjQI6E5PRxMv",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "xdjCAS6hUQyz_d6MlKJnH",
+            "name": "placa vehículo",
+            "terms": [
+              {
+                "id": "UzKSLYpbvW6T4YKP6XO4U",
+                "type": "",
+                "value1": "{{$memory.placa}}",
+                "value2": "^[A-Za-z]{3}[0-9]{4}$",
+                "operator": "regex_match",
+                "inputDisplayName": {
+                  "value1": "{{$memory.placa}}",
+                  "value2": "^[A-Za-z]{3}[0-9]{4}$"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          },
+          {
+            "id": "92du4AV7CmC0D2SvHnBl2",
+            "name": "placa moto",
+            "terms": [
+              {
+                "id": "c8Q8irU2EPra2zi64fTAp",
+                "type": "",
+                "value1": "{{$memory.placa}}",
+                "value2": "^[A-Za-z]{2}[0-9]{3}[A-Za-z]$",
+                "operator": "regex_match",
+                "inputDisplayName": {
+                  "value1": "{{$memory.placa}}",
+                  "value2": "^[A-Za-z]{2}[0-9]{3}[A-Za-z]$"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        6190,
+        1693
+      ]
+    },
+    {
+      "id": "Qbb_UB7W48XsBTwPMl-2i",
+      "title": "Asistencia en Curso",
+      "configuration": {
+        "input": {
+          "pais": "ec",
+          "enabled": "false",
+          "clientId": "64",
+          "telefono": "{{$user.id}}",
+          "usersList": "[\"_593996218400\",\"593982428527\",\"593967651709\",\"593984826299\",\"_593989571155\",\"593969412854\",\"593967651709\",\"593988575955\",\"_593939973292\"]",
+          "paisIsoCode": "test-ec",
+          "clientSecret": "l3xuNeFoQHW6bPFMGUTz4Qd1r0H0SLQD",
+          "authorization": "{{$memory.accessToken}}"
+        },
+        "version": "V 1.0.1",
+        "toolData": {
+          "toolId": 2678,
+          "toolName": "Asistencia en Curso",
+          "thumbnail": 13,
+          "toolkitId": 431,
+          "workflowId": 9698,
+          "principalColor": "#E6F6F9",
+          "complementaryColor": "#00B3C7"
+        },
+        "variable": "asistenciaCurso",
+        "inputDisplayName": {
+          "pais": "ec",
+          "enabled": "false",
+          "clientId": "64",
+          "telefono": "User Id",
+          "usersList": "[\"_593996218400\",\"593982428527\",\"593967651709\",\"593984826299\",\"_593989571155\",\"593969412854\",\"593967651709\",\"593988575955\",\"_593939973292\"]",
+          "paisIsoCode": "test-ec",
+          "clientSecret": "l3xuNeFoQHW6bPFMGUTz4Qd1r0H0SLQD",
+          "authorization": "{{$memory.accessToken}}"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        10806,
+        404
+      ]
+    },
+    {
+      "id": "RCVEOU1RBuEtmPRgOdcTX",
+      "title": "Datum",
+      "configuration": {
+        "row": {
+          "data": {}
+        },
+        "query": [
+          {
+            "id": "baqUa6RQz_XD2eWo_zvup",
+            "type": "text",
+            "field": "Usuario",
+            "value": "{{$user.id}}",
+            "operator": "equal_match_phrase",
+            "displayName": "{{$user.id}}",
+            "displayNameField": "Usuario"
+          }
+        ],
+        "action": "search",
+        "variable": "busquedaTermino",
+        "databaseId": 2756,
+        "displayName": "busquedaTermino"
+      },
+      "type": "DATUM",
+      "position": [
+        2536,
+        321
+      ]
+    },
+    {
+      "id": "rrk95i7OvHnrzU6DQJxQy",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "rqAlm1JfioqiikqJnCQTo",
+            "text": "Listo, el servicio se brindará para tu vehículo.\n\nPlaca: {{$memory.placa}}",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        8220,
+        2102
+      ]
+    },
+    {
+      "id": "T10lKUt2hYyNwj47051JW",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "const data = $memory.getJson(\"busquedaTermino\", {});\n\nconst nombre = data[0].Nombre;\nconst identificacion = data[0].Identificación;\n\n$memory.set(\"nombreGEA\", nombre, 86400)\n$memory.set(\"identificacion\", identificacion, 86400)",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        3062,
+        611
+      ]
+    },
+    {
+      "id": "U4mNyIm1BH4t7a3RyoVX1",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "d7xFqJmIJReznuWTT9K7P",
+            "text": "Veo que ya tienes una asistencia en curso y estamos trabajando en ella. Para continuar de la mejor manera, un especialista se pondrá en contacto contigo pronto.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        8220,
+        2368
+      ]
+    },
+    {
+      "id": "UJv040_N6csor3HTlIqIw",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Cambio de llanta",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        4566,
+        2186
+      ]
+    },
+    {
+      "id": "V_ilEokPRb6ObRr2yhcpn",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "XmaHNVvZi26lNaNxHRGeU",
+            "text": "Ups! No se logro iniciar la asistencia, intenta más tarde.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        11212,
+        505
+      ]
+    },
+    {
+      "id": "VjlVe5hNofYGN1ghw3G7i",
+      "title": "Auth",
+      "configuration": {
+        "input": {
+          "ambiente": {
+            "value": "PRODUCCION"
+          }
+        },
+        "version": "private 2.0.4",
+        "toolData": {
+          "toolId": 1946,
+          "toolName": "Auth",
+          "thumbnail": 7,
+          "toolkitId": 431,
+          "workflowId": 6821,
+          "principalColor": "#3c4e9e",
+          "complementaryColor": "#ffffff"
+        },
+        "variable": "accessToken"
+      },
+      "type": "TOOL",
+      "position": [
+        7408,
+        1413
+      ]
+    },
+    {
+      "id": "WWsEFKk7EwgotC3c11nrC",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Paso de corriente",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        4566,
+        1514
+      ]
+    },
+    {
+      "id": "yFqXQ4KVk2q7Rm-vmytr2",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "7258"
+      },
+      "type": "SKILL",
+      "position": [
+        3348,
+        992
+      ]
+    },
+    {
+      "id": "ygydVpKyHABPV7qfJ3FLB",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        13648,
+        1254
+      ]
+    },
+    {
+      "id": "Z0pxS112QPSyQ3fYZ2Af6",
+      "title": "Pregunta",
+      "configuration": {
+        "prompt": "La placa ingresada no es correcta. Recuerda que la placa debe tener el siguiente formato: Caracteres alfanuméricos (letras y/o números).  3 letras + 4 números. Por favor intenta nuevamente.",
+        "variable": "placa"
+      },
+      "type": "INPUT",
+      "position": [
+        6596,
+        1904
+      ]
+    },
+    {
+      "id": "z2V4OBtRo4PbKML3hAhSE",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "service": "Paso de corriente",
+          "id_servicio": "258"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        4160,
+        1472
+      ]
+    },
+    {
+      "id": "Zf6PRMKH0_BgnnAoiDegE",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "service": "Cambio de llanta ",
+          "id_servicio": "258"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        4160,
+        2144
+      ]
+    },
+    {
+      "id": "ZKOEl5ukn2vxoMAiqITWg",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "mantenimiento": "OFF"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        506,
+        70
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "_E3ZBOed6AaXCcLsCcVvD",
+      "sourceId": "brd2ju4MDAyPyc4t0WDQi",
+      "targetId": "0GsHeUG44iknZZBPgjMZX",
+      "branch": "output:gW8ioMIcWsrMVEu9yNkgJ:failed"
+    },
+    {
+      "id": "_wQ06jRbKa2pXXiR91seT",
+      "sourceId": "brd2ju4MDAyPyc4t0WDQi",
+      "targetId": "Qbb_UB7W48XsBTwPMl-2i",
+      "branch": "output:dCbSEWstx811FGWQruk5z:success"
+    },
+    {
+      "id": "1GU2Xt3DFa0nkai5DUbFf",
+      "sourceId": "ZKOEl5ukn2vxoMAiqITWg",
+      "targetId": "B3HuUS9C3C2V_54NCBjL2",
+      "branch": "default"
+    },
+    {
+      "id": "1LK9eBLenP-sVZ_SaJhfH",
+      "sourceId": "Qbb_UB7W48XsBTwPMl-2i",
+      "targetId": "V_ilEokPRb6ObRr2yhcpn",
+      "branch": "output:V6PjGKpWCeMkjwEqMnoF:failed"
+    },
+    {
+      "id": "3L9I9K7xxD7kZx2bbyEi8",
+      "sourceId": "DUJY5EAU6ubDyyuun3XDe",
+      "targetId": "K6vKn5r-v39XYMzma3kAO",
+      "branch": "success"
+    },
+    {
+      "id": "4DzWTGlTl60_rFkcbEr7E",
+      "sourceId": "brd2ju4MDAyPyc4t0WDQi",
+      "targetId": "0GsHeUG44iknZZBPgjMZX",
+      "branch": "output:ceRk0XpZzt-Xj5ly5EfX1:failed"
+    },
+    {
+      "id": "4QC74d_3ZUN9ptJM3je6A",
+      "sourceId": "OA6PSl6K6hLQFUmwfEspH",
+      "targetId": "039QOyyyNGLLwCXQYyyEm",
+      "branch": "condition:0Hgpjkb--90B6x1D5A0uk"
+    },
+    {
+      "id": "524A6gW86G1CJdc07Drqx",
+      "sourceId": "iYVGGfnES2VoIY5TNPX40",
+      "targetId": "jKyJE0KkzJquTQ6XmTRIe",
+      "branch": "else"
+    },
+    {
+      "id": "5ePrOlyL60QoVPbGNAEzM",
+      "sourceId": "iYVGGfnES2VoIY5TNPX40",
+      "targetId": "MHVKdFNVb7gFyvhixAdCd",
+      "branch": "condition:3UhEZ5NLV33Ch9CdRu3_X"
+    },
+    {
+      "id": "5FA1Kcj5rBu9tiaA0HaWw",
+      "sourceId": "RCVEOU1RBuEtmPRgOdcTX",
+      "targetId": "T10lKUt2hYyNwj47051JW",
+      "branch": "success"
+    },
+    {
+      "id": "6hZZwJdCMQEsq6yKEkUBd",
+      "sourceId": "EiZMkwjQYqBxXZ5sls0_I",
+      "targetId": "b4GiPg9hZ-QE5ggT3ikgg",
+      "branch": "failed"
+    },
+    {
+      "id": "6wguPgs9Xj0s2or3Tx5q3",
+      "sourceId": "8fKqdTlk9Yr_NL99tC62Z",
+      "targetId": "EbYw6OnTzAyTc0Du3f_Fc",
+      "branch": "option:6d53ff61-40b4-4b94-9b45-db590dd3cfd3"
+    },
+    {
+      "id": "7zOvHyA_evYh_w4N0IguD",
+      "sourceId": "8fKqdTlk9Yr_NL99tC62Z",
+      "targetId": "nOmJLimyqV20NZFP9KON8",
+      "branch": "option:09d099b4-3a33-4655-9292-e7ffd2befe4f"
+    },
+    {
+      "id": "8bY-MVm2ZpwfXH0DMGRP2",
+      "sourceId": "VjlVe5hNofYGN1ghw3G7i",
+      "targetId": "kYyr9j5ZUbWE2Neec6np5",
+      "branch": "output:ceRk0XpZzt-Xj5ly5EfX1:failed"
+    },
+    {
+      "id": "8vNM47tRqDEMobb1DlfPO",
+      "sourceId": "lML-hm_h978IXzZvg0iec",
+      "targetId": "VjlVe5hNofYGN1ghw3G7i",
+      "branch": "condition:8ob1kI2YnBKaTCE7M_a9y"
+    },
+    {
+      "id": "9zPPtLhNFXHs9lT-iaTcF",
+      "sourceId": "VjlVe5hNofYGN1ghw3G7i",
+      "targetId": "kYyr9j5ZUbWE2Neec6np5",
+      "branch": "output:pIFMZsYfP-fEFuqFHJTKU:failed"
+    },
+    {
+      "id": "A3rQQuaz893bOdY0tiGkM",
+      "sourceId": "B3HuUS9C3C2V_54NCBjL2",
+      "targetId": "K6z3DSPRQ2nPcs5T7kJl6",
+      "branch": "condition:PWDegvYEGCzXqumiq1BoJ"
+    },
+    {
+      "id": "AjK-O_e9gan5eRk1g2F0I",
+      "sourceId": "T10lKUt2hYyNwj47051JW",
+      "targetId": "kG9StZNs-qAm_OwifwgOx",
+      "branch": "success"
+    },
+    {
+      "id": "B5erqfZaH07vlv6GfI4cy",
+      "sourceId": "IvAFymLelkl20Ca1FLlew",
+      "targetId": "ZKOEl5ukn2vxoMAiqITWg",
+      "branch": "default"
+    },
+    {
+      "id": "bdfGwY9rtbL1Vo2FVEpyd",
+      "sourceId": "_I-49L6iGREMnvLKLKxG0",
+      "targetId": "GrcTz88cM-qD8DViXT2O_",
+      "branch": "output:GhBsBdkNuBfCX5UdnfiE1:failed"
+    },
+    {
+      "id": "BDYulII-f9Z0iFcBtoHM9",
+      "sourceId": "gq3MniJ1fbAQ4zZ5vaeEy",
+      "targetId": "fYBRYFjwwRN9YgIgPjOKk",
+      "branch": "default"
+    },
+    {
+      "id": "bmST9jGmfCLb7MmAvG7SU",
+      "sourceId": "OA6PSl6K6hLQFUmwfEspH",
+      "targetId": "gxSnATFnI9aARMZbx87hh",
+      "branch": "else"
+    },
+    {
+      "id": "byyFB4oqenKnSQMoILA7i",
+      "sourceId": "f3RsN_1DA5lQ3jpXOgwX6",
+      "targetId": "fYBRYFjwwRN9YgIgPjOKk",
+      "branch": "default"
+    },
+    {
+      "id": "coH-zKoK2jUY6xAz9fv3v",
+      "sourceId": "K6vKn5r-v39XYMzma3kAO",
+      "targetId": "0_McnZfbwqh77VLr_yqAO",
+      "branch": "success"
+    },
+    {
+      "id": "cpZF5dyc8fxKS08JwiwNM",
+      "sourceId": "8fKqdTlk9Yr_NL99tC62Z",
+      "targetId": "MFoKDMMHboVPjLjqSeDY3",
+      "branch": "option:e8d1c6b7-974e-4052-b8d6-8c4f8cbb056b"
+    },
+    {
+      "id": "dakDU-ZCXvY01nnzkUREs",
+      "sourceId": "039QOyyyNGLLwCXQYyyEm",
+      "targetId": "DUO6iCgsWT3unITY7blgm",
+      "branch": "failed"
+    },
+    {
+      "id": "DKdRBExCK0qoNN3meyphV",
+      "sourceId": "UJv040_N6csor3HTlIqIw",
+      "targetId": "fYBRYFjwwRN9YgIgPjOKk",
+      "branch": "default"
+    },
+    {
+      "id": "eHdVx8Ch169fh5zsS4zO3",
+      "sourceId": "Zf6PRMKH0_BgnnAoiDegE",
+      "targetId": "UJv040_N6csor3HTlIqIw",
+      "branch": "default"
+    },
+    {
+      "id": "eTjqvY3b_9QeDmlafln-T",
+      "sourceId": "VjlVe5hNofYGN1ghw3G7i",
+      "targetId": "kYyr9j5ZUbWE2Neec6np5",
+      "branch": "output:gW8ioMIcWsrMVEu9yNkgJ:failed"
+    },
+    {
+      "id": "evOtylMEOTkpAA_qLmcKQ",
+      "sourceId": "5sOiHjjI4HZL5OWXOB225",
+      "targetId": "mwydIvikgixAlK5OYh2as",
+      "branch": "else"
+    },
+    {
+      "id": "f1P6r-z1ub7E1v7YlYzvf",
+      "sourceId": "KKce9ZdYgjjWzvXyzY2oh",
+      "targetId": "VjlVe5hNofYGN1ghw3G7i",
+      "branch": "default"
+    },
+    {
+      "id": "h_jAI2RavLssYZtW5zwkt",
+      "sourceId": "RCVEOU1RBuEtmPRgOdcTX",
+      "targetId": "9AfBlzYYdcVSXwmZwZd9n",
+      "branch": "failed"
+    },
+    {
+      "id": "HGSirc-mKS8xyACkgVObr",
+      "sourceId": "Q3JKrksv0XjQI6E5PRxMv",
+      "targetId": "VjlVe5hNofYGN1ghw3G7i",
+      "branch": "condition:92du4AV7CmC0D2SvHnBl2"
+    },
+    {
+      "id": "hP4yoo4EGUf0Q6nEHC4b7",
+      "sourceId": "WWsEFKk7EwgotC3c11nrC",
+      "targetId": "fYBRYFjwwRN9YgIgPjOKk",
+      "branch": "default"
+    },
+    {
+      "id": "j0fX8q8p4YnYIDfh8jl1i",
+      "sourceId": "rrk95i7OvHnrzU6DQJxQy",
+      "targetId": "-4ZrJ4IXF5NoAsh3OCBA6",
+      "branch": "default"
+    },
+    {
+      "id": "JtEH6YIqaKqxHSQq5R5mV",
+      "sourceId": "fYBRYFjwwRN9YgIgPjOKk",
+      "targetId": "5sOiHjjI4HZL5OWXOB225",
+      "branch": "success"
+    },
+    {
+      "id": "K0Hi3nupNCmdeKIaiHeoX",
+      "sourceId": "h3EgalwF1g6uqn8UlBYIb",
+      "targetId": "fYBRYFjwwRN9YgIgPjOKk",
+      "branch": "default"
+    },
+    {
+      "id": "kbb3uwGiqJXXhTO-3Wdb5",
+      "sourceId": "fmvBztkzBjocyQ34hg2qN",
+      "targetId": "ygydVpKyHABPV7qfJ3FLB",
+      "branch": "default"
+    },
+    {
+      "id": "KEw21RCAyaz7qfvoe2TnP",
+      "sourceId": "lML-hm_h978IXzZvg0iec",
+      "targetId": "9z79enNUlsk8BGX9is47z",
+      "branch": "else"
+    },
+    {
+      "id": "L9v5b305kqM4MFWtYFBNy",
+      "sourceId": "039QOyyyNGLLwCXQYyyEm",
+      "targetId": "fmvBztkzBjocyQ34hg2qN",
+      "branch": "success"
+    },
+    {
+      "id": "MAAvMr-koebEMh8V8VOEV",
+      "sourceId": "-4ZrJ4IXF5NoAsh3OCBA6",
+      "targetId": "iYVGGfnES2VoIY5TNPX40",
+      "branch": "default"
+    },
+    {
+      "id": "Mhy88FP_CQrZRwQP7iF97",
+      "sourceId": "EiZMkwjQYqBxXZ5sls0_I",
+      "targetId": "OA6PSl6K6hLQFUmwfEspH",
+      "branch": "success"
+    },
+    {
+      "id": "mPhCdSrLAxrytH_exN13t",
+      "sourceId": "brd2ju4MDAyPyc4t0WDQi",
+      "targetId": "0GsHeUG44iknZZBPgjMZX",
+      "branch": "output:pIFMZsYfP-fEFuqFHJTKU:failed"
+    },
+    {
+      "id": "nCyFW3-Kas80boSOOrM42",
+      "sourceId": "z2V4OBtRo4PbKML3hAhSE",
+      "targetId": "WWsEFKk7EwgotC3c11nrC",
+      "branch": "default"
+    },
+    {
+      "id": "NdD0DBlZUgdS9WGBojLPu",
+      "sourceId": "gxSnATFnI9aARMZbx87hh",
+      "targetId": "J665DNl3IHj5_TvTgCasP",
+      "branch": "option:dynamic-button"
+    },
+    {
+      "id": "NepRsffzIcyegAw6bg73U",
+      "sourceId": "_I-49L6iGREMnvLKLKxG0",
+      "targetId": "rrk95i7OvHnrzU6DQJxQy",
+      "branch": "output:cMbClaWngxTw_WNJw4bZf:success"
+    },
+    {
+      "id": "nHtkv03ZROKrKjkJYnQ6d",
+      "sourceId": "_I-49L6iGREMnvLKLKxG0",
+      "targetId": "U4mNyIm1BH4t7a3RyoVX1",
+      "branch": "output:berd99i-k3_Q-bVNiUmM7:failed"
+    },
+    {
+      "id": "nuW-cFj3yqa7u-fJZK4i3",
+      "sourceId": "lML-hm_h978IXzZvg0iec",
+      "targetId": "VjlVe5hNofYGN1ghw3G7i",
+      "branch": "condition:9LSlkpTDNwlV9tBdvc3E7"
+    },
+    {
+      "id": "odBcmy1SZ81Aa7iZemADA",
+      "sourceId": "HYuB-4sMv9AA-LTmftowh",
+      "targetId": "f3RsN_1DA5lQ3jpXOgwX6",
+      "branch": "default"
+    },
+    {
+      "id": "opoeoCV-Ndc6163PUYM--",
+      "sourceId": "T10lKUt2hYyNwj47051JW",
+      "targetId": "yFqXQ4KVk2q7Rm-vmytr2",
+      "branch": "failed"
+    },
+    {
+      "id": "p8rtUhQsz-BLFSf-dQG4Z",
+      "sourceId": "B3HuUS9C3C2V_54NCBjL2",
+      "targetId": "DUJY5EAU6ubDyyuun3XDe",
+      "branch": "else"
+    },
+    {
+      "id": "pRui0V0jF8CPxJ-QCc8_n",
+      "sourceId": "5sOiHjjI4HZL5OWXOB225",
+      "targetId": "VjlVe5hNofYGN1ghw3G7i",
+      "branch": "condition:lmbYm4dHS7jLiKp_OoD58"
+    },
+    {
+      "id": "qDi-S-SX0TpcIuqhxYQRK",
+      "sourceId": "J665DNl3IHj5_TvTgCasP",
+      "targetId": "fmvBztkzBjocyQ34hg2qN",
+      "branch": "default"
+    },
+    {
+      "id": "r16IkXk7T437dLb2Rigl-",
+      "sourceId": "kG9StZNs-qAm_OwifwgOx",
+      "targetId": "8fKqdTlk9Yr_NL99tC62Z",
+      "branch": "default"
+    },
+    {
+      "id": "rivK6mGLH9W5AFLR6XK0c",
+      "sourceId": "Qbb_UB7W48XsBTwPMl-2i",
+      "targetId": "c2HCSTIm84vE4Nt1gr_rm",
+      "branch": "output:9J0JylR4vSlFt9KlO2nE:success"
+    },
+    {
+      "id": "s_B_6zM-BEYQCNI1lMRtU",
+      "sourceId": "Q3JKrksv0XjQI6E5PRxMv",
+      "targetId": "VjlVe5hNofYGN1ghw3G7i",
+      "branch": "condition:xdjCAS6hUQyz_d6MlKJnH"
+    },
+    {
+      "id": "s-JtyaqgS63oFb6DIYbUL",
+      "sourceId": "8fKqdTlk9Yr_NL99tC62Z",
+      "targetId": "z2V4OBtRo4PbKML3hAhSE",
+      "branch": "option:f034efc9-47f7-4769-80fa-45b95a488c48"
+    },
+    {
+      "id": "sIL9IY0cuCySbMf0jq9bO",
+      "sourceId": "Q3JKrksv0XjQI6E5PRxMv",
+      "targetId": "Z0pxS112QPSyQ3fYZ2Af6",
+      "branch": "else"
+    },
+    {
+      "id": "thfIfb-OBmTy3gJGCCVRe",
+      "sourceId": "0_McnZfbwqh77VLr_yqAO",
+      "targetId": "RCVEOU1RBuEtmPRgOdcTX",
+      "branch": "default"
+    },
+    {
+      "id": "tkpJNqtM2ttL8n0_jILgU",
+      "sourceId": "c2HCSTIm84vE4Nt1gr_rm",
+      "targetId": "EiZMkwjQYqBxXZ5sls0_I",
+      "branch": "option:c8e6ce70-88d1-494d-a623-59b2aedf00a1"
+    },
+    {
+      "id": "UxHRmXQh5bmNR3_kChuXe",
+      "sourceId": "8fKqdTlk9Yr_NL99tC62Z",
+      "targetId": "eDVvjNmnkII7JJLL9ltnc",
+      "branch": "option:kRP2pE1SlsatyNg2xKdt2"
+    },
+    {
+      "id": "V9hol2lPtpp4IqEgYv2uS",
+      "sourceId": "5sOiHjjI4HZL5OWXOB225",
+      "targetId": "VjlVe5hNofYGN1ghw3G7i",
+      "branch": "condition:06qm6JkUY2g00CLrzWTSL"
+    },
+    {
+      "id": "VioLX1pUrD6u5K-hB3msc",
+      "sourceId": "peV3Zv_mhj0dx7cnwVJVn",
+      "targetId": "brd2ju4MDAyPyc4t0WDQi",
+      "branch": "else"
+    },
+    {
+      "id": "vRCbRjYpQRGJ8s31iFk_g",
+      "sourceId": "mwydIvikgixAlK5OYh2as",
+      "targetId": "Q3JKrksv0XjQI6E5PRxMv",
+      "branch": "success"
+    },
+    {
+      "id": "wd-WX1OTccuuJB_l4J-70",
+      "sourceId": "_I-49L6iGREMnvLKLKxG0",
+      "targetId": "GrcTz88cM-qD8DViXT2O_",
+      "branch": "output:0UZvK6m6iogBdy8PppRP6:failed"
+    },
+    {
+      "id": "wFN-iwIGh12zt3JYgoguG",
+      "sourceId": "EbYw6OnTzAyTc0Du3f_Fc",
+      "targetId": "KKce9ZdYgjjWzvXyzY2oh",
+      "branch": "default"
+    },
+    {
+      "id": "wQ7_eJ15A7u3DG1ddNSuW",
+      "sourceId": "eDVvjNmnkII7JJLL9ltnc",
+      "targetId": "gq3MniJ1fbAQ4zZ5vaeEy",
+      "branch": "default"
+    },
+    {
+      "id": "wS0keG8QGg2HbCmYY4JV-",
+      "sourceId": "ja_iw_fRUxF5SudRAikiM",
+      "targetId": "fYBRYFjwwRN9YgIgPjOKk",
+      "branch": "default"
+    },
+    {
+      "id": "X7Y-j7VqOd_T4JNnbTuyH",
+      "sourceId": "8fKqdTlk9Yr_NL99tC62Z",
+      "targetId": "Zf6PRMKH0_BgnnAoiDegE",
+      "branch": "option:a946f24e-9ebd-414d-9513-382b07012a3c"
+    },
+    {
+      "id": "XUBsAIaYm5ii3gpNCLYjF",
+      "sourceId": "8fKqdTlk9Yr_NL99tC62Z",
+      "targetId": "HYuB-4sMv9AA-LTmftowh",
+      "branch": "option:9e53e3de-c21b-459d-87e9-ca6992c5baf1"
+    },
+    {
+      "id": "yc6BqefucNopx2wnHMBHf",
+      "sourceId": "MFoKDMMHboVPjLjqSeDY3",
+      "targetId": "ja_iw_fRUxF5SudRAikiM",
+      "branch": "default"
+    },
+    {
+      "id": "yqE87Ehqmn46ojYKaUkU5",
+      "sourceId": "Z0pxS112QPSyQ3fYZ2Af6",
+      "targetId": "lML-hm_h978IXzZvg0iec",
+      "branch": "success"
+    },
+    {
+      "id": "yx1MGCz7hGXhgbO5UWVAM",
+      "sourceId": "nOmJLimyqV20NZFP9KON8",
+      "targetId": "h3EgalwF1g6uqn8UlBYIb",
+      "branch": "default"
+    },
+    {
+      "id": "ZyXEliKqTzVV9V8K75254",
+      "sourceId": "VjlVe5hNofYGN1ghw3G7i",
+      "targetId": "_I-49L6iGREMnvLKLKxG0",
+      "branch": "output:dCbSEWstx811FGWQruk5z:success"
+    }
+  ]
+}

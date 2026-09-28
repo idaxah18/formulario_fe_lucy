@@ -1,0 +1,61 @@
+{
+  "workflowId": 7689,
+  "workflowName": "2.6 Reportar un problema",
+  "workflowDescription": "Reportar un problema",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "3U90kXAwJrrFvM39YcGfc",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "rhx3oLMklqpk2EoUapuIt",
+            "text": "Oh, lamento que hayas tenido un problema. 😕 \nPara poder atenderte mejor, inmediatamente un agente se comunicará contigo para resolverlo.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1769,
+        453
+      ]
+    },
+    {
+      "id": "LsC9JkC5FRu7KOMuO0kaf",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        1161,
+        441
+      ]
+    },
+    {
+      "id": "msT8_p7ZWyCtz-jY0BzB2",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "7492"
+      },
+      "type": "SKILL",
+      "position": [
+        2127,
+        504
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "2Pc1_N4vDtnmmxn69K-WO",
+      "sourceId": "LsC9JkC5FRu7KOMuO0kaf",
+      "targetId": "3U90kXAwJrrFvM39YcGfc",
+      "branch": "default"
+    },
+    {
+      "id": "BfRzJE0Mv5zZM5iPfedw7",
+      "sourceId": "3U90kXAwJrrFvM39YcGfc",
+      "targetId": "msT8_p7ZWyCtz-jY0BzB2",
+      "branch": "default"
+    }
+  ]
+}

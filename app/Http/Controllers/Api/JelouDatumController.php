@@ -17,7 +17,7 @@ class JelouDatumController extends Controller
         if (! $this->jelou->configured()) {
             return response()->json([
                 'ok' => false,
-                'message' => 'Datum no configurado (JELOU_API_TOKEN).',
+                'message' => 'Datum no configurado (JELOU_DATUM_BASIC_* o JELOU_API_TOKEN).',
             ], 503);
         }
 
@@ -203,14 +203,21 @@ class JelouDatumController extends Controller
         }
 
         try {
+            $now = now('America/Guayaquil');
+            $producto = $data['producto'] ?? 'derivacion_asesor';
+            $notas = trim((string) ($data['notas'] ?? ''));
+            $opcion = $notas !== '' ? "{$producto} — {$notas}" : $producto;
+
             $created = $this->jelou->createRow('venta_asistencias', [
                 'identificacion' => $data['identificacion'],
-                'nombre' => $data['nombre'] ?? '',
-                'telefono' => $data['telefono'] ?? '',
-                'producto' => $data['producto'] ?? 'derivacion_asesor',
+                'identificador_canal' => (string) ($data['telefono'] ?? ''),
+                'fecha' => $now->format('Y-m-d'),
+                'hora' => $now->format('H:i:s'),
+                'producto' => $producto,
+                'opcion_recurso_utilizado' => $opcion,
+                'canal' => 'WEBVIEW',
                 'accion_ejecutada' => 'INTERESADO',
-                'notas' => $data['notas'] ?? '',
-                'origen' => 'lucy_webview',
+                'segmento' => 'Chat',
             ]);
 
             return response()->json(['ok' => true, 'data' => $created]);

@@ -2,7 +2,8 @@
 
 **Proyecto Jelou:** `01j5661e5gaf6330435zh3bzjx`  
 **Export local:** `jelou-lucy-ecuador-observe` (117 workflows, 98 tools en catálogo org)  
-**Keyword:** `lucy_webview`
+**Keyword:** `lucy_webview`  
+**Stubs e integraciones pendientes (tablas + refs Jelou):** [`Stub Faltantes.md`](./Stub%20Faltantes.md) / [`STUB_FALTANTES.md`](./STUB_FALTANTES.md)
 
 ## Qué significa “replicar el bot”
 

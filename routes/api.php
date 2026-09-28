@@ -22,14 +22,18 @@ Route::get('/health', function () {
 
 Route::get('/v1/integrations/status', [IntegrationsController::class, 'status']);
 
-Route::middleware('integration:jelou_datum')->prefix('v1/jelou/datum')->group(function () {
+Route::prefix('v1/jelou/datum')->group(function () {
+    // Flujos del chat: el controlador devuelve simulated:true si falta JELOU_API_TOKEN (ver PHASE3_TEST.md).
     Route::get('/venta/lead', [JelouDatumController::class, 'ventaLead']);
     Route::post('/venta/contrato', [JelouDatumController::class, 'ventaMarcarContrato']);
     Route::post('/derivacion', [JelouDatumController::class, 'derivacionLead']);
     Route::post('/ia-router/terms', [JelouDatumController::class, 'iaRouterTerms']);
-    Route::get('/{tableKey}/rows', [JelouDatumController::class, 'queryRows']);
-    Route::post('/{tableKey}/rows', [JelouDatumController::class, 'createRow']);
-    Route::patch('/{tableKey}/rows/{rowId}', [JelouDatumController::class, 'patchRow']);
+
+    Route::middleware('integration:jelou_datum')->group(function () {
+        Route::get('/{tableKey}/rows', [JelouDatumController::class, 'queryRows']);
+        Route::post('/{tableKey}/rows', [JelouDatumController::class, 'createRow']);
+        Route::patch('/{tableKey}/rows/{rowId}', [JelouDatumController::class, 'patchRow']);
+    });
 });
 
 Route::middleware('integration:jelou_pay')->prefix('v1/jelou/pay')->group(function () {

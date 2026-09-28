@@ -9,41 +9,12 @@
             aria-hidden="true"
         >
             <div class="chat-success-hero__doc">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 64 64"
-                    class="h-16 w-16 text-lucy-blue"
-                >
-                    <rect
-                        x="12"
-                        y="8"
-                        width="40"
-                        height="48"
-                        rx="4"
-                        fill="currentColor"
-                        opacity="0.12"
-                    />
-                    <path
-                        d="M22 22h20M22 30h20M22 38h12"
-                        stroke="currentColor"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
-                    />
-                    <circle
-                        cx="46"
-                        cy="46"
-                        r="14"
-                        fill="#E8A317"
-                    />
-                    <path
-                        d="M40 46l4 4 8-8"
-                        stroke="#fff"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        fill="none"
-                    />
-                </svg>
+                <ChatIcon
+                    name="file-check"
+                    :size="64"
+                    :stroke-width="1.5"
+                    class="text-lucy-blue"
+                />
             </div>
         </div>
 
@@ -64,7 +35,13 @@
             v-if="variant === 'success' && infoText"
             class="chat-info-box"
         >
-            <span class="chat-info-box__icon">i</span>
+            <span class="chat-info-box__icon">
+                <ChatIcon
+                    name="info"
+                    :size="16"
+                    :stroke-width="2"
+                />
+            </span>
             <p>{{ infoText }}</p>
         </div>
     </article>
@@ -73,6 +50,7 @@
 <script setup>
 import { computed } from 'vue';
 import { parseBotMessage } from '@/flows/lucy/uiMeta.js';
+import ChatIcon from '@/components/chat/ChatIcon.vue';
 
 const props = defineProps({
     text: { type: String, required: true },

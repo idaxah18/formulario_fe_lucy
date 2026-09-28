@@ -1,0 +1,438 @@
+{
+  "workflowId": 7692,
+  "workflowName": "PMA",
+  "workflowDescription": "Panel multiagente",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "_oCSiW6Wry7FNQ5UwzFLf",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "service": "{{$memory.service}}",
+          "cveafiliado": "{{$memory.cveafiliado}}",
+          "id_asistencia": "{{$memory.id_asistencia}}",
+          "id_expediente": "{{$memory.id_expediente}}"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        270,
+        251
+      ]
+    },
+    {
+      "id": "5XT_oADedpE14jTZYjv2U",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "7258"
+      },
+      "type": "SKILL",
+      "position": [
+        2005,
+        882
+      ]
+    },
+    {
+      "id": "7TZgMDjk40TT3b5dWoKRl",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "N7TNLh2S63jN86KpBOwZ8",
+            "text": "En este momento todos nuestros asesores se encuentran ocupados, tan pronto tengamos un asesor disponible nos comunicaremos contigo.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2385,
+        356
+      ]
+    },
+    {
+      "id": "CoFYbMJheRWpoYEn-r3LA",
+      "title": "API",
+      "configuration": {
+        "url": "https://api.jelou.ai/v1/bots/+593958637937/users/593960766468/cache",
+        "body": {
+          "type": "application/json",
+          "content": "{\n\t\"params\": {\n\t\"asist_curso_expediente\": \"111111\",\n\t\t\"asist_curso_id\": \"111111\",\n\t\t\"asist_curso_servicio\": \"ASISTENCIA ODONTOLOGICA\",\n\t\t\"asist_curso_cedula\": \"1111111111\"\n\t}\n}",
+          "enabled": true
+        },
+        "method": "POST",
+        "output": "sidebarCabina",
+        "headers": [
+          {
+            "id": "do8BcTfCiBO_KvHiAwSoA",
+            "key": "accept",
+            "value": "*/*",
+            "enabled": true
+          },
+          {
+            "id": "o0THH8T-BpFAje4lCE5PE",
+            "key": "accept-language",
+            "value": "es",
+            "enabled": true
+          },
+          {
+            "id": "2wLj8S8jVUzOUAux1VKBx",
+            "key": "authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NjIzNCwibmFtZXMiOiJKb3NlIFJvbWVybyIsImxhbmciOiJlcyIsImVtYWlsIjoiam9zZS5yb21lcm9AamVsb3UuYWkiLCJlbWFpbFZlcmlmaWVkIjpudWxsLCJjb21wYW55SWQiOjEzNSwiYWN0aXZlIjoib2ZmbGluZSIsInN0YXRlIjp0cnVlLCJwcm92aWRlcklkIjoiOTBjYjRlMjItZjg0NS00OGJhLTk4NTEtNGM1MjJmNWUwYTkwIiwiZXh0ZXJuYWxUb2tlbiI6IjFlZjVkMDZmLTg4NTUtNGY5YS05NTI1LTUyZDk2ZDVhNjAxOSIsIm9wZXJhdG9yQWN0aXZlIjoib2ZmbGluZSIsImNyZWF0ZWRCeSI6NTc2OCwicHJvcGVydGllcyI6bnVsbCwic2hvdWxkUmVjZWl2ZUVtYWlsIjpudWxsLCJub3RpZmljYXRpb25Tb3VuZCI6ZmFsc2UsImlzTWlncmF0ZWQiOmZhbHNlLCJpc09wZXJhdG9yIjp0cnVlLCJvcGVyYXRvcklkIjo0ODU3LCJ0aW1lem9uZSI6IkFtZXJpY2EvR3VheWFxdWlsIiwibW9uaXRvckFsbFRlYW1zIjp0cnVlLCJsb2dnZWRJbkF0IjoiMjAyNS0wMS0yOFQxMToxNToxOS4wMDBaIiwibG9nZ2VkT3V0QXQiOiIyMDI1LTAxLTIzVDA4OjQwOjM0LjAwMFoiLCJkZWxldGVkQXQiOm51bGwsImNyZWF0ZWRBdCI6IjIwMjQtMDEtMjVUMTQ6Mzg6MzguMDAwWiIsInVwZGF0ZWRBdCI6IjIwMjUtMDEtMjhUMTY6MTU6MTkuMDAwWiIsIlVzZXJUd29GYWN0b3JBdXRoIjpbeyJtZXRob2RJZCI6MSwicHJlZmVycmVkIjpmYWxzZSwic3RhdGUiOmZhbHNlfV0sIk9wZXJhdG9yIjp7ImlkIjo0ODU3LCJuYW1lcyI6Ikpvc2UgUm9tZXJvIiwiZW1haWwiOiJqb3NlLnJvbWVyb0BqZWxvdS5haSIsInByb3BlcnRpZXMiOm51bGwsImNvbXBhbnlJZCI6MTM1LCJzdGF0ZSI6MSwiYWN0aXZlIjoib2ZmbGluZSIsInByb3ZpZGVySWQiOiI5MGNiNGUyMi1mODQ1LTQ4YmEtOTg1MS00YzUyMmY1ZTBhOTAiLCJleHBvVG9rZW4iOiJFeHBvbmVudFB1c2hUb2tlbltXOUZGNVVHa0pobWtZTF9OcDdUZXVwXSIsImxvZ2dlZE91dEF0IjoiMjAyNS0wMS0yM1QwODo0MDozNC4wMDBaIiwibG9nZ2VkSW5BdCI6IjIwMjUtMDEtMjhUMTE6MTU6MTkuMDAwWiIsInRlYW1JZHMiOltudWxsLG51bGwsbnVsbF19LCJzZXNzaW9uSWQiOiJ2MVdXQlhMdXMiLCJqd3RfdHlwZSI6IlVTRVIiLCJpYXQiOjE3MzgwODA5NTAsImV4cCI6MTczODEyNDE1MH0.Br_Gjq5-dH3Z90uGsYGpQYMOVuPzAaC7kPnLOsT3Uck",
+            "enabled": true
+          },
+          {
+            "id": "Z0XoNp7UmrrfxhJ_hHyvq",
+            "key": "content-type",
+            "value": "application/json",
+            "enabled": true
+          },
+          {
+            "id": "wOjuRm7AW8z_BjgTFPK4M",
+            "key": "origin",
+            "value": "http://localhost:4200",
+            "enabled": true
+          },
+          {
+            "id": "IPtKcJkPNCBGm901uyv_5",
+            "key": "priority",
+            "value": "u=1, i",
+            "enabled": true
+          },
+          {
+            "id": "wTrt80yCVsmELc14ZjUEB",
+            "key": "referer",
+            "value": "http://localhost:4200/",
+            "enabled": true
+          },
+          {
+            "id": "bsfnccWBLQ9swFZwSxCKZ",
+            "key": "sec-ch-ua",
+            "value": "\"Google Chrome\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\"",
+            "enabled": true
+          },
+          {
+            "id": "4XuGwP649qdfw0SLfqy1u",
+            "key": "sec-ch-ua-mobile",
+            "value": "?0",
+            "enabled": true
+          },
+          {
+            "id": "kJIbB9SRO0cXlQCF1St3f",
+            "key": "sec-ch-ua-platform",
+            "value": "\"Linux\"",
+            "enabled": true
+          },
+          {
+            "id": "ozxiKTUwTYHWCzFT3llu9",
+            "key": "sec-fetch-dest",
+            "value": "empty",
+            "enabled": true
+          },
+          {
+            "id": "1_bq7tJObp3PisdYnXLhN",
+            "key": "sec-fetch-mode",
+            "value": "cors",
+            "enabled": true
+          },
+          {
+            "id": "7usAo5z206UblrG7TdZxX",
+            "key": "sec-fetch-site",
+            "value": "cross-site",
+            "enabled": true
+          },
+          {
+            "id": "XfvSYNLhUngNVb-IlFLBf",
+            "key": "",
+            "type": "text",
+            "value": "",
+            "enabled": false
+          }
+        ],
+        "settings": {
+          "retries": 0,
+          "timeout": 30000,
+          "proxyOptions": {
+            "ip": "185.228.195.219",
+            "auth": {
+              "password": null,
+              "username": null
+            },
+            "host": null,
+            "port": null,
+            "enabled": false,
+            "protocol": "https"
+          },
+          "retryOptions": {
+            "enabled": false,
+            "retries": 0,
+            "retryDelay": "no_delay",
+            "milliseconds": 1000,
+            "retryCondition": "is_network_or_idempotent_request_error",
+            "shouldResetTimeout": false
+          },
+          "sslCertificate": true
+        },
+        "parameters": [
+          {
+            "id": "oN1mfGZesXBScAOP-9HH9",
+            "key": "",
+            "value": "",
+            "enabled": false
+          }
+        ],
+        "authentication": {
+          "type": "basic",
+          "enabled": true,
+          "password": "9k8FEJ0ImcE0fF7SaHDdTGWgHgY0t98fFCEZdn6OeZgdnaoe1OAwE7QxhZDFhBoq",
+          "username": "wNiW8G9429qFI5UhrYi1gfmP0GQ9Am3V"
+        }
+      },
+      "type": "HTTP",
+      "position": [
+        -136,
+        703
+      ]
+    },
+    {
+      "id": "DTSyvGEUXNSrtSfLaARlp",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        -543,
+        137
+      ]
+    },
+    {
+      "id": "NOuTe3Yx_IEl8A97Ws0QE",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "D1QdQy2BM0o3SNHe5W2lm",
+            "text": "El horario de atención de nuestros asesores es de 8am a 5pm, tan pronto tengamos un asesor disponible nos comunicaremos contigo. Si deseas hacer uso de un servicio o te encuentras en una emergencia, comunícate con nosotros al número 1700247000 o al 0958972400",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2413,
+        610
+      ]
+    },
+    {
+      "id": "r4fckeX7KTJPK8qijJ1zX",
+      "title": "API",
+      "configuration": {
+        "url": "https://api.jelou.ai/v1/bots/{{$user.botId}}/users/{{$user.id}}/storedParams/legacy",
+        "body": {
+          "type": "application/json",
+          "content": "{\n\"asist_curso_expediente\": \"{{$memory.id_expediente}}\",\n\"asist_curso_id\" : \"{{$memory.id_asistencia}}\",\n\"asist_curso_servicio\" : \"{{$memory.service}}\",\n\"asist_curso_cedula\" : \"{{$memory.cveafiliado}}\"\n}",
+          "enabled": true
+        },
+        "method": "POST",
+        "output": "sidebarCabina",
+        "headers": [
+          {
+            "id": "UvtxjInd1fAs9GNR28fvG",
+            "key": "content-type",
+            "value": "application/json",
+            "enabled": true
+          },
+          {
+            "id": "hIOXeJFc8YonnmzLfxfH_",
+            "key": "",
+            "type": "text",
+            "value": "",
+            "enabled": false
+          }
+        ],
+        "settings": {
+          "retries": 0,
+          "timeout": 30000,
+          "proxyOptions": {
+            "ip": "185.228.195.219",
+            "auth": {
+              "password": null,
+              "username": null
+            },
+            "host": null,
+            "port": null,
+            "enabled": false,
+            "protocol": "https"
+          },
+          "retryOptions": {
+            "enabled": false,
+            "retries": 0,
+            "retryDelay": "no_delay",
+            "milliseconds": 1000,
+            "retryCondition": "is_network_or_idempotent_request_error",
+            "shouldResetTimeout": false
+          },
+          "sslCertificate": true
+        },
+        "parameters": [
+          {
+            "id": "vEgU9zzDCW4QuSF3T9uT2",
+            "key": "shouldSkipUpdate",
+            "value": "false",
+            "enabled": true
+          },
+          {
+            "id": "-XSirePQUym9_fEVAicII",
+            "key": "",
+            "type": "text",
+            "value": "",
+            "enabled": false
+          }
+        ],
+        "authentication": {
+          "type": "basic",
+          "enabled": true,
+          "password": "9k8FEJ0ImcE0fF7SaHDdTGWgHgY0t98fFCEZdn6OeZgdnaoe1OAwE7QxhZDFhBoq",
+          "username": "wNiW8G9429qFI5UhrYi1gfmP0GQ9Am3V"
+        }
+      },
+      "type": "HTTP",
+      "position": [
+        406,
+        759
+      ]
+    },
+    {
+      "id": "RT55FW7ZM1mJm7vuzgeTM",
+      "title": "Conectar asesor",
+      "configuration": {
+        "teamId": 603,
+        "priority": 0,
+        "assignment": {
+          "by": "team",
+          "type": "direct"
+        }
+      },
+      "type": "CONNECT",
+      "position": [
+        1724,
+        100
+      ]
+    },
+    {
+      "id": "zZdigB6lP3IzrEnA4UN0k",
+      "title": "API",
+      "configuration": {
+        "url": "https://api.jelou.ai/v1/bots/{{$user.botId}}/users/{{$user.id}}/cache",
+        "body": {
+          "type": "application/json",
+          "content": "{\n\"params\": {\n\"asist_curso_expediente\": \"{{$memory.id_expediente}}\",\n\"asist_curso_id\" : \"{{$memory.id_asistencia}}\",\n\"asist_curso_servicio\" : \"{{$memory.service}}\",\n\"asist_curso_cedula\" : \"{{$memory.cveafiliado}}\"\n    }\n}",
+          "enabled": true
+        },
+        "method": "POST",
+        "output": "sidebarCabina",
+        "headers": [
+          {
+            "id": "UvtxjInd1fAs9GNR28fvG",
+            "key": "content-type",
+            "value": "application/json",
+            "enabled": true
+          },
+          {
+            "id": "hIOXeJFc8YonnmzLfxfH_",
+            "key": "",
+            "type": "text",
+            "value": "",
+            "enabled": false
+          }
+        ],
+        "settings": {
+          "retries": 0,
+          "timeout": 30000,
+          "proxyOptions": {
+            "ip": "185.228.195.219",
+            "auth": {
+              "password": null,
+              "username": null
+            },
+            "host": null,
+            "port": null,
+            "enabled": false,
+            "protocol": "https"
+          },
+          "retryOptions": {
+            "enabled": false,
+            "retries": 0,
+            "retryDelay": "no_delay",
+            "milliseconds": 1000,
+            "retryCondition": "is_network_or_idempotent_request_error",
+            "shouldResetTimeout": false
+          },
+          "sslCertificate": true
+        },
+        "parameters": [
+          {
+            "id": "oe_GI90IaJVTmdLjJ6AJQ",
+            "key": "",
+            "value": "",
+            "enabled": false
+          }
+        ],
+        "authentication": {
+          "type": "basic",
+          "enabled": true,
+          "password": "9k8FEJ0ImcE0fF7SaHDdTGWgHgY0t98fFCEZdn6OeZgdnaoe1OAwE7QxhZDFhBoq",
+          "username": "wNiW8G9429qFI5UhrYi1gfmP0GQ9Am3V"
+        }
+      },
+      "type": "HTTP",
+      "position": [
+        702,
+        346
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "0EE1l7MlHg1BVjUCUKssN",
+      "sourceId": "RT55FW7ZM1mJm7vuzgeTM",
+      "targetId": "NOuTe3Yx_IEl8A97Ws0QE",
+      "branch": "output:OPERATORS_NOT_IN_SCHEDULER:failed"
+    },
+    {
+      "id": "3rumDfFnDB816yzfU2Oag",
+      "sourceId": "RT55FW7ZM1mJm7vuzgeTM",
+      "targetId": "7TZgMDjk40TT3b5dWoKRl",
+      "branch": "output:OPERATOR_NOT_FOUND:failed"
+    },
+    {
+      "id": "8QYVQwTOpcHOnIHDVvN0Q",
+      "sourceId": "RT55FW7ZM1mJm7vuzgeTM",
+      "targetId": "5XT_oADedpE14jTZYjv2U",
+      "branch": "output:UNKNOWN_ERROR:failed"
+    },
+    {
+      "id": "aC1-P5AIkSElZScZS7bt9",
+      "sourceId": "_oCSiW6Wry7FNQ5UwzFLf",
+      "targetId": "zZdigB6lP3IzrEnA4UN0k",
+      "branch": "default"
+    },
+    {
+      "id": "h1dLA-eRwUz01mVQNRiXf",
+      "sourceId": "zZdigB6lP3IzrEnA4UN0k",
+      "targetId": "RT55FW7ZM1mJm7vuzgeTM",
+      "branch": "success"
+    },
+    {
+      "id": "hdl2I6e6ZpdJcSuXQlY98",
+      "sourceId": "DTSyvGEUXNSrtSfLaARlp",
+      "targetId": "_oCSiW6Wry7FNQ5UwzFLf",
+      "branch": "default"
+    },
+    {
+      "id": "sC7WPSjrYUC8tCMXMEKea",
+      "sourceId": "zZdigB6lP3IzrEnA4UN0k",
+      "targetId": "5XT_oADedpE14jTZYjv2U",
+      "branch": "failed"
+    }
+  ]
+}

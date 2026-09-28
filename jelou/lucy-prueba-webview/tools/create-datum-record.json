@@ -1,0 +1,238 @@
+{
+  "toolId": 1942,
+  "workflowId": 6809,
+  "toolName": "Create Datum Record",
+  "toolDescription": "Guardar registro en Datum y retornar el ID",
+  "triggerType": "DEFAULT",
+  "ownership": "OWNED",
+  "inputs": [
+    {
+      "id": "642KUwZO7wLSQGSr6m9h0",
+      "name": "data",
+      "displayName": "Datos",
+      "description": "Datos en formato JSON con su par clave - valor, considerando que la clave sea el mismo nombre de la columna a insertar.",
+      "type": "STRING",
+      "required": true,
+      "defaultValue": null,
+      "configuration": {},
+      "position": 0
+    },
+    {
+      "id": "WRpcxq4PmpgUaFiHpHc_4",
+      "name": "table_id",
+      "displayName": "Id Tabla",
+      "description": "Identificador de la tabla donde se desea guardar el registro",
+      "type": "STRING",
+      "required": true,
+      "defaultValue": null,
+      "configuration": {},
+      "position": 0
+    }
+  ],
+  "outputs": [
+    {
+      "id": "EvpFQcH4X7RdlrZ593Ip1",
+      "name": "CODE_ERROR",
+      "displayName": "Error CODE",
+      "description": "CODE_ERROR",
+      "type": "FAILED",
+      "required": true,
+      "schema": {
+        "CODE_ERROR": "CODE_ERROR"
+      },
+      "position": 0
+    },
+    {
+      "id": "QjQM5cRDsMJy5vOfDW6Bc",
+      "name": "HTTP_ERROR",
+      "displayName": "Error HTTP",
+      "description": "HTTP_ERROR",
+      "type": "FAILED",
+      "required": true,
+      "schema": {
+        "HTTP_ERROR": "HTTP_ERROR"
+      },
+      "position": 0
+    },
+    {
+      "id": "4lMXlfATy7tb-cJ4VvavW",
+      "name": "record_id",
+      "displayName": "Record Id",
+      "description": "Retorna el id del registro",
+      "type": "SUCCESS",
+      "required": true,
+      "schema": {
+        "record_id": "record_id"
+      },
+      "position": 0
+    }
+  ],
+  "nodes": [
+    {
+      "id": "0rilxBtfVHpZD_mZ4TkVR",
+      "title": "Webhook",
+      "type": "WEBHOOK",
+      "position": [
+        819,
+        859
+      ]
+    },
+    {
+      "id": "0shSBKkXr5N976oHzr6lJ",
+      "title": "API",
+      "configuration": {
+        "url": "https://api.jelou.ai/v2/databases/{{$input.table_id}}/rows",
+        "body": {
+          "type": "application/json",
+          "content": "{{$input.data}}",
+          "enabled": true
+        },
+        "method": "POST",
+        "output": "saveRecord",
+        "headers": [
+          {
+            "id": "Content-type",
+            "key": "Content-type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "settings": {
+          "retries": 0,
+          "timeout": 30000,
+          "proxyOptions": {
+            "ip": "185.228.195.219",
+            "auth": {
+              "password": null,
+              "username": null
+            },
+            "host": null,
+            "port": null,
+            "enabled": false,
+            "protocol": "https"
+          },
+          "retryOptions": {
+            "enabled": false,
+            "retries": 0,
+            "retryDelay": "no_delay",
+            "milliseconds": 1000,
+            "retryCondition": "is_network_or_idempotent_request_error",
+            "shouldResetTimeout": false
+          },
+          "sslCertificate": true
+        },
+        "parameters": [
+          {
+            "id": "0a76f389-d929-47dc-b578-b579bbcb00da",
+            "key": null,
+            "value": null,
+            "enabled": true
+          }
+        ],
+        "authentication": {
+          "type": "basic",
+          "enabled": true,
+          "password": "9k8FEJ0ImcE0fF7SaHDdTGWgHgY0t98fFCEZdn6OeZgdnaoe1OAwE7QxhZDFhBoq",
+          "username": "wNiW8G9429qFI5UhrYi1gfmP0GQ9Am3V"
+        }
+      },
+      "type": "HTTP",
+      "position": [
+        1269,
+        290
+      ]
+    },
+    {
+      "id": "7Z-Ollgl1BqWuoMTJj8gT",
+      "title": "End",
+      "configuration": {
+        "outputId": "QjQM5cRDsMJy5vOfDW6Bc"
+      },
+      "type": "END",
+      "position": [
+        1755,
+        468
+      ]
+    },
+    {
+      "id": "9Pi9DNiZQeQ1ZvcsJ8Kwz",
+      "title": "End",
+      "configuration": {
+        "outputId": "EvpFQcH4X7RdlrZ593Ip1"
+      },
+      "type": "END",
+      "position": [
+        2173,
+        283
+      ]
+    },
+    {
+      "id": "i_gvkw8D_IuK6JOeXQ_Q5",
+      "title": "Code v2",
+      "configuration": {
+        "title": "Code v2",
+        "content": "const response = $context.getHttpResponse(\"saveRecord\")\nconst response2 = response.json()\nconst hhtpcode = $utils._.get(response2, \"status\", \"-1\")\nconst record_id = $utils._.get(response2, \"data._id\", '')\n\n$output.set('record_id', record_id)",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        1873,
+        123
+      ]
+    },
+    {
+      "id": "YW_M_lrRQekfXL7_n8d8f",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        817,
+        291
+      ]
+    },
+    {
+      "id": "ztne5MJm-eRKiO_wFQnsg",
+      "title": "End",
+      "configuration": {
+        "outputId": "4lMXlfATy7tb-cJ4VvavW"
+      },
+      "type": "END",
+      "position": [
+        2175,
+        26
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "B-9_fCReLKWRgSXYxJWNh",
+      "sourceId": "0shSBKkXr5N976oHzr6lJ",
+      "targetId": "i_gvkw8D_IuK6JOeXQ_Q5",
+      "branch": "success"
+    },
+    {
+      "id": "d1CIdfrKrQSM1yjFGst5m",
+      "sourceId": "i_gvkw8D_IuK6JOeXQ_Q5",
+      "targetId": "ztne5MJm-eRKiO_wFQnsg",
+      "branch": "success"
+    },
+    {
+      "id": "kKWZP4hIDZbRJLEyMvEjG",
+      "sourceId": "YW_M_lrRQekfXL7_n8d8f",
+      "targetId": "0shSBKkXr5N976oHzr6lJ",
+      "branch": "default"
+    },
+    {
+      "id": "PZWNNg1EgFOHyTaU-N1t7",
+      "sourceId": "0shSBKkXr5N976oHzr6lJ",
+      "targetId": "7Z-Ollgl1BqWuoMTJj8gT",
+      "branch": "failed"
+    },
+    {
+      "id": "uMdGxqR03lV31ezeTioJv",
+      "sourceId": "i_gvkw8D_IuK6JOeXQ_Q5",
+      "targetId": "9Pi9DNiZQeQ1ZvcsJ8Kwz",
+      "branch": "failed"
+    }
+  ]
+}

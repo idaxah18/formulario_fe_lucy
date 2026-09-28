@@ -10,6 +10,7 @@ use App\Support\Integrations\IntegrationRegistry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
@@ -26,7 +27,7 @@ class GeaToolsController extends Controller
             'telefono' => 'nullable|string',
         ]);
 
-        $telefono = GeaPhone::normalizeRemitente(
+        $telefono = $this->requireTelefonoRemitente(
             $data['telefono'] ?? $request->query('telefono'),
         );
 
@@ -68,7 +69,7 @@ class GeaToolsController extends Controller
     public function notificarCabina(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'telefono' => 'nullable|string',
+            'telefono' => 'required|string',
             'cveafiliado' => 'required|string|size:10',
             'tipo_servicio' => 'required|string|max:32',
             'plan_asistencia' => 'required|string|max:64',
@@ -77,7 +78,7 @@ class GeaToolsController extends Controller
             'id_asistencia' => 'nullable|string',
         ]);
 
-        $telefono = GeaPhone::normalizeRemitente($data['telefono'] ?? null);
+        $telefono = $this->requireTelefonoRemitente($data['telefono']);
         $country = $this->countryPath();
 
         $body = [
@@ -211,7 +212,7 @@ class GeaToolsController extends Controller
             'telefono' => 'required|string',
         ]);
 
-        $telefono = GeaPhone::normalizeRemitente($data['telefono']);
+        $telefono = $this->requireTelefonoRemitente($data['telefono']);
 
         try {
             $raw = $this->omniax->request('post', '/v1/asistencias/reagendar', [
@@ -320,5 +321,16 @@ class GeaToolsController extends Controller
         }
 
         return [];
+    }
+
+    private function requireTelefonoRemitente(?string $telefono): string
+    {
+        try {
+            return GeaPhone::requireRemitente($telefono);
+        } catch (\InvalidArgumentException) {
+            throw ValidationException::withMessages([
+                'telefono' => ['Ingresa un celular válido de Ecuador (09xxxxxxxx).'],
+            ]);
+        }
     }
 }

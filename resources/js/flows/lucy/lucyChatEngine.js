@@ -3,11 +3,20 @@ import {
     applyLucyTelefonoToContext,
     getTelefonoFromQuery,
     isValidLucyTelefono,
+    readPersistedLucyTelefono,
     resolveLucyTelefono,
     shouldSkipTelefonoPrompt,
+    TELEFONO_EC_RE,
 } from '@/lib/lucyTelefono.js';
 
-import { bot, user } from './flowHelpers.js';
+import { bot, user, LUCY_HOME_NODE, LUCY_LEGACY_ROOT_NODES } from './flowHelpers.js';
+import {
+    isGeaServiceTerminalNode,
+    resolveBackNodeId,
+    resolveNavigateBackTarget,
+    shouldShowBackButton,
+} from './navBack.js';
+import { isOmniaxScheduleFlow } from './omniax/omniaxScheduleBack.js';
 
 import {
     applyComQuickMeta,
@@ -63,17 +72,39 @@ const CEDULA_RE = /^\d{10}$/;
 
 
 export function createLucyChatState(entryNode = LUCY_ENTRY_NODE) {
+    const context = {};
+    const fromQuery = getTelefonoFromQuery();
+    if (fromQuery) {
+        applyLucyTelefonoToContext(context, fromQuery);
+    } else {
+        const persisted = readPersistedLucyTelefono();
+        if (persisted && TELEFONO_EC_RE.test(persisted)) {
+            context.telefono = persisted;
+        }
+    }
 
     return {
-
         nodeId: entryNode,
-
-        context: {},
-
+        context,
         pendingLocationNext: null,
-
+        navStack: [],
     };
+}
 
+export function canNavigateBack(state) {
+    return shouldShowBackButton(state);
+}
+
+function pushNavHistory(state, fromNodeId) {
+    if (!fromNodeId) return;
+    const stack = state.navStack ? [...state.navStack] : [];
+    if (stack[stack.length - 1] === fromNodeId) return;
+    stack.push(fromNodeId);
+    state.navStack = stack;
+}
+
+function clearNavStack(state) {
+    state.navStack = [];
 }
 
 
@@ -137,6 +168,8 @@ export function getQuickActions(state) {
             type: a.type,
             next: a.next,
             meta: a.meta,
+            icon: a.icon,
+            menuTone: a.menuTone,
         }));
     }
 
@@ -148,6 +181,8 @@ export function getQuickActions(state) {
             type: a.type,
             next: a.next,
             meta: a.meta,
+            icon: a.icon,
+            menuTone: a.menuTone,
         }));
     }
 
@@ -211,13 +246,19 @@ export function getQuickActions(state) {
 
         meta: a.meta,
 
+        icon: a.icon,
+
+        menuTone: a.menuTone,
+
+        url: a.url,
+
     }));
 
 
 
     if (actions.length === 0 && !node.input) {
 
-        return [{ id: 'menu', label: 'Menú principal', next: 'menu_principal' }];
+        return [{ id: 'menu', label: 'Menú principal', next: LUCY_HOME_NODE }];
 
     }
 
@@ -227,7 +268,8 @@ export function getQuickActions(state) {
 
 
 
-function enterNode(state, nodeId, messages) {
+function enterNode(state, nodeId, messages, options = {}) {
+    const { recordHistory = true } = options;
 
     const node = getNode(nodeId);
 
@@ -235,10 +277,28 @@ function enterNode(state, nodeId, messages) {
 
         messages.push(bot('No encontramos ese paso del flujo. Volviendo al inicio.'));
 
-        state.nodeId = LUCY_ENTRY_NODE;
+        clearNavStack(state);
 
-        return enterNode(state, LUCY_ENTRY_NODE, messages);
+        return enterNode(state, LUCY_ENTRY_NODE, messages, { recordHistory: false });
 
+    }
+
+    if (LUCY_LEGACY_ROOT_NODES.includes(nodeId)) {
+        return enterNode(state, LUCY_HOME_NODE, messages, options);
+    }
+
+    if (nodeId === 'auth_telefono' && shouldSkipTelefonoPrompt()) {
+        const next = node.input?.next || 'auth_cedula';
+        return enterNode(state, next, messages, { recordHistory: false });
+    }
+
+    if (nodeId === 'auth_cedula' && !resolveLucyTelefono(state.context)) {
+        return enterNode(state, 'auth_telefono', messages, options);
+    }
+
+    const fromNodeId = state.nodeId;
+    if (recordHistory && fromNodeId && fromNodeId !== nodeId) {
+        pushNavHistory(state, fromNodeId);
     }
 
     state.nodeId = nodeId;
@@ -248,15 +308,6 @@ function enterNode(state, nodeId, messages) {
     const queryTel = getTelefonoFromQuery();
     if (queryTel) {
         applyLucyTelefonoToContext(state.context, queryTel);
-    }
-
-    if (nodeId === 'auth_telefono' && shouldSkipTelefonoPrompt()) {
-        const next = node.input?.next || 'auth_cedula';
-        return enterNode(state, next, messages);
-    }
-
-    if (nodeId === 'auth_cedula' && !resolveLucyTelefono(state.context)) {
-        return enterNode(state, 'auth_telefono', messages);
     }
 
     syncOmniaxKind(state, node);
@@ -292,11 +343,42 @@ function enterNode(state, nodeId, messages) {
 
     }
 
-    const omniaxEnter = getOmniaxEnterTask(state, node);
-    const geaEnter = getGeaEnterTask(state, node);
-    const asegEnter = getAsegEnterTask(state, node);
-    const comEnter = getComEnterTask(state, node);
-    const iaEnter = getIaEnterTask(state, node);
+    if (node.returnTo) {
+        return enterNode(state, node.returnTo, messages, { recordHistory: false });
+    }
+
+    const skipAsyncEnter = recordHistory === false;
+
+    let omniaxEnter = skipAsyncEnter ? null : getOmniaxEnterTask(state, node);
+    let geaEnter = skipAsyncEnter ? null : getGeaEnterTask(state, node);
+    const asegEnter = skipAsyncEnter ? null : getAsegEnterTask(state, node);
+    const comEnter = skipAsyncEnter ? null : getComEnterTask(state, node);
+    const iaEnter = skipAsyncEnter ? null : getIaEnterTask(state, node);
+
+    if (
+        !skipAsyncEnter
+        && !geaEnter
+        && node.gea?.refreshMenuEnter
+        && node.useGeaMenu
+        && !(getGeaMenuActions(state)?.length)
+        && state.context.gea?.asistenciasActivas?.length
+    ) {
+        geaEnter = node.gea.refreshMenuEnter;
+    }
+
+    if (
+        !skipAsyncEnter
+        && !omniaxEnter
+        && node.omx?.refreshMenuEnter
+        && node.useOmniaxMenu
+        && !(getOmniaxMenuActions(state)?.length)
+    ) {
+        omniaxEnter = node.omx.refreshMenuEnter;
+    }
+
+    if (nodeId === LUCY_HOME_NODE) {
+        clearNavStack(state);
+    }
 
     return { scroll: true, omniaxEnter, geaEnter, asegEnter, comEnter, iaEnter };
 
@@ -314,7 +396,8 @@ function handleGlobalCommand(text, state, messages) {
 
         if (state.context.omniax) state.context.omniax = {};
 
-        enterNode(state, 'menu_principal', messages);
+        clearNavStack(state);
+        enterNode(state, LUCY_HOME_NODE, messages, { recordHistory: false });
 
         return true;
 
@@ -346,7 +429,9 @@ export function reduceLucyChat(state, messages, event) {
 
     if (event.type === 'init') {
 
-        const enter = enterNode(nextState, nextState.nodeId || LUCY_ENTRY_NODE, newMessages);
+        const enter = enterNode(nextState, nextState.nodeId || LUCY_ENTRY_NODE, newMessages, {
+            recordHistory: false,
+        });
 
         return {
 
@@ -360,7 +445,26 @@ export function reduceLucyChat(state, messages, event) {
 
     }
 
+    if (event.type === 'navigateBack') {
+        const prevNodeId = resolveNavigateBackTarget(nextState);
+        if (!prevNodeId) {
+            return { state: nextState, messages, scroll: false };
+        }
 
+        if (prevNodeId === LUCY_HOME_NODE || prevNodeId === 'menu_medico' || prevNodeId === 'menu_dental') {
+            clearNavStack(nextState);
+        } else if (!isOmniaxScheduleFlow(nextState.nodeId)) {
+            const { stack } = resolveBackNodeId(nextState.navStack || []);
+            nextState.navStack = stack;
+        }
+
+        const enter = enterNode(nextState, prevNodeId, newMessages, { recordHistory: false });
+        return {
+            state: nextState,
+            messages: [...messages, ...newMessages],
+            ...packEnter(enter),
+        };
+    }
 
     if (
         event.type === 'omniaxResult'
@@ -379,6 +483,8 @@ export function reduceLucyChat(state, messages, event) {
         if (result.messages?.length) newMessages.push(...result.messages);
 
         if (result.patchContext) Object.assign(nextState.context, result.patchContext);
+
+        if (result.clearNavStack) clearNavStack(nextState);
 
         if (result.rerunTask) {
 
@@ -405,6 +511,9 @@ export function reduceLucyChat(state, messages, event) {
         }
 
         if (!result.stayOnNode && result.nextNodeId) {
+            if (isGea && isGeaServiceTerminalNode(result.nextNodeId)) {
+                clearNavStack(nextState);
+            }
 
             const enter = enterNode(nextState, result.nextNodeId, newMessages);
 
@@ -491,7 +600,8 @@ export function reduceLucyChat(state, messages, event) {
     if (event.type === 'geaError') {
         const detail = String(event.message || 'No pudimos completar la operación GEA.').trim();
         newMessages.push(bot(`⚠️ ${detail}`));
-        const enter = enterNode(nextState, 'menu_solucion_24_7', newMessages);
+        clearNavStack(nextState);
+        const enter = enterNode(nextState, LUCY_HOME_NODE, newMessages, { recordHistory: false });
         return {
             state: nextState,
             messages: [...messages, ...newMessages],
@@ -513,7 +623,8 @@ export function reduceLucyChat(state, messages, event) {
     if (event.type === 'comError') {
         const detail = String(event.message || 'No pudimos completar la operación comercial.').trim();
         newMessages.push(bot(`⚠️ ${detail}`));
-        const enter = enterNode(nextState, 'menu_principal', newMessages);
+        clearNavStack(nextState);
+        const enter = enterNode(nextState, LUCY_HOME_NODE, newMessages, { recordHistory: false });
         return {
             state: nextState,
             messages: [...messages, ...newMessages],
@@ -612,6 +723,19 @@ export function reduceLucyChat(state, messages, event) {
             };
         }
 
+        if (action.type === 'link' && action.url) {
+            const url = String(action.url);
+            newMessages.push(user(action.label || 'Abrir enlace'));
+            if (typeof window !== 'undefined') {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+            return {
+                state: nextState,
+                messages: [...messages, ...newMessages],
+                scroll: false,
+            };
+        }
+
         if (action.type === 'location' || action.id === 'share_location') {
 
             newMessages.push(user(action.label || '📍 Ubicación'));
@@ -636,7 +760,14 @@ export function reduceLucyChat(state, messages, event) {
 
         newMessages.push(user(action.label));
 
-        const enter = enterNode(nextState, action.next, newMessages);
+        const goingHome = action.next === LUCY_HOME_NODE;
+        if (goingHome) {
+            clearNavStack(nextState);
+        }
+
+        const enter = enterNode(nextState, action.next, newMessages, {
+            recordHistory: !goingHome,
+        });
 
         return {
 
@@ -881,12 +1012,12 @@ export function reduceLucyChat(state, messages, event) {
 
         let nextId = node.input.next;
 
-        if (nextState.context.skipToAseguradora && nextId === 'truncal_en_curso') {
-
+        if (
+            nextState.context.skipToAseguradora
+            && (nextId === 'truncal_en_curso' || nextId === 'post_auth_gate_load')
+        ) {
             nextState.context.skipToAseguradora = false;
-
             nextId = 'menu_aseguradora';
-
         }
 
 

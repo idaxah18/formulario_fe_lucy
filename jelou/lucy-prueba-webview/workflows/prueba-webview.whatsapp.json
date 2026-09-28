@@ -1,0 +1,187 @@
+{
+  "workflowId": 70197,
+  "workflowName": "prueba_webview",
+  "workflowDescription": "Skill de prueba: abre la webview Laravel Lucy Ecuador cuando el usuario escribe prueba_webview o pide probar el chat web embebido.",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "5omq9aQNoyzgJo9vN7AGi",
+      "title": "Abrir webview Lucy",
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1080,
+        320
+      ],
+      "configuration": {
+        "messages": [
+          {
+            "id": "tmp_wv_open_01",
+            "type": "webview",
+            "text": "Chat Lucy Ecuador (prueba)",
+            "buttonText": "Abrir chat web",
+            "url": "{{$memory.lucy_webview_base_url}}/?embedded=1&telefono={{$memory.telefono_webview}}",
+            "settings": {
+              "isBlockingEnabled": true,
+              "responseVariable": "lucyWebviewClose",
+              "expirationTime": 900,
+              "pendingMessage": "Completa el flujo en la webview. Al cerrar con *Volver a WhatsApp*, continuamos aquí."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "96zLkwenwzOj3SP6uS8SY",
+      "title": "URL pública webview",
+      "type": "MEMORY",
+      "position": [
+        360,
+        320
+      ],
+      "configuration": {
+        "variables": {
+          "lucy_webview_base_url": "https://TU-TUNEL.ngrok-free.app"
+        }
+      }
+    },
+    {
+      "id": "AjuM9hjKvlSzbNe_2264Y",
+      "title": "Error webview",
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1320,
+        440
+      ],
+      "configuration": {
+        "messages": [
+          {
+            "id": "tmp_err_txt_01",
+            "type": "text",
+            "text": "No pudimos completar la webview. Revisa que la URL pública (túnel ngrok/Cloudflare) esté activa y vuelve a intentar."
+          }
+        ]
+      }
+    },
+    {
+      "id": "CqdVp2_DGT5Gzg2gnnPeL",
+      "title": "Cierre OK",
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1320,
+        200
+      ],
+      "configuration": {
+        "messages": [
+          {
+            "id": "tmp_exit_ok_01",
+            "type": "text",
+            "text": "Gracias. Cerraste la webview de prueba. Puedes escribir *Menú principal* para volver al bot."
+          }
+        ]
+      }
+    },
+    {
+      "id": "DTBurIelNTBP532dtur_1",
+      "title": "Tiempo agotado",
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1320,
+        320
+      ],
+      "configuration": {
+        "messages": [
+          {
+            "id": "tmp_exp_txt_01",
+            "type": "text",
+            "text": "La webview expiró por tiempo. Escribe *prueba_webview* para intentar de nuevo."
+          }
+        ]
+      }
+    },
+    {
+      "id": "Efducbwke119MT0VVdMiv",
+      "title": "Intro",
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        840,
+        320
+      ],
+      "configuration": {
+        "messages": [
+          {
+            "id": "tmp_intro_txt_01",
+            "type": "text",
+            "text": "Vamos a abrir la *webview de prueba* de Lucy (Laravel). Si no tienes celular en la URL, ingrésalo en el primer paso del chat."
+          }
+        ]
+      }
+    },
+    {
+      "id": "I9K-_jIOFJ2lgGVwMZMxQ",
+      "title": "Teléfono remitente",
+      "type": "CODE",
+      "position": [
+        600,
+        320
+      ],
+      "configuration": {
+        "title": "Normalizar teléfono",
+        "content": "const raw = String($user.get('id') || '');\nconst digits = raw.replace(/\\D+/g, '');\nlet local = '';\nif (digits.startsWith('593') && digits.length >= 12) {\n  local = '0' + digits.slice(3, 13);\n} else if (digits.length === 10 && digits.startsWith('09')) {\n  local = digits;\n} else if (digits.length === 9) {\n  local = '0' + digits;\n}\n$memory.set('telefono_webview', local, 86400);",
+        "memoryVersion": "v2"
+      }
+    },
+    {
+      "id": "MIi20zvJMBAxComZIK_9b",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        120,
+        320
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "9OB_5TRShYAl-7ZSTRndK",
+      "sourceId": "96zLkwenwzOj3SP6uS8SY",
+      "targetId": "I9K-_jIOFJ2lgGVwMZMxQ",
+      "branch": "default"
+    },
+    {
+      "id": "DWVRITIu3slwB-a_5T4RI",
+      "sourceId": "I9K-_jIOFJ2lgGVwMZMxQ",
+      "targetId": "Efducbwke119MT0VVdMiv",
+      "branch": "success"
+    },
+    {
+      "id": "eu-8a1fnfQTU6JPq2QXj6",
+      "sourceId": "5omq9aQNoyzgJo9vN7AGi",
+      "targetId": "CqdVp2_DGT5Gzg2gnnPeL",
+      "branch": "exit"
+    },
+    {
+      "id": "LbuJQ2BT06RFtP3M7MrGF",
+      "sourceId": "Efducbwke119MT0VVdMiv",
+      "targetId": "5omq9aQNoyzgJo9vN7AGi",
+      "branch": "default"
+    },
+    {
+      "id": "Uz2B2H2BH1tscQtsorzqm",
+      "sourceId": "MIi20zvJMBAxComZIK_9b",
+      "targetId": "96zLkwenwzOj3SP6uS8SY",
+      "branch": "default"
+    },
+    {
+      "id": "W15PGi_pImDptvUeQBts6",
+      "sourceId": "5omq9aQNoyzgJo9vN7AGi",
+      "targetId": "DTBurIelNTBP532dtur_1",
+      "branch": "expire"
+    },
+    {
+      "id": "X2Hb8S5_i_zh5HtQSVUC4",
+      "sourceId": "5omq9aQNoyzgJo9vN7AGi",
+      "targetId": "AjuM9hjKvlSzbNe_2264Y",
+      "branch": "error"
+    }
+  ]
+}

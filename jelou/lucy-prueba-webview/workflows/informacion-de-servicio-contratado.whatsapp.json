@@ -1,0 +1,252 @@
+{
+  "workflowId": 9986,
+  "workflowName": "Información de servicio contratado",
+  "workflowDescription": "Información de servicio contratado",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "_hj2Syz5IA038IJrklCUG",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        2456,
+        631
+      ]
+    },
+    {
+      "id": "h6UKrrM3qMbYbP0YXRTVX",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        818,
+        338
+      ]
+    },
+    {
+      "id": "la5Wx0xA5YL1s6TGIF_mO",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "YvySBUioljigLkzudjw7N",
+            "text": "La cédula ingresada no es correcta. Por favor, intenta nuevamente.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1682,
+        771
+      ]
+    },
+    {
+      "id": "OD0-5-RmdlpgLlVZbWqT8",
+      "title": "Pregunta",
+      "configuration": {
+        "prompt": "Por favor envíame tu número de cédula.",
+        "variable": "identificación"
+      },
+      "type": "INPUT",
+      "position": [
+        1267,
+        267
+      ]
+    },
+    {
+      "id": "sxNiKyy1O-30JNOJ60_72",
+      "title": "Lista",
+      "configuration": {
+        "messages": [
+          {
+            "id": "iyfJg2-h6IdbEZsNTntnk",
+            "text": "¡OK! ¿De qué servicio deseas información?",
+            "type": "list",
+            "title": "",
+            "button": "",
+            "options": [
+              {
+                "id": "iyfJg2-h6IdbEZsNTntnk",
+                "url": "",
+                "type": "postback",
+                "title": "🏡 Hogar",
+                "payload": {
+                  "type": "edge",
+                  "memory": {
+                    "flowName": "Información de servicio contratado"
+                  },
+                  "skillId": "5310",
+                  "targetId": "_hj2Syz5IA038IJrklCUG"
+                },
+                "description": ""
+              },
+              {
+                "id": "de090a10-6a5c-46d1-9bed-6e54fb24d37c",
+                "url": "",
+                "type": "postback",
+                "title": "🚙 Vial",
+                "payload": {
+                  "type": "edge",
+                  "memory": {
+                    "flowName": "Información de servicio contratado - Vial"
+                  },
+                  "skillId": "5310",
+                  "targetId": "_hj2Syz5IA038IJrklCUG"
+                },
+                "description": ""
+              },
+              {
+                "id": "7cb6df8c-6103-44fa-a0f5-de0f35f7c9c1",
+                "url": "",
+                "type": "postback",
+                "title": "👨🏻‍⚕️ Médico",
+                "payload": {
+                  "type": "edge",
+                  "memory": {
+                    "flowName": "Información de servicio contratado - Médico"
+                  },
+                  "skillId": "5310",
+                  "targetId": "_hj2Syz5IA038IJrklCUG"
+                },
+                "description": ""
+              },
+              {
+                "id": "1f82c1ff-3924-4acb-a0b7-06a527ea8af1",
+                "url": "",
+                "type": "postback",
+                "title": "🦷 Dental",
+                "payload": {
+                  "type": "edge",
+                  "memory": {
+                    "flowName": "Información de servicio contratado - Dental"
+                  },
+                  "skillId": "5310",
+                  "targetId": "_hj2Syz5IA038IJrklCUG"
+                },
+                "description": ""
+              },
+              {
+                "id": "94b1292d-89ee-4c8a-a2c5-745ba0a8e0ce",
+                "url": "",
+                "type": "postback",
+                "title": "📄 Otras asistencias",
+                "payload": {
+                  "type": "edge",
+                  "memory": {
+                    "flowName": "Información de servicio contratado - Otras asistencias"
+                  },
+                  "skillId": "5310",
+                  "targetId": "_hj2Syz5IA038IJrklCUG"
+                },
+                "description": ""
+              }
+            ],
+            "settings": {
+              "isBlockingEnabled": false
+            }
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2097,
+        305
+      ]
+    },
+    {
+      "id": "VV1RgmHLdoVR_o8lhWik5",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "Au7GQbj3x1nLp-NzqvJsz",
+            "name": "Es cedula",
+            "terms": [
+              {
+                "id": "51mPEjiTTwEL7_eduTeWQ",
+                "type": "legal_id",
+                "value1": "{{$memory.identificación}}",
+                "value2": "legal_id",
+                "operator": "is",
+                "inputDisplayName": {
+                  "value1": "identificación"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        1660,
+        307
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "0s_orKxQBhmDGMX4PePtM",
+      "sourceId": "sxNiKyy1O-30JNOJ60_72",
+      "targetId": "_hj2Syz5IA038IJrklCUG",
+      "branch": "option:94b1292d-89ee-4c8a-a2c5-745ba0a8e0ce"
+    },
+    {
+      "id": "0UzMYptItCef7jT-7772Z",
+      "sourceId": "VV1RgmHLdoVR_o8lhWik5",
+      "targetId": "la5Wx0xA5YL1s6TGIF_mO",
+      "branch": "else"
+    },
+    {
+      "id": "aByE5kvb1YGEcERRia00m",
+      "sourceId": "OD0-5-RmdlpgLlVZbWqT8",
+      "targetId": "VV1RgmHLdoVR_o8lhWik5",
+      "branch": "success"
+    },
+    {
+      "id": "b2VO43l-nnbn_vAtqgbVM",
+      "sourceId": "sxNiKyy1O-30JNOJ60_72",
+      "targetId": "_hj2Syz5IA038IJrklCUG",
+      "branch": "option:1f82c1ff-3924-4acb-a0b7-06a527ea8af1"
+    },
+    {
+      "id": "f4Edb78m6F0BJN42sC63P",
+      "sourceId": "sxNiKyy1O-30JNOJ60_72",
+      "targetId": "_hj2Syz5IA038IJrklCUG",
+      "branch": "option:iyfJg2-h6IdbEZsNTntnk"
+    },
+    {
+      "id": "fu9sZTh2xX5WlLpw5PKBY",
+      "sourceId": "VV1RgmHLdoVR_o8lhWik5",
+      "targetId": "sxNiKyy1O-30JNOJ60_72",
+      "branch": "condition:Au7GQbj3x1nLp-NzqvJsz"
+    },
+    {
+      "id": "gPYfbTjQhQGPJ7oQMxr7q",
+      "sourceId": "h6UKrrM3qMbYbP0YXRTVX",
+      "targetId": "OD0-5-RmdlpgLlVZbWqT8",
+      "branch": "default"
+    },
+    {
+      "id": "p6XpTKUx4ihehNfFZeo7K",
+      "sourceId": "la5Wx0xA5YL1s6TGIF_mO",
+      "targetId": "OD0-5-RmdlpgLlVZbWqT8",
+      "branch": "default"
+    },
+    {
+      "id": "pOf2XdDJuqvG13WARGHMq",
+      "sourceId": "sxNiKyy1O-30JNOJ60_72",
+      "targetId": "_hj2Syz5IA038IJrklCUG",
+      "branch": "option:de090a10-6a5c-46d1-9bed-6e54fb24d37c"
+    },
+    {
+      "id": "YJuBqPuF5vCsgaO_mf292",
+      "sourceId": "sxNiKyy1O-30JNOJ60_72",
+      "targetId": "_hj2Syz5IA038IJrklCUG",
+      "branch": "option:7cb6df8c-6103-44fa-a0f5-de0f35f7c9c1"
+    }
+  ]
+}

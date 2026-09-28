@@ -3,9 +3,17 @@
         class="chat-form-panel"
         @submit.prevent="submit"
     >
-        <h2 class="chat-form-panel__headline">
-            {{ config.headline }}
-        </h2>
+        <div class="chat-panel-title-row">
+            <h2 class="chat-form-panel__headline">
+                {{ config.headline }}
+            </h2>
+            <ChatBackButton
+                v-if="showBack"
+                variant="corner"
+                :disabled="disabled"
+                @click="$emit('back')"
+            />
+        </div>
         <p
             v-if="config.hint"
             class="chat-form-panel__hint"
@@ -40,12 +48,15 @@
 <script setup>
 import { ref, watch } from 'vue';
 
+import ChatBackButton from '@/components/chat/ChatBackButton.vue';
+
 const props = defineProps({
     config: { type: Object, required: true },
     disabled: { type: Boolean, default: false },
+    showBack: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['submit']);
+const emit = defineEmits(['submit', 'back']);
 
 const draft = ref('');
 

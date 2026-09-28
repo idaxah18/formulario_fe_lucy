@@ -1,3 +1,4 @@
+import { advisorHandoffSay, isAdvisorHandoffDoneNode } from './advisorHandoffCopy.js';
 import { LUCY_FLOW_NODES } from './lucyFlowGraph.js';
 import { getComDockCopy } from './comercial/comercialEngine.js';
 import { getAsegDockCopy } from './aseguradora/aseguradoraEngine.js';
@@ -32,6 +33,21 @@ export function getDockPrompt(state) {
     const comDock = getComDockCopy(state);
     if (node?.useComMenu && comDock?.headline) {
         return { headline: comDock.headline, hint: comDock.hint || '' };
+    }
+
+    if (isAdvisorHandoffDoneNode(state.nodeId)) {
+        let variant = 'comercial';
+        if (state.nodeId === 'reportar_problema_done') variant = 'problema';
+        else if (state.nodeId === 'asistencia_activa_asesor_done') variant = 'asistencia_en_curso';
+        else if (state.nodeId === 'otras_soluciones_gea_done') variant = 'otras_soluciones';
+        else if (state.nodeId === 'gea_crear_exit') variant = 'asistencia_en_curso';
+        else if (/_asesor_done$/.test(state.nodeId)) variant = 'cita_agenda';
+
+        const simulated = Boolean(
+            state.context?.gea?.advisorHandoffSimulated || state.context?.com?.advisorHandoffSimulated,
+        );
+        const lines = advisorHandoffSay(variant, { simulated });
+        return { headline: lines[0] || '', hint: lines.slice(1).join('\n') };
     }
 
     if (!node?.say?.length) return null;

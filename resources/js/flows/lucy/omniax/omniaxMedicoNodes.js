@@ -2,6 +2,8 @@
  * Subgrafo Omniax — agendar / reagendar cita médica.
  */
 
+import { advisorHandoffSay } from '../advisorHandoffCopy.js';
+
 export const OMX_MED_FECHA_HORA_NODE = 'omx_med_fecha_hora';
 export const OMX_MED_BENEF_FORM_NODE = 'omx_med_benef_form';
 
@@ -160,10 +162,26 @@ export function buildOmniaxMedicoNodes() {
         },
         omx_med_sin_asignacion: {
             jelou: 'Sin asignación establecimiento',
-            say: [
-                'Listo, en breve un asesor se comunicará contigo para darte detalles de tu servicio.',
+            skipSay: true,
+            useOmniaxMenu: true,
+        },
+        omx_med_asesor_load: {
+            jelou: 'Derivación asesor — cita médica',
+            skipSay: true,
+            com: {
+                enter: 'derivacion_asesor',
+                producto: 'Agendar cita médica',
+                notas: 'Omniax: no aplica asignación de establecimiento',
+                afterDerivacion: 'omx_med_asesor_done',
+            },
+        },
+        omx_med_asesor_done: {
+            jelou: 'Derivación asesor — cita médica',
+            say: advisorHandoffSay('cita_agenda'),
+            actions: [
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
+                { id: 'med', label: 'Menú médico', next: 'menu_medico' },
             ],
-            actions: [{ id: 'menu', label: 'Menú principal', next: 'menu_principal' }],
         },
         omx_med_verificar_disponibilidad_load: {
             jelou: 'Verificar disponibilidad',
@@ -191,7 +209,7 @@ export function buildOmniaxMedicoNodes() {
             jelou: 'Cita confirmada',
             skipSay: true,
             actions: [
-                { id: 'menu', label: 'Menú principal', next: 'menu_principal' },
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
                 { id: 'med', label: 'Menú médico', next: 'menu_medico' },
             ],
         },
@@ -200,7 +218,7 @@ export function buildOmniaxMedicoNodes() {
             skipSay: true,
             actions: [
                 { id: 'retry', label: 'Reintentar', next: 'omx_med_start' },
-                { id: 'menu', label: 'Menú principal', next: 'menu_principal' },
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
             ],
         },
         omx_med_sin_fechas: {
@@ -208,7 +226,7 @@ export function buildOmniaxMedicoNodes() {
             say: ['Lo sentimos. No existen fechas disponibles. Por favor, escoge otro establecimiento.'],
             actions: [
                 { id: 'volver', label: 'Elegir otro establecimiento', next: 'omx_med_donde' },
-                { id: 'menu', label: 'Menú principal', next: 'menu_principal' },
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
             ],
         },
     };

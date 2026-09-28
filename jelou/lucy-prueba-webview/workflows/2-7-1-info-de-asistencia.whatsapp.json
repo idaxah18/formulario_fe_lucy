@@ -1,0 +1,111 @@
+{
+  "workflowId": 7691,
+  "workflowName": "2.7.1 Info de asistencia",
+  "workflowDescription": "Info de asistencia",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "EHmtvsDLvilH_Ng0istqL",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        1688,
+        336
+      ]
+    },
+    {
+      "id": "munQWSdPY2js1cAUOpT4C",
+      "title": "Botones",
+      "configuration": {
+        "messages": [
+          {
+            "id": "7hjTx0U4xNev0DFOrgJjy",
+            "text": "¿Cuál de estas opciones se ajusta a tu necesidad?",
+            "type": "buttons",
+            "title": "",
+            "caption": "Elige una 👇",
+            "options": [
+              {
+                "id": "16acafc6-0d6e-4a74-abc9-818d4e91b651",
+                "url": "",
+                "type": "postback",
+                "title": "Servicio contratado",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4235",
+                  "targetId": "EHmtvsDLvilH_Ng0istqL"
+                },
+                "description": ""
+              },
+              {
+                "id": "c49d67f2-03d0-4dff-9702-f457ebb25326",
+                "url": "",
+                "type": "postback",
+                "title": "Solicitar Factura",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4235",
+                  "targetId": "OhRxviubh2YoO3vjn6D0r"
+                },
+                "description": ""
+              }
+            ],
+            "settings": {
+              "isBlockingEnabled": false,
+              "oneTimeUseButtons": false
+            }
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1314,
+        319
+      ]
+    },
+    {
+      "id": "OhRxviubh2YoO3vjn6D0r",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        1682,
+        545
+      ]
+    },
+    {
+      "id": "vP9MXTh5Z9Co6hG7aGloz",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        818,
+        338
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "c3Bj4w5ER0i1o6dJCPzX8",
+      "sourceId": "munQWSdPY2js1cAUOpT4C",
+      "targetId": "OhRxviubh2YoO3vjn6D0r",
+      "branch": "option:c49d67f2-03d0-4dff-9702-f457ebb25326"
+    },
+    {
+      "id": "kf14xGdXiqhG5T38ydg8s",
+      "sourceId": "vP9MXTh5Z9Co6hG7aGloz",
+      "targetId": "munQWSdPY2js1cAUOpT4C",
+      "branch": "default"
+    },
+    {
+      "id": "zCAMrgkasPoHlPzEG4zIZ",
+      "sourceId": "munQWSdPY2js1cAUOpT4C",
+      "targetId": "EHmtvsDLvilH_Ng0istqL",
+      "branch": "option:16acafc6-0d6e-4a74-abc9-818d4e91b651"
+    }
+  ]
+}

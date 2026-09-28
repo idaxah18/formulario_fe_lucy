@@ -5,6 +5,25 @@ return [
         'project_id' => env('JELOU_PROJECT_ID', '01j5661e5gaf6330435zh3bzjx'),
         'api_base_url' => env('JELOU_API_BASE_URL', 'https://api.jelou.ai'),
         'api_token' => env('JELOU_API_TOKEN'),
+        /**
+         * Datum v2: Bearer sk_ no autentica /v2/databases — usan HTTP Basic por cuenta Jelou.
+         * venta_asistencias (1435) ≠ credenciales del tool 1942 (ver WF Venta Asistencias).
+         */
+        'datum_auth_profiles' => [
+            'venta' => [
+                'user' => env('JELOU_DATUM_VENTA_BASIC_USER'),
+                'password' => env('JELOU_DATUM_VENTA_BASIC_PASSWORD'),
+            ],
+            'default' => [
+                'user' => env('JELOU_DATUM_BASIC_USER'),
+                'password' => env('JELOU_DATUM_BASIC_PASSWORD'),
+            ],
+        ],
+        'datum_table_auth' => [
+            'venta_asistencias' => 'venta',
+            'inmediata' => 'default',
+            'ia_router_terms' => 'default',
+        ],
         'datum_tables' => [
             'venta_asistencias' => env('JELOU_DATUM_TABLE_VENTA', '1435'),
             'inmediata' => env('JELOU_DATUM_TABLE_INMEDIATA', '2254'),

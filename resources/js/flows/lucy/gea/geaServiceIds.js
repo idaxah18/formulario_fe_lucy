@@ -17,8 +17,16 @@ const ID_BY_SERVICE_LABEL = {
     'Cerrajería de puertas': '299',
     'Cerrajería para apertura': '299',
     'Inspector in situ': '295',
+    /** WF `2.4 Vial` lista → MEMORY `Asistencia Legal telefónica` / skill **5231** (sin ubicación). Override: VITE_GEA_ID_ASISTENCIA_LEGAL_TELEFONICA */
+    'Asistencia Legal telefónica': '322',
+    /** WF `Otras soluciones 2` → skill **5231**. Override: VITE_GEA_ID_OTRAS_SOLUCIONES */
+    'Otras soluciones': '476',
     Ambulancia: '257',
+    /** WF `2.2 Médico` → Orientación Médica Telf. (skill 4220). Override: VITE_GEA_ID_ORIENTACION_MEDICA_TELEFONICA */
+    'Orientación médica telefónica': '302',
     'Médico a domicilio': '303',
+    /** WF `2.2.6 Bienestar y nutrición` (skill 4220). Override: VITE_GEA_ID_BIENESTAR_Y_NUTRICION */
+    'Bienestar y nutrición': '304',
 };
 
 function envOverride(label) {

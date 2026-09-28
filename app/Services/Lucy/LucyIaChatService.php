@@ -17,6 +17,7 @@ class LucyIaChatService
             'agendar' => $this->loadPrompt('agendar'),
             'reagendar' => $this->loadPrompt('reagendar'),
             'router' => $this->loadPrompt('router'),
+            'proteccion' => $this->loadPrompt('proteccion'),
         ];
     }
 
@@ -27,7 +28,13 @@ class LucyIaChatService
             throw new RuntimeException("Perfil IA desconocido: {$profile}");
         }
 
-        return $profiles[$profile];
+        $prompt = $profiles[$profile];
+        $kb = $this->knowledgeAppendix($profile);
+        if ($kb !== '') {
+            $prompt .= "\n\n---\n## Base de conocimiento (usa solo esto para hechos del producto)\n".$kb;
+        }
+
+        return $prompt;
     }
 
     /**
@@ -50,7 +57,7 @@ class LucyIaChatService
         }
 
         if ($this->llmConfigured()) {
-            $text = $this->llmReply($system, $history, $userMessage);
+            $text = $this->llmReply($profile, $system, $history, $userMessage);
 
             return [
                 'mode' => 'llm',
@@ -73,7 +80,7 @@ class LucyIaChatService
     /**
      * @param  array<int, array{role: string, content: string}>  $history
      */
-    private function llmReply(string $system, array $history, string $userMessage): string
+    private function llmReply(string $profile, string $system, array $history, string $userMessage): string
     {
         $messages = [['role' => 'system', 'content' => $system]];
         $max = (int) config('lucy_ia.max_history', 12);
@@ -89,12 +96,14 @@ class LucyIaChatService
         }
         $messages[] = ['role' => 'user', 'content' => $userMessage];
 
+        $model = config("lucy_ia.profile_models.{$profile}") ?: config('lucy_ia.model');
+
         $base = config('lucy_ia.base_url');
         $response = Http::acceptJson()
             ->withToken((string) config('lucy_ia.api_key'))
             ->timeout((int) config('lucy_ia.timeout', 60))
             ->post("{$base}/chat/completions", [
-                'model' => config('lucy_ia.model'),
+                'model' => $model,
                 'temperature' => 0.4,
                 'messages' => $messages,
             ]);
@@ -125,6 +134,7 @@ class LucyIaChatService
             'hogar' => 'Cuéntame qué problema tienes en casa (plomería, electricidad, cerrajería…) y si es urgente o programado.',
             'vial' => 'Describe tu situación vial (grúa, batería, llanta, etc.) y comparte referencia de ubicación si puedes.',
             'agendar', 'reagendar' => '¿La cita es médica o dental? ¿Agendar o reagendar? Indica especialidad si es médica.',
+            'proteccion' => 'Indica el **producto de protección** o qué te pasó (robo, secuestro express, etc.). Con documentos listos llama al **1700 247000**.',
             default => 'Soy Lucy en modo asistido (sin LLM en servidor). Elige un flujo en el menú o activa LUCY_IA_API_KEY.',
         };
 
@@ -139,5 +149,27 @@ class LucyIaChatService
         }
 
         return trim((string) file_get_contents($path));
+    }
+
+    private function knowledgeAppendix(string $profile): string
+    {
+        $files = match ($profile) {
+            'proteccion' => ['servicios_proteccion.json'],
+            default => [],
+        };
+
+        $parts = [];
+        foreach ($files as $file) {
+            $path = resource_path("data/lucy-ia/kb/{$file}");
+            if (! is_file($path)) {
+                continue;
+            }
+            $raw = trim((string) file_get_contents($path));
+            if ($raw !== '') {
+                $parts[] = $raw;
+            }
+        }
+
+        return implode("\n\n", $parts);
     }
 }

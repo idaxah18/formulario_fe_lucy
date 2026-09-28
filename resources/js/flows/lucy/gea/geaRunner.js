@@ -3,6 +3,18 @@ import {
     fetchAsistenciaEnCurso,
     fetchMenuProveedorValida,
 } from '@/api/geaToolsApi.js';
+import { crearDerivacionLead } from '@/api/comercialApi.js';
+import { fetchAsistenciasEnProceso as fetchDentalEnProceso } from '@/api/omniaxDentalApi.js';
+import { fetchAsistenciasEnProceso as fetchMedicoEnProceso } from '@/api/omniaxMedicoApi.js';
+import {
+    ASISTENCIAS_ACTIVAS_PAGE_SIZE,
+    asistenciaActivaMenuStyle,
+    buildDerivacionAsistenciaPayload,
+    labelAsistenciaActiva,
+    mergeAsistenciasActivas,
+    sortAsistenciasActivasDesc,
+} from './asistenciasActivas.js';
+import { isAdvisorHandoffDoneNode } from '../advisorHandoffCopy.js';
 import { runCabinaGateOrBlock } from './cabinaGate.js';
 import {
     actualizarUbicacionAsistencia,
@@ -62,6 +74,12 @@ export function getGeaEnterTask(state, node) {
 export function applyGeaQuickMeta(state, action) {
     if (!action?.meta?.gea) return;
     const patch = { ...action.meta.gea };
+    if (patch.selectedAsistenciaIndex != null) {
+        ensureGea(state.context).selectedAsistenciaIndex = Number(patch.selectedAsistenciaIndex);
+    }
+    if (patch.asistenciasActivasPage != null) {
+        ensureGea(state.context).asistenciasActivasPage = Number(patch.asistenciasActivasPage);
+    }
     if (patch.encuestaAnswer) {
         ensureGea(state.context).pendingEncuestaAnswer = patch.encuestaAnswer;
         delete patch.encuestaAnswer;
@@ -105,6 +123,63 @@ function resolveIdAsistencia(gea) {
     return id != null ? Number(id) : null;
 }
 
+function showAsistenciasActivasHub(ctx, gea, merged, { resetPage = false } = {}) {
+    if (resetPage) {
+        gea.asistenciasActivasPage = 0;
+    }
+    const page = Number(gea.asistenciasActivasPage) || 0;
+    const sorted = sortAsistenciasActivasDesc(merged);
+    gea.asistenciasActivas = sorted;
+
+    const pageSize = ASISTENCIAS_ACTIVAS_PAGE_SIZE;
+    const start = page * pageSize;
+    const pageItems = sorted.slice(start, start + pageSize);
+
+    const actions = pageItems.map((item, i) => {
+        const globalIndex = start + i;
+        const style = asistenciaActivaMenuStyle(item) || {};
+        return {
+            id: `asig_${globalIndex}`,
+            label: labelAsistenciaActiva(item),
+            next: 'asistencia_activa_pick_load',
+            meta: { gea: { selectedAsistenciaIndex: globalIndex } },
+            icon: style.icon,
+            menuTone: style.menuTone,
+        };
+    });
+
+    if (start + pageSize < sorted.length) {
+        actions.push({
+            id: 'more',
+            label: 'Ver más',
+            next: 'asistencia_activa_list',
+            meta: { gea: { asistenciasActivasPage: page + 1 } },
+            icon: 'chevron-right',
+            menuTone: 'tone-blue',
+        });
+    }
+
+    actions.push({
+        id: 'home',
+        label: 'Menú principal',
+        next: 'menu_solucion_24_7',
+        icon: 'home',
+        menuTone: 'tone-blue',
+    });
+
+    const hint =
+        sorted.length > pageSize
+            ? `Mostrando ${start + 1}–${Math.min(start + pageSize, sorted.length)} de ${sorted.length} (más recientes primero).`
+            : `${sorted.length} asistencia(s), más recientes primero.`;
+
+    setMenu(
+        ctx,
+        'Tienes asistencias en curso',
+        hint,
+        actions,
+    );
+}
+
 function showEncuestaQuestion(ctx, gea) {
     const preguntas = gea.encuestaPreguntas || [];
     const idx = gea.encuestaIndex ?? 0;
@@ -117,7 +192,7 @@ function showEncuestaQuestion(ctx, gea) {
     const actions = buildEncuestaMenuActions(pregunta, idx, preguntas.length);
     actions.push({
         id: 'gea_enc_salir',
-        label: '0. Salir del menú',
+        label: 'Salir del menú',
         next: 'menu_utilidades',
     });
     setMenu(
@@ -174,7 +249,128 @@ export async function runGeaEnter(task, state) {
             }
             return {
                 messages: lopdpMessages,
-                nextNodeId: gea.afterLopdpNext || 'truncal_en_curso',
+                nextNodeId: gea.afterLopdpNext || 'post_auth_gate_load',
+                patchContext: { gea },
+            };
+        }
+
+        case 'post_auth_asistencias_gate': {
+            if (ctx.skipToAseguradora) {
+                ctx.skipToAseguradora = false;
+                return {
+                    messages: [],
+                    nextNodeId: 'menu_aseguradora',
+                    patchContext: { gea },
+                };
+            }
+            if (!cedula) {
+                throw new Error('Falta la cédula del titular.');
+            }
+
+            const [geaToolRes, medicoRes, dentalRes] = await Promise.allSettled([
+                fetchAsistenciaEnCurso(telefono),
+                fetchMedicoEnProceso(cedula, false),
+                fetchDentalEnProceso(cedula, false),
+            ]);
+
+            const merged = mergeAsistenciasActivas({
+                geaTool: geaToolRes.status === 'fulfilled' ? geaToolRes.value : null,
+                medicoRes: medicoRes.status === 'fulfilled' ? medicoRes.value : null,
+                dentalRes: dentalRes.status === 'fulfilled' ? dentalRes.value : null,
+            });
+
+            if (!merged.length) {
+                return {
+                    messages: [],
+                    nextNodeId: 'menu_solucion_24_7',
+                    patchContext: { gea },
+                };
+            }
+
+            showAsistenciasActivasHub(ctx, gea, merged, { resetPage: true });
+            return {
+                messages: [],
+                nextNodeId: 'asistencias_activas_hub',
+                patchContext: { gea },
+                clearNavStack: true,
+            };
+        }
+
+        case 'asistencia_activa_list': {
+            const merged = gea.asistenciasActivas || [];
+            if (!merged.length) {
+                return {
+                    messages: [],
+                    nextNodeId: 'post_auth_gate_load',
+                    patchContext: { gea },
+                };
+            }
+            showAsistenciasActivasHub(ctx, gea, merged);
+            return {
+                messages: [],
+                nextNodeId: 'asistencias_activas_hub',
+                patchContext: { gea },
+            };
+        }
+
+        case 'asistencia_activa_pick': {
+            const idx = Number(gea.selectedAsistenciaIndex);
+            const item = gea.asistenciasActivas?.[idx];
+            if (!item) {
+                return {
+                    messages: [bot('No encontramos esa asistencia. Vuelve al listado.')],
+                    nextNodeId: 'asistencia_activa_list',
+                    patchContext: { gea },
+                };
+            }
+            gea.selectedAsistencia = item;
+            setMenu(
+                ctx,
+                item.tipo,
+                `${item.detalle}${item.id != null ? `\nID asistencia: ${item.id}` : ''}`,
+                [
+                    {
+                        id: 'asesor',
+                        label: 'Contactar asesor por esta asistencia',
+                        next: 'asistencia_activa_asesor_load',
+                    },
+                    {
+                        id: 'back',
+                        label: 'Volver al listado',
+                        next: 'asistencia_activa_list',
+                        meta: { gea: { asistenciasActivasPage: 0 } },
+                    },
+                    { id: 'home', label: 'Menú principal', next: 'menu_solucion_24_7' },
+                ],
+            );
+            return {
+                messages: [],
+                nextNodeId: 'asistencia_activa_detalle',
+                patchContext: { gea },
+            };
+        }
+
+        case 'derivacion_asesor_asistencia': {
+            if (!cedula) throw new Error('Ingresa tu cédula al inicio.');
+            const item = gea.selectedAsistencia;
+            if (!item) {
+                return {
+                    messages: [bot('Selecciona primero una asistencia del listado.')],
+                    nextNodeId: 'asistencia_activa_list',
+                    patchContext: { gea },
+                };
+            }
+            const derivacion = await crearDerivacionLead(
+                buildDerivacionAsistenciaPayload(item, { cedula, nombre, telefono }),
+            );
+            const simulated = Boolean(derivacion?.simulated);
+            clearGeaMenu(ctx);
+            if (simulated) {
+                gea.advisorHandoffSimulated = true;
+            }
+            return {
+                messages: [],
+                nextNodeId: 'asistencia_activa_asesor_done',
                 patchContext: { gea },
             };
         }
@@ -227,9 +423,14 @@ export async function runGeaEnter(task, state) {
             if (!serviceId) {
                 throw new Error('No hay id_servicio configurado para este tipo de asistencia.');
             }
-            const lat = gea.latitud || ctx.omniax?.latitud || ctx.lastLocation?.latitude;
-            const lng = gea.longitud || ctx.omniax?.longitud || ctx.lastLocation?.longitude;
-            if (lat == null || lng == null) {
+            let lat = gea.latitud || ctx.omniax?.latitud || ctx.lastLocation?.latitude;
+            let lng = gea.longitud || ctx.omniax?.longitud || ctx.lastLocation?.longitude;
+            let direccion = String(gea.direccion || 'Sin referencia').trim();
+            if (gea.sinUbicacion) {
+                lat = lat ?? '';
+                lng = lng ?? '';
+                direccion = 'NO APLICA DIRECCION';
+            } else if (lat == null || lng == null) {
                 throw new Error('Falta la ubicación GPS para crear la asistencia.');
             }
             const body = {
@@ -237,7 +438,7 @@ export async function runGeaEnter(task, state) {
                 nombres: nombre,
                 cveafiliado: cedula,
                 id_servicio: serviceId,
-                direccion: String(gea.direccion || 'Sin referencia').trim(),
+                direccion,
                 latitud: String(lat),
                 longitud: String(lng),
             };
@@ -252,47 +453,23 @@ export async function runGeaEnter(task, state) {
             if (caso) extra.push(`Número de caso: ${caso}`);
             if (idAsist) extra.push(`ID asistencia: ${idAsist}`);
 
+            const nextNodeId = gea.afterCrearNext || 'gea_crear_exit';
+            const messages = isAdvisorHandoffDoneNode(nextNodeId)
+                ? []
+                : [botFromOmniaxResponse(res, extra)];
+
             return {
-                messages: [botFromOmniaxResponse(res, extra)],
-                nextNodeId: gea.afterCrearNext || 'gea_crear_exit',
+                messages,
+                nextNodeId,
                 patchContext: { gea },
             };
         }
 
         case 'en_proceso_remitente': {
-            const tool = await fetchAsistenciaEnCurso(telefono);
-            const list =
-                tool.branch === 'exito_consulta' && Array.isArray(tool.data)
-                    ? tool.data
-                    : normalizeAsistenciaRows(tool.raw);
-            if (tool.branch === 'sinAsistencias' || !list.length) {
-                return {
-                    messages: [
-                        bot(
-                            tool.raw?.noticias?.mensaje ||
-                                'Al momento no tienes asistencias en proceso con este número.',
-                        ),
-                    ],
-                    nextNodeId: 'choose_plan',
-                    patchContext: { gea },
-                };
-            }
-            const actions = list.slice(0, 9).map((row, i) => ({
-                id: `gea_enp_${i}`,
-                label: asistenciaLabel(row, i),
-                next: 'menu_solucion_24_7',
-                meta: { gea: { preview_id: pickIdAsistencia(row) } },
-            }));
-            actions.push(
-                { id: 'reag', label: 'Reagendar asistencia', next: 'reagendar_asistencia' },
-                { id: 'cancel_flow', label: 'Cancelar asistencia', next: 'cancelar_asistencia' },
-                ...standardExitActions('choose_plan'),
-            );
-            setMenu(ctx, 'Asistencias en curso', 'Selecciona una opción.', actions);
             return {
-                messages: [bot('Estas son tus asistencias activas:')],
-                stayOnNode: true,
-                patchContext: { gea: { ...gea, enProcesoList: list } },
+                messages: [],
+                nextNodeId: 'post_auth_gate_load',
+                patchContext: { gea },
             };
         }
 

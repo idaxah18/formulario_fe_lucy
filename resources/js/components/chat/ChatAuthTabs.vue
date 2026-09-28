@@ -38,9 +38,11 @@
                     class="chat-tabs__panel"
                     @submit.prevent="submitTelefono"
                 >
-                    <p class="chat-tabs__headline">
-                        Ingresa tu número de celular (pruebas en web). En WhatsApp se usa tu número automáticamente.
-                    </p>
+                    <div class="chat-panel-title-row">
+                        <p class="chat-tabs__headline">
+                            Ingresa tu número de celular (pruebas en web). En WhatsApp se usa tu número automáticamente.
+                        </p>
+                    </div>
                     <label class="chat-field">
                         <span class="chat-field__label">Celular</span>
                         <input
@@ -70,9 +72,17 @@
                     class="chat-tabs__panel"
                     @submit.prevent="submitCedula"
                 >
-                    <p class="chat-tabs__headline">
-                        Hola, soy Lucy. Para ayudarte, ingresa tu número de cédula.
-                    </p>
+                    <div class="chat-panel-title-row">
+                        <p class="chat-tabs__headline">
+                            Hola, soy Lucy. Para ayudarte, ingresa tu número de cédula.
+                        </p>
+                        <ChatBackButton
+                            v-if="showBack"
+                            variant="corner"
+                            :disabled="disabled"
+                            @click="$emit('back')"
+                        />
+                    </div>
                     <label class="chat-field">
                         <span class="chat-field__label">Número de cédula</span>
                         <input
@@ -102,9 +112,17 @@
                     class="chat-tabs__panel"
                     @submit.prevent="submitNombre"
                 >
-                    <p class="chat-tabs__headline">
-                        Gracias. Ahora confirma tu nombre completo.
-                    </p>
+                    <div class="chat-panel-title-row">
+                        <p class="chat-tabs__headline">
+                            Gracias. Ahora confirma tu nombre completo.
+                        </p>
+                        <ChatBackButton
+                            v-if="showBack"
+                            variant="corner"
+                            :disabled="disabled"
+                            @click="$emit('back')"
+                        />
+                    </div>
                     <label class="chat-field">
                         <span class="chat-field__label">Nombre completo</span>
                         <input
@@ -133,13 +151,15 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { readPersistedLucyTelefono } from '@/lib/lucyTelefono.js';
+import ChatBackButton from '@/components/chat/ChatBackButton.vue';
 
 const props = defineProps({
     nodeId: { type: String, required: true },
     disabled: { type: Boolean, default: false },
+    showBack: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['submit']);
+const emit = defineEmits(['submit', 'back']);
 
 const tabs = [
     { id: 'telefono', label: 'Teléfono' },

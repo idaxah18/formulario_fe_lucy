@@ -6,7 +6,7 @@ Proxy Laravel: `/api/v1/omniax/gea/*` → Omniax `test-ec`.
 
 | Experiencia | Nodos | API |
 |-------------|-------|-----|
-| Hogar / vial / ambulancia (crear) | `asist_loc_*` → dirección → `asist_done_*` | `POST /asistencias/gea` |
+| Hogar / vial / médico GEA (ambulancia, orientación telf., médico domicilio, etc.) | `asist_loc_*` → dirección → `asist_done_*` | `POST /asistencias/gea` |
 | Troncal “asistencia en curso” | `asistencias_en_curso` | `POST /asistencias/en-proceso-remitente` |
 | Cancelar | `cancelar_asistencia` → menú → `gea_cancel_done` | `POST /asistencias/listado` + `PUT …/cancelar` |
 

@@ -70,7 +70,7 @@ class AseguradoraAsapController extends Controller
     public function reporteColision(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'telefono_remitente' => 'nullable|string',
+            'telefono_remitente' => 'required|string',
             'id_afiliacion' => 'required',
             'id_vehiculo' => 'nullable',
             'id_estado_provincia_depto' => 'required',
@@ -91,7 +91,7 @@ class AseguradoraAsapController extends Controller
             'tipo_colision' => 'nullable|string|max:64',
         ]);
 
-        $tel = GeaPhone::normalizeRemitente($data['telefono_remitente'] ?? null);
+        $tel = GeaPhone::requireRemitente($data['telefono_remitente']);
         $payload = [
             'telefono_remitente' => $tel,
             'id_afiliacion' => $data['id_afiliacion'],
@@ -134,7 +134,7 @@ class AseguradoraAsapController extends Controller
     private function reporteRobo(Request $request, string $path): JsonResponse
     {
         $data = $request->validate([
-            'telefono_remitente' => 'nullable|string',
+            'telefono_remitente' => 'required|string',
             'id_afiliacion' => 'required',
             'id_vehiculo' => 'nullable',
             'id_estado_provincia_depto' => 'required',
@@ -148,7 +148,7 @@ class AseguradoraAsapController extends Controller
             'asegurado_correo' => 'nullable|string|max:120',
         ]);
 
-        $tel = GeaPhone::normalizeRemitente($data['telefono_remitente'] ?? null);
+        $tel = GeaPhone::requireRemitente($data['telefono_remitente']);
         $payload = [
             'telefono_remitente' => $tel,
             'id_afiliacion' => $data['id_afiliacion'],

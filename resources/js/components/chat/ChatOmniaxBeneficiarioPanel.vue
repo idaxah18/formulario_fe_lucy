@@ -3,9 +3,17 @@
         class="chat-form-panel"
         @submit.prevent="submit"
     >
-        <h2 class="chat-form-panel__headline">
-            Datos del beneficiario
-        </h2>
+        <div class="chat-panel-title-row">
+            <h2 class="chat-form-panel__headline">
+                Datos del beneficiario
+            </h2>
+            <ChatBackButton
+                v-if="showBack"
+                variant="corner"
+                :disabled="disabled"
+                @click="$emit('back')"
+            />
+        </div>
         <p class="chat-form-panel__hint">
             Información que Omniax requiere además del titular (cédula y nombre del afiliado ya están en el inicio del chat).
         </p>
@@ -120,12 +128,14 @@ import {
     OMX_PARENTESCO_OPTIONS,
     OMX_SEXO_OPTIONS,
 } from '@/flows/lucy/omniax/omniaxBeneficiarioOptions.js';
+import ChatBackButton from '@/components/chat/ChatBackButton.vue';
 
 defineProps({
     disabled: { type: Boolean, default: false },
+    showBack: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['submit']);
+const emit = defineEmits(['submit', 'back']);
 
 const identificacion = ref('');
 const nombre = ref('');

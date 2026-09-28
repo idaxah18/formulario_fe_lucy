@@ -30,6 +30,7 @@ export function syncComFromNode(state, node) {
         'afterPayFail',
         'afterDerivacion',
         'producto',
+        'notas',
         'afterVipInfo',
     ];
     for (const k of keys) {

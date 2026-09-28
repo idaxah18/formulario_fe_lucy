@@ -182,7 +182,7 @@
     }
 
     .chat-info-box__icon {
-        @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-lucy-blue text-xs font-bold text-white;
+        @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-lucy-blue text-white;
     }
 
     .chat-user-chip {
@@ -210,6 +210,10 @@
 
     .chat-dock-loading {
         @apply mb-4 text-center text-sm font-medium text-lucy-blue;
+    }
+
+    .chat-dock-feedback {
+        @apply mb-4 rounded-xl border border-lucy-blue/20 bg-lucy-blue/5 px-3 py-3 text-sm leading-relaxed text-slate-700;
     }
 
     .chat-menu-list {
@@ -301,6 +305,22 @@
         @apply bg-lucy-olive/20 text-lucy-olive;
     }
 
+    .chat-menu-item__icon.tone-asist-medica {
+        @apply bg-red-100 text-red-500;
+    }
+
+    .chat-menu-item__icon.tone-asist-dental {
+        @apply bg-sky-100 text-sky-600;
+    }
+
+    .chat-menu-item__icon.tone-asist-hogar {
+        @apply bg-amber-100 text-amber-600;
+    }
+
+    .chat-menu-item__icon.tone-asist-vial {
+        @apply bg-emerald-100 text-emerald-600;
+    }
+
     .chat-menu-item--compact .chat-menu-item__icon {
         @apply h-8 w-8;
     }
@@ -311,6 +331,47 @@
 
     .chat-menu-item__chevron {
         @apply shrink-0 text-slate-300;
+    }
+
+    .chat-panel-wrap {
+        @apply relative;
+    }
+
+    .chat-panel-title-row {
+        @apply mb-1 flex items-start justify-between gap-2;
+    }
+
+    .chat-panel-title-row--composer {
+        @apply mb-2 items-center;
+    }
+
+    .chat-ia-composer__label {
+        @apply font-solution text-sm font-bold text-lucy-blue;
+    }
+
+    .chat-panel-title-row .chat-tabs__headline,
+    .chat-panel-title-row .chat-form-panel__headline {
+        @apply mb-0 min-w-0 flex-1 pr-0;
+    }
+
+    .chat-back--corner {
+        @apply inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 text-lucy-navy shadow-sm transition active:scale-[0.98] disabled:opacity-40;
+    }
+
+    .chat-back--dock {
+        @apply mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 font-solution text-sm font-bold text-lucy-navy transition active:scale-[0.99] disabled:opacity-40;
+    }
+
+    .chat-back--after-intro {
+        @apply mt-1;
+    }
+
+    .chat-back__label {
+        @apply leading-none;
+    }
+
+    .chat-icon {
+        @apply shrink-0;
     }
 
     .chat-form-panel__headline {
@@ -421,7 +482,7 @@
     }
 
     .chat-stepper__title {
-        @apply block truncate font-solution text-[11px] font-bold text-lucy-navy;
+        @apply block font-solution text-[11px] font-bold leading-tight text-lucy-navy;
     }
 
     .chat-stepper__desc {

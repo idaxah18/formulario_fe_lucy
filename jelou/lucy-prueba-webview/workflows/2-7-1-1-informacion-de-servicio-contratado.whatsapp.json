@@ -1,0 +1,380 @@
+{
+  "workflowId": 7693,
+  "workflowName": "2.7.1.1 Información de servicio contratado",
+  "workflowDescription": "Información de servicio contratado",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "5kysovcSmyPdCTXXfm071",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Vial",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        2630,
+        -33
+      ]
+    },
+    {
+      "id": "7U6j6aNhsgy1dU6OrWXx5",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        3103,
+        513
+      ]
+    },
+    {
+      "id": "8iyQlZnUBH5cAFcP3Op_K",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "dpjIAUM90lFmMHPasa2Yr",
+            "text": "La cédula ingresada no es correcta. Por favor, intenta nuevamente.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1982,
+        813
+      ]
+    },
+    {
+      "id": "ayiOqummXnueTPVaQCaS3",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        3097,
+        259
+      ]
+    },
+    {
+      "id": "ILas8oIG66vBEL5hNHSKg",
+      "title": "Pregunta",
+      "configuration": {
+        "prompt": "Por favor, envíame tu número de cédula.",
+        "variable": "identificación"
+      },
+      "type": "INPUT",
+      "position": [
+        1231,
+        222
+      ]
+    },
+    {
+      "id": "jSvaUvxHrJFnlxdFJnLFL",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "06ozu37AJKSV9adnaBDsQ",
+            "name": "",
+            "terms": [
+              {
+                "id": "JINms_JgiGftQ2Ubk-UDt",
+                "type": "legal_id",
+                "value1": "{{$memory.identificación}}",
+                "value2": "legal_id",
+                "operator": "is",
+                "inputDisplayName": {
+                  "value1": "identificación"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        1665,
+        389
+      ]
+    },
+    {
+      "id": "LKFxINlS4OabVBRKIQgSJ",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        3112,
+        753
+      ]
+    },
+    {
+      "id": "n0bjL7bnQF-78P7RIMyXc",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Otras asistencias",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        2546,
+        725
+      ]
+    },
+    {
+      "id": "o77erQv5Lnqpk2eKjdIe1",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        818,
+        338
+      ]
+    },
+    {
+      "id": "Q8jTaJZ8CQXoa7nhvO-0C",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        3106,
+        -7
+      ]
+    },
+    {
+      "id": "t9BmbXoctaGpG1PWt0NQj",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        2935,
+        -217
+      ]
+    },
+    {
+      "id": "uED6NzB-UOyRfUCEHu0eY",
+      "title": "Lista",
+      "configuration": {
+        "messages": [
+          {
+            "id": "2C53G75wjjEZ9qsuGGMA5",
+            "text": "¡OK! ¿De qué servicio deseas información?",
+            "type": "list",
+            "title": "",
+            "button": "",
+            "options": [
+              {
+                "id": "2C53G75wjjEZ9qsuGGMA5",
+                "url": "",
+                "type": "postback",
+                "title": "🏡 Hogar",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4237",
+                  "targetId": "W7eJ_-t-BrK9JkAJl4GgD"
+                },
+                "description": ""
+              },
+              {
+                "id": "cbae036e-d046-4632-9cce-a1fba03f7195",
+                "url": "",
+                "type": "postback",
+                "title": "🚙 Vial",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4237",
+                  "targetId": "5kysovcSmyPdCTXXfm071"
+                },
+                "description": ""
+              },
+              {
+                "id": "82a35e65-014a-4f6a-8e72-9c4d7669ef97",
+                "url": "",
+                "type": "postback",
+                "title": "👨🏻‍⚕️ Médico",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4237",
+                  "targetId": "wK3DgfqrwdrcFeUJd_F20"
+                },
+                "description": ""
+              },
+              {
+                "id": "d828e1bc-39e2-4af6-a480-2a0d32ba64b4",
+                "url": "",
+                "type": "postback",
+                "title": "🦷 Dental",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4237",
+                  "targetId": "vPdOG7TR9rhp2kXWUUnT4"
+                },
+                "description": ""
+              },
+              {
+                "id": "f38c5306-b2cd-4521-bf4f-f715f4653016",
+                "url": "",
+                "type": "postback",
+                "title": "📄 Otras asistencias",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "4237",
+                  "targetId": "n0bjL7bnQF-78P7RIMyXc"
+                },
+                "description": ""
+              }
+            ],
+            "settings": {
+              "isBlockingEnabled": false
+            }
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2021,
+        90
+      ]
+    },
+    {
+      "id": "vPdOG7TR9rhp2kXWUUnT4",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Dental",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        2637,
+        533
+      ]
+    },
+    {
+      "id": "W7eJ_-t-BrK9JkAJl4GgD",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Hogar",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        2514,
+        -218
+      ]
+    },
+    {
+      "id": "wK3DgfqrwdrcFeUJd_F20",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Médico",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        2609,
+        272
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "-mmSvPWgnqNLfkvaB9SM5",
+      "sourceId": "W7eJ_-t-BrK9JkAJl4GgD",
+      "targetId": "t9BmbXoctaGpG1PWt0NQj",
+      "branch": "default"
+    },
+    {
+      "id": "3ENAMTwg-a4iZ-gqfalCu",
+      "sourceId": "o77erQv5Lnqpk2eKjdIe1",
+      "targetId": "ILas8oIG66vBEL5hNHSKg",
+      "branch": "default"
+    },
+    {
+      "id": "4peHgNqfY1FZRVZnRTy3u",
+      "sourceId": "5kysovcSmyPdCTXXfm071",
+      "targetId": "Q8jTaJZ8CQXoa7nhvO-0C",
+      "branch": "default"
+    },
+    {
+      "id": "7Pm_z5z8_TAtdiPV3mRK9",
+      "sourceId": "8iyQlZnUBH5cAFcP3Op_K",
+      "targetId": "ILas8oIG66vBEL5hNHSKg",
+      "branch": "default"
+    },
+    {
+      "id": "A8TJ-x0n0lMKPwyYH0q0-",
+      "sourceId": "uED6NzB-UOyRfUCEHu0eY",
+      "targetId": "5kysovcSmyPdCTXXfm071",
+      "branch": "option:cbae036e-d046-4632-9cce-a1fba03f7195"
+    },
+    {
+      "id": "BJjNkF2wUSvYPZzdV1B-K",
+      "sourceId": "ILas8oIG66vBEL5hNHSKg",
+      "targetId": "jSvaUvxHrJFnlxdFJnLFL",
+      "branch": "success"
+    },
+    {
+      "id": "bUQlt5BWQ-07asyEUCsK_",
+      "sourceId": "uED6NzB-UOyRfUCEHu0eY",
+      "targetId": "n0bjL7bnQF-78P7RIMyXc",
+      "branch": "option:f38c5306-b2cd-4521-bf4f-f715f4653016"
+    },
+    {
+      "id": "CbCcv9-ws1T3aEGiWv7lY",
+      "sourceId": "jSvaUvxHrJFnlxdFJnLFL",
+      "targetId": "uED6NzB-UOyRfUCEHu0eY",
+      "branch": "condition:06ozu37AJKSV9adnaBDsQ"
+    },
+    {
+      "id": "gcjLF984d4Jo4e1K8oGNa",
+      "sourceId": "wK3DgfqrwdrcFeUJd_F20",
+      "targetId": "ayiOqummXnueTPVaQCaS3",
+      "branch": "default"
+    },
+    {
+      "id": "H_lc3Adt1IHiDO6_-6Yhy",
+      "sourceId": "vPdOG7TR9rhp2kXWUUnT4",
+      "targetId": "7U6j6aNhsgy1dU6OrWXx5",
+      "branch": "default"
+    },
+    {
+      "id": "KThrQm0MRsHOTY1ULU8Ev",
+      "sourceId": "uED6NzB-UOyRfUCEHu0eY",
+      "targetId": "vPdOG7TR9rhp2kXWUUnT4",
+      "branch": "option:d828e1bc-39e2-4af6-a480-2a0d32ba64b4"
+    },
+    {
+      "id": "l73j48cRCfcEVqIZlD0G1",
+      "sourceId": "jSvaUvxHrJFnlxdFJnLFL",
+      "targetId": "8iyQlZnUBH5cAFcP3Op_K",
+      "branch": "else"
+    },
+    {
+      "id": "nRKo9K-Z17uVcI5eGKuBH",
+      "sourceId": "uED6NzB-UOyRfUCEHu0eY",
+      "targetId": "W7eJ_-t-BrK9JkAJl4GgD",
+      "branch": "option:2C53G75wjjEZ9qsuGGMA5"
+    },
+    {
+      "id": "oAvp3vZNq8KBr4C0md1Hz",
+      "sourceId": "uED6NzB-UOyRfUCEHu0eY",
+      "targetId": "wK3DgfqrwdrcFeUJd_F20",
+      "branch": "option:82a35e65-014a-4f6a-8e72-9c4d7669ef97"
+    },
+    {
+      "id": "uPMzjXwRC0hLhPq6zQGUE",
+      "sourceId": "n0bjL7bnQF-78P7RIMyXc",
+      "targetId": "LKFxINlS4OabVBRKIQgSJ",
+      "branch": "default"
+    }
+  ]
+}

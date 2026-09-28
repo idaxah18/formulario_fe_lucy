@@ -3,9 +3,17 @@
         class="chat-form-panel"
         @submit.prevent="submit"
     >
-        <h2 class="chat-form-panel__headline">
-            Fecha y hora de la cita
-        </h2>
+        <div class="chat-panel-title-row">
+            <h2 class="chat-form-panel__headline">
+                Fecha y hora de la cita
+            </h2>
+            <ChatBackButton
+                v-if="showBack"
+                variant="corner"
+                :disabled="disabled"
+                @click="$emit('back')"
+            />
+        </div>
         <p class="chat-form-panel__hint">
             Fecha <code>AAAA-MM-DD</code> (ej. 2025-01-30). Hora en 24 h <code>HH:mm</code> (ej. <code>08:30</code>, <code>14:00</code>).
         </p>
@@ -53,12 +61,14 @@
 <script setup>
 import { ref } from 'vue';
 import { normalizeToOmniaxHora24 } from '@/flows/lucy/omniax/omniaxHoraFormat.js';
+import ChatBackButton from '@/components/chat/ChatBackButton.vue';
 
 defineProps({
     disabled: { type: Boolean, default: false },
+    showBack: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['submit']);
+const emit = defineEmits(['submit', 'back']);
 
 const fecha = ref('');
 const hora = ref('');

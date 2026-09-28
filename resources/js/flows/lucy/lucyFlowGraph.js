@@ -1,6 +1,9 @@
 import { HSM_CATEGORIES } from './hsmCatalog.js';
+import { advisorHandoffSay } from './advisorHandoffCopy.js';
 import {
+    advisorHandoffMenuActions,
     crearAsistenciaChain,
+    LUCY_HOME_NODE,
     slugify,
     standardExitActions,
     stubRegistered,
@@ -19,6 +22,64 @@ function menuNode(id, jelou, say, actions) {
 
 function merge(...parts) {
     return Object.assign({}, ...parts);
+}
+
+/** Menú raíz legacy (oculto; redirige a {@link LUCY_HOME_NODE}). Pendiente decisión gerencia. */
+const ROOT_HOME_ACTIONS = [
+    { id: 'plan_asist', label: 'Solución 24/7 (Asistencias)', next: 'menu_solucion_24_7' },
+    { id: 'plan_aseg', label: 'Aseguradora ASAP', next: 'menu_aseguradora' },
+    { id: 'plan_vip', label: 'Asistencias VIP', next: 'asistencias_vip' },
+    { id: 'plan_prot', label: 'Servicios Protección', next: 'servicios_proteccion' },
+    { id: 'plan_ia', label: 'IA Router (registro)', next: 'ia_router' },
+    { id: 'plan_hsm', label: 'Simulador HSM (QA)', next: 'hsm_root' },
+    { id: 'plan_utils', label: 'Utilidades / sistema', next: 'menu_utilidades' },
+];
+
+const ROOT_HOME_SAY = 'Bienvenido. ¿Qué tipo de atención necesitas hoy?';
+
+/** WF 2.7.1.1 → skill PMA (4236); webview: derivación Datum con producto por segmento. */
+const INFO_SERVICIO_CONTRATADO_SEGMENTS = [
+    { leaf: 'hogar', label: 'Hogar', producto: 'Información de servicio contratado' },
+    { leaf: 'vial', label: 'Vial', producto: 'Información de servicio contratado - Vial' },
+    { leaf: 'medico', label: 'Médico', producto: 'Información de servicio contratado - Médico' },
+    { leaf: 'dental', label: 'Dental', producto: 'Información de servicio contratado - Dental' },
+    {
+        leaf: 'otras',
+        label: 'Otras asistencias',
+        producto: 'Información de servicio contratado - Otras asistencias',
+    },
+];
+
+const SEGMENT_MENU_STYLE = {
+    hogar: { icon: 'house', menuTone: 'tone-asist-hogar' },
+    vial: { icon: 'car', menuTone: 'tone-asist-vial' },
+    medico: { icon: 'heart', menuTone: 'tone-asist-medica' },
+    dental: { icon: 'toothbrush-sparkles', menuTone: 'tone-asist-dental' },
+    otras: { icon: 'handshake', menuTone: 'tone-olive' },
+};
+
+function buildInfoServicioContratadoLeaves() {
+    const nodes = {};
+    for (const seg of INFO_SERVICIO_CONTRATADO_SEGMENTS) {
+        const loadId = `leaf_info_${seg.leaf}_load`;
+        const doneId = `leaf_info_${seg.leaf}_done`;
+        nodes[loadId] = {
+            jelou: '2.7.1.1 Información de servicio contratado',
+            skipSay: true,
+            com: {
+                enter: 'derivacion_asesor',
+                producto: seg.producto,
+                notas: `Servicio contratado / ${seg.label}`,
+                afterDerivacion: doneId,
+            },
+        };
+        nodes[doneId] = {
+            jelou: '2.7.1.1 Información de servicio contratado',
+            skipSay: true,
+            actions: advisorHandoffMenuActions('info_servicio_contratado'),
+        };
+    }
+    return nodes;
 }
 
 function buildServiceChains(labels, jelouRef, returnNode, chainExtra = {}) {
@@ -61,44 +122,57 @@ function buildCore() {
                 jelou: 'Aceptacion LOPDP',
                 say: ['Registrando aceptación de protección de datos…'],
                 skipSay: true,
-                gea: { enter: 'lopdp', afterLopdpNext: 'truncal_en_curso' },
+                gea: { enter: 'lopdp', afterLopdpNext: 'post_auth_gate_load' },
+            },
+            post_auth_gate_load: {
+                jelou: 'Truncal-inicio',
+                say: ['Revisando asistencias en curso…'],
+                skipSay: true,
+                gea: { enter: 'post_auth_asistencias_gate' },
+            },
+            asistencias_activas_hub: {
+                jelou: 'Asistencias en curso',
+                skipSay: true,
+                useGeaMenu: true,
+                gea: { refreshMenuEnter: 'asistencia_activa_list' },
+            },
+            asistencia_activa_list: {
+                jelou: 'Asistencias en curso',
+                skipSay: true,
+                gea: { enter: 'asistencia_activa_list' },
+            },
+            asistencia_activa_pick_load: {
+                jelou: 'Asistencias en curso',
+                skipSay: true,
+                gea: { enter: 'asistencia_activa_pick' },
+            },
+            asistencia_activa_detalle: {
+                jelou: 'Asistencias en curso',
+                skipSay: true,
+                useGeaMenu: true,
+            },
+            asistencia_activa_asesor_load: {
+                jelou: 'Derivación asesor — asistencia en curso',
+                skipSay: true,
+                gea: { enter: 'derivacion_asesor_asistencia' },
+            },
+            asistencia_activa_asesor_done: {
+                jelou: 'Derivación asesor — asistencia en curso',
+                say: advisorHandoffSay('asistencia_en_curso'),
+                actions: [{ id: 'home', label: 'Menú principal', next: LUCY_HOME_NODE }],
             },
         },
         menuNode(
             'truncal_en_curso',
             'Truncal-inicio',
-            '¿Tienes una asistencia en curso en este momento?',
+            '(Legacy) ¿Tienes una asistencia en curso?',
             [
-                { id: 'si', label: 'Sí', next: 'asistencias_en_curso' },
-                { id: 'no', label: 'No', next: 'choose_plan' },
+                { id: 'si', label: 'Sí', next: 'post_auth_gate_load' },
+                { id: 'no', label: 'No', next: 'menu_solucion_24_7' },
             ],
         ),
-        menuNode(
-            'choose_plan',
-            '0. Inicio del bot',
-            'Bienvenido. ¿Qué tipo de atención necesitas hoy?',
-            [
-                { id: 'plan_asist', label: 'Solución 24/7 (Asistencias)', next: 'menu_solucion_24_7' },
-                { id: 'plan_aseg', label: 'Aseguradora ASAP', next: 'menu_aseguradora' },
-                { id: 'plan_vip', label: 'Asistencias VIP', next: 'asistencias_vip' },
-                { id: 'plan_prot', label: 'Servicios Protección', next: 'servicios_proteccion' },
-                { id: 'plan_ia', label: 'IA Router (registro)', next: 'ia_router' },
-                { id: 'plan_hsm', label: 'Simulador HSM (QA)', next: 'hsm_root' },
-                { id: 'plan_utils', label: 'Utilidades / sistema', next: 'menu_utilidades' },
-            ],
-        ),
-        menuNode(
-            'menu_principal',
-            'Truncal-inicio',
-            'Menú principal. ¿Qué deseas hacer?',
-            [
-                { id: 'p_asist', label: 'Solución 24/7', next: 'menu_solucion_24_7' },
-                { id: 'p_aseg', label: 'Aseguradora', next: 'menu_aseguradora' },
-                { id: 'p_vip', label: 'VIP', next: 'asistencias_vip' },
-                { id: 'p_prot', label: 'Protección', next: 'servicios_proteccion' },
-                { id: 'p_hsm', label: 'HSM (QA)', next: 'hsm_root' },
-            ],
-        ),
+        menuNode('choose_plan', '0. Inicio del bot', ROOT_HOME_SAY, ROOT_HOME_ACTIONS),
+        menuNode('menu_principal', '0. Inicio del bot', ROOT_HOME_SAY, ROOT_HOME_ACTIONS),
         buildGeaNodes(),
     );
 }
@@ -109,10 +183,48 @@ function buildSolucion247() {
         '2.3 Hogar',
     );
     const vial = buildServiceChains(
-        ['Grúa', 'Cambio de llanta', 'Suministro de gasolina', 'Paso de corriente', 'Cerrajería de puertas', 'Inspector in situ'],
+        [
+            'Grúa',
+            'Cambio de llanta',
+            'Suministro de gasolina',
+            'Paso de corriente',
+            'Cerrajería de puertas',
+            'Inspector in situ',
+        ],
         '2.4 Vial',
     );
-    const medicoAsist = buildServiceChains(['Ambulancia', 'Médico a domicilio'], '2.2 Médico');
+    const vialLegalTelefonica = crearAsistenciaChain(
+        'Asistencia Legal telefónica',
+        '2.4 Vial',
+        'menu_solucion_24_7',
+        {
+            ...geaChainOptions('Asistencia Legal telefónica', '2.4 Vial'),
+            skipLocation: true,
+            sinUbicacion: true,
+            crearJelouRef: 'V2 Crear asistencia sin dirección sin ubicación',
+        },
+    );
+    const otrasSolucionesGea = crearAsistenciaChain(
+        'Otras soluciones',
+        'Otras soluciones 2',
+        'menu_solucion_24_7',
+        {
+            ...geaChainOptions('Otras soluciones', 'Otras soluciones 2'),
+            skipLocation: true,
+            sinUbicacion: true,
+            crearJelouRef: 'V2 Crear asistencia sin dirección sin ubicación',
+            afterCrearNext: 'otras_soluciones_gea_done',
+        },
+    );
+    const medicoAsist = buildServiceChains(
+        [
+            'Ambulancia',
+            'Orientación médica telefónica',
+            'Médico a domicilio',
+            'Bienestar y nutrición',
+        ],
+        '2.2 Médico',
+    );
 
     const dentalWiz = wizardTextSteps(
         [
@@ -128,14 +240,55 @@ function buildSolucion247() {
             '2. Servicios Solución 24/7',
             'Solución 24/7. ¿Cuál de estos servicios necesitas?',
             [
-                { id: 'dental', label: 'Dental', next: 'menu_dental' },
-                { id: 'medico', label: 'Médico', next: 'menu_medico' },
-                { id: 'hogar', label: 'Hogar', next: 'menu_hogar' },
-                { id: 'vial', label: 'Vial', next: 'menu_vial' },
-                { id: 'otras', label: 'Otras soluciones', next: 'otras_soluciones' },
-                { id: 'reportar', label: 'Reportar un problema', next: 'reportar_problema' },
-                { id: 'vermas', label: 'Ver más opciones', next: 'ver_mas_opciones' },
-                { id: 'main', label: 'Menú principal', next: 'menu_principal' },
+                {
+                    id: 'dental',
+                    label: 'Dental',
+                    next: 'menu_dental',
+                    icon: 'toothbrush-sparkles',
+                    menuTone: 'tone-asist-dental',
+                },
+                {
+                    id: 'medico',
+                    label: 'Médico',
+                    next: 'menu_medico',
+                    icon: 'heart',
+                    menuTone: 'tone-asist-medica',
+                },
+                {
+                    id: 'hogar',
+                    label: 'Hogar',
+                    next: 'menu_hogar',
+                    icon: 'house',
+                    menuTone: 'tone-asist-hogar',
+                },
+                {
+                    id: 'vial',
+                    label: 'Vial',
+                    next: 'menu_vial',
+                    icon: 'car',
+                    menuTone: 'tone-asist-vial',
+                },
+                {
+                    id: 'otras',
+                    label: 'Otras soluciones',
+                    next: 'otras_soluciones',
+                    icon: 'handshake',
+                    menuTone: 'tone-olive',
+                },
+                {
+                    id: 'reportar',
+                    label: 'Reportar un problema',
+                    next: 'reportar_problema',
+                    icon: 'info',
+                    menuTone: 'tone-warm',
+                },
+                {
+                    id: 'vermas',
+                    label: 'Ver más opciones',
+                    next: 'ver_mas_opciones',
+                    icon: 'logs',
+                    menuTone: 'tone-blue',
+                },
             ],
         ),
         menuNode(
@@ -145,7 +298,7 @@ function buildSolucion247() {
             [
                 { id: 'den', label: 'Dental', next: 'omx_den_reag_start' },
                 { id: 'med', label: 'Médico', next: 'omx_med_reag_start' },
-                { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' },
+                { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
             ],
         ),
         menuNode(
@@ -155,8 +308,7 @@ function buildSolucion247() {
             [
                 { id: 'ag', label: 'Agendar cita', next: 'omx_den_cabina' },
                 { id: 're', label: 'Reagendar cita', next: 'omx_den_reag_cabina' },
-                { id: 'ia', label: 'Dental IA', next: 'dental_ia' },
-                { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' },
+                { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
             ],
         ),
         menuNode(
@@ -176,27 +328,22 @@ function buildSolucion247() {
             'Médico 🏥 ¿Qué necesitas?',
             [
                 { id: 'amb', label: 'Ambulancia', next: medicoAsist.actions[0].next },
-                { id: 'ori', label: 'Orientación Médica Telf.', next: 'leaf_orientacion_medica' },
+                { id: 'ori', label: 'Orientación médica telefónica', next: medicoAsist.actions[1].next },
                 { id: 'ag', label: 'Agendar cita médica', next: 'omx_med_cabina' },
                 { id: 're', label: 'Reagendar cita médica', next: 'omx_med_reag_cabina' },
-                { id: 'dom', label: 'Médico a domicilio', next: medicoAsist.actions[1].next },
-                { id: 'nut', label: 'Bienestar y nutrición', next: 'bienestar_nutricion' },
+                { id: 'dom', label: 'Médico a domicilio', next: medicoAsist.actions[2].next },
+                { id: 'nut', label: 'Bienestar y nutrición', next: medicoAsist.actions[3].next },
                 { id: 'edo', label: 'E-doctor', next: 'activar_edoctor_inicio' },
-                { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' },
+                { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
             ],
         ),
-        {
-            leaf_orientacion_medica: stubRegistered('Orientación médica telefónica', '2.2 Médico'),
-            bienestar_nutricion: stubRegistered('Bienestar y nutrición', '2.2.6 Bienestar y nutrición'),
-        },
         menuNode(
             'menu_hogar',
             '2.3 Hogar',
             'Hogar 🏡 Elige el servicio:',
             [
                 ...hogar.actions,
-                { id: 'ia', label: 'Hogar IA', next: 'hogar_ia' },
-                { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' },
+                { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
             ],
         ),
         hogar.nodes,
@@ -204,62 +351,146 @@ function buildSolucion247() {
         menuNode(
             'menu_vial',
             '2.4 Vial',
-            'Vial 🚗 ¿Cuál servicio necesitas?',
+            'Bienvenid@ a tu solución vial 🚗',
             [
                 ...vial.actions,
-                { id: 'leg', label: 'Asistencia Legal Telf.', next: 'leaf_asistencia_legal_vial' },
-                { id: 'ia', label: 'Vial IA', next: 'vial_ia' },
-                { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' },
+                { id: 'leg', label: 'Asistencia legal telefónica', next: vialLegalTelefonica.entry },
+                { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
             ],
         ),
         vial.nodes,
-        { leaf_asistencia_legal_vial: stubRegistered('Asistencia legal telefónica', '2.4 Vial') },
+        vialLegalTelefonica.nodes,
         menuNode('otras_soluciones', '2.5 Otras Soluciones', 'Otras soluciones para ti:', [
             { id: 'go', label: 'Continuar', next: 'otras_soluciones_2' },
             { id: 'no', label: 'No', next: 'menu_solucion_24_7' },
         ]),
-        { otras_soluciones_2: stubRegistered('Otras soluciones', 'Otras soluciones 2') },
+        menuNode(
+            'otras_soluciones_2',
+            'Otras soluciones 2',
+            '¿Quieres solicitar alguna otra solución que no se encuentra en el menú?',
+            [
+                { id: 'si', label: 'Sí', next: otrasSolucionesGea.entry },
+                { id: 'salir', label: 'Salir', next: 'menu_solucion_24_7' },
+            ],
+        ),
+        otrasSolucionesGea.nodes,
+        {
+            otras_soluciones_gea_done: {
+                jelou: 'Otras soluciones 2',
+                say: advisorHandoffSay('otras_soluciones'),
+                actions: [
+                    {
+                        id: 'home',
+                        label: 'Menú principal',
+                        next: LUCY_HOME_NODE,
+                        icon: 'home',
+                        menuTone: 'tone-blue',
+                    },
+                ],
+            },
+        },
         {
             reportar_problema: {
                 jelou: '2.6 Reportar un problema',
                 say: ['Cuéntanos el problema que tuviste:'],
                 input: { next: 'reportar_problema_done', echoUser: true },
             },
-            reportar_problema_done: stubRegistered('Reporte de problema', '2.6 Reportar un problema'),
+            reportar_problema_done: {
+                jelou: '2.6 Reportar un problema',
+                say: advisorHandoffSay('problema'),
+                actions: standardExitActions('menu_solucion_24_7'),
+            },
         },
         menuNode('ver_mas_opciones', '2.7 Ver más opciones', 'Aquí te presentamos más opciones.', [
-            { id: 'info', label: 'Info de asistencia', next: 'info_asistencia' },
+            {
+                id: 'info',
+                label: 'Info de asistencia',
+                next: 'info_asistencia',
+                icon: 'info',
+                menuTone: 'tone-blue',
+            },
             { id: 'comp', label: 'Comprar asistencia', next: 'comprar_asistencia' },
             { id: 'blog', label: 'Blog Solución 24/7', next: 'blog_solucion' },
-            { id: 'back', label: '0. Salir del menú', next: 'menu_solucion_24_7' },
+            {
+                id: 'back',
+                label: 'Salir del menú',
+                next: 'menu_solucion_24_7',
+                icon: 'arrow-left',
+                menuTone: 'tone-blue',
+            },
         ]),
         menuNode('info_asistencia', '2.7.1 Info de asistencia', 'Selecciona una opción:', [
-            { id: 'sc', label: 'Servicio contratado', next: 'info_servicio_contratado' },
-            { id: 'fac', label: 'Solicitar Factura', next: 'solicitar_factura' },
+            {
+                id: 'sc',
+                label: 'Servicio contratado',
+                next: 'info_servicio_contratado',
+                icon: 'toolbox',
+                menuTone: 'tone-blue',
+            },
+            {
+                id: 'fac',
+                label: 'Solicitar Factura',
+                next: 'solicitar_factura_load',
+                icon: 'info',
+                menuTone: 'tone-blue',
+            },
         ]),
         menuNode(
             'info_servicio_contratado',
             '2.7.1.1 Información de servicio contratado',
             '¿Qué línea de servicio consultas?',
-            [
-                { id: 'h', label: '🏡 Hogar', next: 'leaf_info_hogar' },
-                { id: 'v', label: '🚙 Vial', next: 'leaf_info_vial' },
-                { id: 'm', label: '👨🏻‍⚕️ Médico', next: 'leaf_info_medico' },
-                { id: 'd', label: '🦷 Dental', next: 'leaf_info_dental' },
-                { id: 'o', label: '📄 Otras asistencias', next: 'leaf_info_otras' },
-            ],
+            INFO_SERVICIO_CONTRATADO_SEGMENTS.map((seg) => {
+                const style = SEGMENT_MENU_STYLE[seg.leaf] || {};
+                return {
+                    id: seg.leaf[0],
+                    label: seg.label,
+                    next: `leaf_info_${seg.leaf}_load`,
+                    icon: style.icon,
+                    menuTone: style.menuTone,
+                };
+            }),
         ),
         {
-            leaf_info_hogar: stubRegistered('Info servicio Hogar', 'Información de servicio contratado'),
-            leaf_info_vial: stubRegistered('Info servicio Vial', 'Información de servicio contratado'),
-            leaf_info_medico: stubRegistered('Info servicio Médico', 'Información de servicio contratado'),
-            leaf_info_dental: stubRegistered('Info servicio Dental', 'Información de servicio contratado'),
-            leaf_info_otras: stubRegistered('Info otras asistencias', 'Información de servicio contratado'),
-            solicitar_factura: stubRegistered('Solicitud de factura', '2.7.1.2 Solicitar factura'),
+            ...buildInfoServicioContratadoLeaves(),
+            /** WF 2.7.1.2 → skill PMA (4236); webview: derivación Datum. */
+            solicitar_factura_load: {
+                jelou: '2.7.1.2 Solicitar factura',
+                skipSay: true,
+                com: {
+                    enter: 'derivacion_asesor',
+                    producto: 'Solicitar factura',
+                    notas: 'Info de asistencia / solicitar factura',
+                    afterDerivacion: 'solicitar_factura_done',
+                },
+            },
+            solicitar_factura_done: {
+                jelou: '2.7.1.2 Solicitar factura',
+                skipSay: true,
+                actions: advisorHandoffMenuActions('info_asistencia'),
+            },
             blog_solucion: {
                 jelou: '2.7.3 Blog Solución 24/7',
-                say: ['Te compartimos contenido del blog Solución 24/7 (enlace simulado).'],
-                actions: standardExitActions(),
+                say: [
+                    'Conoce tips, novedades y guías de tus asistencias en el blog oficial Solución 24/7.',
+                    'https://blog.solucion24-7.com.ec',
+                ],
+                actions: [
+                    {
+                        id: 'open_blog',
+                        label: 'Abrir blog Solución 24/7',
+                        type: 'link',
+                        url: 'https://blog.solucion24-7.com.ec',
+                        icon: 'sparkles',
+                        menuTone: 'tone-blue',
+                    },
+                    {
+                        id: 'back',
+                        label: 'Salir del menú',
+                        next: 'ver_mas_opciones',
+                        icon: 'arrow-left',
+                        menuTone: 'tone-blue',
+                    },
+                ],
             },
         },
         menuNode('comprar_asistencia', '2.7.2 Comprar un servicio de asistencia', '¿Qué deseas comprar?', [
@@ -292,7 +523,7 @@ function buildSolucion247() {
             },
             derivacion_asesor_load: {
                 skipSay: true,
-                com: { enter: 'derivacion_asesor', afterDerivacion: 'menu_principal' },
+                com: { enter: 'derivacion_asesor', afterDerivacion: LUCY_HOME_NODE },
             },
         },
     );
@@ -342,7 +573,7 @@ function buildAseguradora() {
                 { id: 'leg', label: 'Asistencia Legal', next: 'aseg_placa_legal' },
                 { id: 'ins', label: 'Inspección vehícular', next: 'inspeccion' },
                 { id: 'sin', label: 'Reportar un siniestro', next: 'menu_siniestro' },
-                { id: 'main', label: 'Menú principal', next: 'menu_principal' },
+                { id: 'main', label: 'Menú principal', next: LUCY_HOME_NODE },
             ],
         ),
         plateNodes,
@@ -383,7 +614,7 @@ function buildComercial() {
     return merge(
         menuNode('asistencias_vip', '3 - Asistencias VIP - Inicio', 'Asistencias VIP:', [
             { id: 'si', label: 'Sí', next: 'vip_intro_load' },
-            { id: 'no', label: 'No', next: 'menu_principal' },
+            { id: 'no', label: 'No', next: LUCY_HOME_NODE },
         ]),
         {
             vip_intro_load: {
@@ -413,20 +644,38 @@ function buildComercial() {
                     '✅ Datos de registro VIP guardados en esta sesión.',
                     'La activación final (afiliación Omniax) se completa en WhatsApp con el mismo código.',
                 ],
-                actions: standardExitActions('menu_principal'),
+                actions: standardExitActions(),
             },
         },
         menuNode('servicios_proteccion', '4 - Servicios Protección - Inicio', 'Servicios de protección:', [
             { id: 'si', label: 'Sí', next: 'leaf_proteccion' },
-            { id: 'no', label: 'No', next: 'menu_principal' },
+            { id: 'no', label: 'No', next: LUCY_HOME_NODE },
         ]),
-        { leaf_proteccion: stubRegistered('Servicios Protección', '4 - Servicios Protección - Inicio') },
         menuNode('activar_edoctor_inicio', 'Activar e-doctor - Inicio', 'E-Doctor:', [
             { id: 'plan', label: 'Adquirir plan', next: 'edoctor_registro' },
             { id: 'info', label: 'Quiero más info.', next: 'edoctor_info' },
         ]),
         {
-            edoctor_info: stubRegistered('Más información E-Doctor', 'Activar e-doctor - Quiero Más Información'),
+            edoctor_info: {
+                jelou: 'Activar e-doctor - Quiero Más Información',
+                say: ['Registrando tu solicitud de información sobre **e-doctor**…'],
+                skipSay: true,
+                com: {
+                    enter: 'derivacion_asesor',
+                    producto: 'E-doctor',
+                    notas: 'Activar e-doctor - Quiero más información',
+                    afterDerivacion: 'edoctor_info_done',
+                },
+            },
+            edoctor_info_done: {
+                jelou: 'Activar e-doctor - Quiero Más Información',
+                say: [
+                    '**E-doctor** es telemedicina GEA: consultas médicas en línea.',
+                    'App: bit.ly/app-e-doctor — Web: https://www.e-doctorgea.com/',
+                    'Para contratar el plan, vuelve al menú E-doctor y elige **Adquirir plan**.',
+                ],
+                actions: standardExitActions('menu_solucion_24_7'),
+            },
             edoctor_registro: {
                 jelou: 'Activar e-doctor - Registrar Datos',
                 say: ['Ingresa tu **correo electrónico**:'],
@@ -493,16 +742,73 @@ function buildComercial() {
         },
         menuNode('pycca', 'Asistencia Cuidado Familiar Pycca - Inicio', 'Cuidado familiar Pycca:', [
             { id: 'con', label: 'Contratar', next: 'leaf_pycca' },
-            { id: 'lla', label: 'Quiero que me llamen', next: 'derivacion_asesor' },
+            { id: 'lla', label: 'Quiero que me llamen', next: 'pycca_llamada_load' },
         ]),
-        { leaf_pycca: stubRegistered('Pycca', 'Asistencia Cuidado Familiar Pycca - Inicio') },
+        {
+            leaf_pycca: {
+                jelou: 'Asistencia Cuidado Familiar Pycca - Inicio',
+                say: ['Registrando tu solicitud de **Cuidado familiar Pycca**…'],
+                skipSay: true,
+                com: {
+                    enter: 'derivacion_asesor',
+                    producto: 'Pycca Cuidado familiar',
+                    notas: 'Pycca - Contratar',
+                    afterDerivacion: 'leaf_pycca_done',
+                },
+            },
+            leaf_pycca_done: {
+                jelou: 'Asistencia Cuidado Familiar Pycca - Inicio',
+                say: advisorHandoffSay('comercial'),
+                actions: standardExitActions('menu_solucion_24_7'),
+            },
+            pycca_llamada_load: {
+                jelou: 'Asistencia Cuidado Familiar Pycca - Inicio',
+                skipSay: true,
+                com: {
+                    enter: 'derivacion_asesor',
+                    producto: 'Pycca Cuidado familiar',
+                    notas: 'Pycca - Quiero que me llamen',
+                    afterDerivacion: 'pycca',
+                },
+            },
+        },
         menuNode('banco_bolivariano', 'Bco Bolivariano - Venta Asistencia - Inicio', 'Banco Bolivariano — venta:', [
             { id: 'on', label: 'Comprar online', next: 'leaf_banco' },
             { id: 'llam', label: 'Agendar una llamada', next: 'leaf_banco_llamada' },
         ]),
         {
-            leaf_banco: stubRegistered('Venta Banco Bolivariano', 'Bco Bolivariano - Venta Asistencia - Inicio'),
-            leaf_banco_llamada: stubRegistered('Llamada agendada', 'Bco Bolivariano - Venta Asistencia - Inicio'),
+            leaf_banco: {
+                jelou: 'Bco Bolivariano - Venta Asistencia - Inicio',
+                say: ['Registrando tu solicitud de **compra online**…'],
+                skipSay: true,
+                com: {
+                    enter: 'derivacion_asesor',
+                    producto: 'Banco Bolivariano',
+                    notas: 'Bco Bolivariano - Comprar online',
+                    afterDerivacion: 'leaf_banco_done',
+                },
+            },
+            leaf_banco_done: {
+                jelou: 'Bco Bolivariano - Venta Asistencia - Inicio',
+                say: advisorHandoffSay('comercial'),
+                actions: standardExitActions('menu_solucion_24_7'),
+            },
+            leaf_banco_llamada: {
+                jelou: 'Bco Bolivariano - Venta Asistencia - Inicio',
+                say: ['Registrando tu solicitud para **agendar una llamada**…'],
+                skipSay: true,
+                com: {
+                    enter: 'derivacion_asesor',
+                    producto: 'Banco Bolivariano',
+                    notas: 'Bco Bolivariano - Agendar llamada',
+                    afterDerivacion: 'leaf_banco_llamada_done',
+                },
+            },
+            leaf_banco_llamada_done: {
+                jelou: 'Bco Bolivariano - Venta Asistencia - Inicio',
+                say: advisorHandoffSay('comercial'),
+                actions: standardExitActions('menu_solucion_24_7'),
+            },
         },
         menuNode('jaher', 'Jaher - Inicio', 'Jaher:', [
             { id: 'go', label: 'Empezar', next: 'leaf_jaher' },
@@ -586,7 +892,7 @@ function buildUtils() {
         menuNode('ia_router', 'IA Router', 'IA Router — ¿Cómo deseas continuar?', [
             { id: 'reg', label: 'Registro', next: 'auth_telefono' },
             { id: 'terms', label: 'Aceptar términos IA', next: 'ia_router_terms_load' },
-            { id: 'sin', label: 'Sin registro', next: 'choose_plan' },
+            { id: 'sin', label: 'Sin registro', next: LUCY_HOME_NODE },
         ]),
     );
 }
@@ -645,7 +951,7 @@ function buildHsm() {
         say: ['✅ Respuesta registrada (simulación).'],
         actions: [
             { id: 'hsm', label: 'Más HSM', next: 'hsm_root' },
-            { id: 'menu', label: 'Menú principal', next: 'menu_principal' },
+            { id: 'menu', label: 'Menú principal', next: LUCY_HOME_NODE },
         ],
     };
     return nodes;

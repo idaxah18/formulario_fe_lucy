@@ -2,6 +2,7 @@
 
 namespace App\Services\Jelou;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -10,36 +11,76 @@ class JelouApiClient
 {
     public function configured(): bool
     {
-        return (bool) config('services.jelou.api_token');
+        return $this->hasAuthProfile('venta')
+            || $this->hasAuthProfile('default')
+            || (bool) config('services.jelou.api_token');
     }
 
-    public function get(string $path, array $query = []): array
+    private function hasAuthProfile(string $profile): bool
     {
-        return $this->request('get', $path, ['query' => $query]);
+        $auth = config("services.jelou.datum_auth_profiles.{$profile}");
+
+        if (! is_array($auth)) {
+            return false;
+        }
+
+        $user = $auth['user'] ?? null;
+        $pass = $auth['password'] ?? null;
+
+        return $user !== null && $user !== '' && $pass !== null && $pass !== '';
     }
 
-    public function post(string $path, array $json = []): array
+    private function httpClientForTable(string $tableKey): PendingRequest
     {
-        return $this->request('post', $path, ['json' => $json]);
+        $profile = (string) config("services.jelou.datum_table_auth.{$tableKey}", 'default');
+        $auth = config("services.jelou.datum_auth_profiles.{$profile}");
+
+        if (is_array($auth) && ($auth['user'] ?? '') !== '' && ($auth['password'] ?? '') !== '') {
+            return Http::acceptJson()->timeout(45)->withBasicAuth(
+                (string) $auth['user'],
+                (string) $auth['password'],
+            );
+        }
+
+        $token = config('services.jelou.api_token');
+        if ($token) {
+            return Http::acceptJson()->timeout(45)->withToken((string) $token);
+        }
+
+        throw new RuntimeException(
+            "Datum Jelou sin credenciales para tabla «{$tableKey}» (perfil {$profile}).",
+        );
     }
 
-    public function patch(string $path, array $json = []): array
+    public function get(string $path, array $query = [], ?string $tableKey = null): array
     {
-        return $this->request('patch', $path, ['json' => $json]);
+        return $this->request('get', $path, ['query' => $query], $tableKey);
     }
 
-    public function request(string $method, string $path, array $options = []): array
+    public function post(string $path, array $json = [], ?string $tableKey = null): array
+    {
+        return $this->request('post', $path, ['json' => $json], $tableKey);
+    }
+
+    public function patch(string $path, array $json = [], ?string $tableKey = null): array
+    {
+        return $this->request('patch', $path, ['json' => $json], $tableKey);
+    }
+
+    public function request(string $method, string $path, array $options = [], ?string $tableKey = null): array
     {
         if (! $this->configured()) {
-            throw new RuntimeException('JELOU_API_TOKEN no configurado.');
+            throw new RuntimeException(
+                'Datum Jelou no configurado (JELOU_DATUM_*_BASIC_* o JELOU_API_TOKEN).',
+            );
         }
 
         $base = rtrim((string) config('services.jelou.api_base_url'), '/');
         $url = str_starts_with($path, 'http') ? $path : "{$base}/".ltrim($path, '/');
 
-        $pending = Http::acceptJson()
-            ->withToken((string) config('services.jelou.api_token'))
-            ->timeout(45);
+        $pending = $tableKey !== null
+            ? $this->httpClientForTable($tableKey)
+            : $this->httpClientForTable('venta_asistencias');
 
         $method = strtolower($method);
         $response = match ($method) {
@@ -52,8 +93,13 @@ class JelouApiClient
         $body = $response->json() ?? [];
 
         if (! $response->successful()) {
+            $message = $body['message'] ?? $response->body();
+            if (is_array($message)) {
+                $message = json_encode($message, JSON_UNESCAPED_UNICODE);
+            }
+
             throw new RuntimeException(
-                'Jelou API error '.$response->status().': '.($body['message'] ?? $response->body())
+                'Jelou API error '.$response->status().': '.$message
             );
         }
 
@@ -74,20 +120,20 @@ class JelouApiClient
     {
         $tableId = $this->tableId($tableKey);
 
-        return $this->get("/v2/databases/{$tableId}/rows", $query);
+        return $this->get("/v2/databases/{$tableId}/rows", $query, $tableKey);
     }
 
     public function updateRow(string $tableKey, string $rowId, array $data): array
     {
         $tableId = $this->tableId($tableKey);
 
-        return $this->patch("/v2/databases/{$tableId}/rows/{$rowId}", $data);
+        return $this->patch("/v2/databases/{$tableId}/rows/{$rowId}", $data, $tableKey);
     }
 
     public function createRow(string $tableKey, array $data): array
     {
         $tableId = $this->tableId($tableKey);
 
-        return $this->post("/v2/databases/{$tableId}/rows", $data);
+        return $this->post("/v2/databases/{$tableId}/rows", $data, $tableKey);
     }
 }

@@ -1,0 +1,269 @@
+{
+  "workflowId": 29787,
+  "workflowName": "4 - Servicios Protección - Inicio",
+  "workflowDescription": "Skill para consultas del segmento protección",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "-z2arTbBc2EBw7APmXnwQ",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        72,
+        139
+      ]
+    },
+    {
+      "id": "9eFpKfhFTn_hjGS_dWdN4",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "7WJnEvXCEk6v4NhSpKuhK",
+            "text": "{{$message.text}}",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        135,
+        573
+      ]
+    },
+    {
+      "id": "AvXUNQANEjZugYIqsget-",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "8681"
+      },
+      "type": "SKILL",
+      "position": [
+        1981,
+        255
+      ]
+    },
+    {
+      "id": "G26l5_aQlwTPn7DBwBujy",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "sW0DC6PZVH2jY4kuHhCdn",
+            "name": "",
+            "terms": [
+              {
+                "id": "QdEASpD_wOfqgmgrsL396",
+                "type": "",
+                "value1": "{{$memory.IA_segmento_proteccion.subflujo}}",
+                "value2": "salir",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.IA_segmento_proteccion.subflujo}}",
+                  "value2": "salir"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          },
+          {
+            "id": "8NFJNrR5G_aunIDsKsHeB",
+            "name": "",
+            "terms": [
+              {
+                "id": "0KZCtGIBmOw7l86GJ75sj",
+                "type": "",
+                "value1": "{{$memory.IA_segmento_proteccion.subflujo}}",
+                "value2": "menu_principal",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.IA_segmento_proteccion.subflujo}}",
+                  "value2": "menu_principal"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        1347,
+        77
+      ]
+    },
+    {
+      "id": "IDy2XhT-02jjZfRquuco6",
+      "title": "AI Agent",
+      "configuration": {
+        "model": "openai/gpt-4.1",
+        "version": "v2",
+        "settings": {
+          "expiration": {
+            "time": "hours",
+            "enabled": false,
+            "duration": 8,
+            "timeInSeconds": 28800
+          }
+        },
+        "variable": "IA_segmento_proteccion",
+        "knowledge": [
+          {
+            "id": "01kb0x77ggqpt8capffd2rzntf",
+            "name": "productos_bancarios",
+            "size": 2759,
+            "type": "json",
+            "status": "active",
+            "purpose": "assistant",
+            "brain_id": "01j5661e5gaf6330435zh3bzjx",
+            "metadata": "{\"path\":\"https:\\/\\/s3.us-west-2.amazonaws.com\\/cdn.devlabs.tech\\/brains%2F8c067e64-7e34-465b-a504-3392ddced681%2Fproductos_bancarios.json\"}",
+            "created_at": "2025-11-26T20:21:02.000000Z",
+            "deleted_at": null,
+            "updated_at": "2025-11-26T20:21:02.000000Z",
+            "description": "productos_bancarios"
+          },
+          {
+            "id": "01kb0xq9756mba1zdx3gcweczd",
+            "name": "Servicios Protección",
+            "size": 2756,
+            "type": "json",
+            "status": "active",
+            "purpose": "assistant",
+            "brain_id": "01j5661e5gaf6330435zh3bzjx",
+            "metadata": "{\"path\":\"https:\\/\\/s3.us-west-2.amazonaws.com\\/cdn.devlabs.tech\\/brains%2Fffdb419f-3052-4964-bef0-fe33f9384552%2Fjson_segmento_proteccion.json\"}",
+            "created_at": "2025-11-26T20:29:48.000000Z",
+            "deleted_at": null,
+            "updated_at": "2025-11-26T20:29:48.000000Z",
+            "description": "Servicios Protección"
+          },
+          {
+            "id": "01kd3ckb3e2qynwtg90s583dvb",
+            "name": "Informacion Lucy",
+            "size": 1555,
+            "type": "md",
+            "status": "active",
+            "purpose": "assistant",
+            "brain_id": "01j5661e5gaf6330435zh3bzjx",
+            "metadata": "{\"path\":\"https:\\/\\/s3.us-west-2.amazonaws.com\\/cdn.devlabs.tech\\/brains%2Fb817e064-9dc7-4f2c-b5f0-7f1be757a448%2Fkn_lucy.md\"}",
+            "created_at": "2025-12-22T15:59:40.000000Z",
+            "deleted_at": null,
+            "updated_at": "2025-12-22T15:59:40.000000Z",
+            "description": "Base de conocimiento con información de Lucy"
+          }
+        ],
+        "connections": {
+          "tools": []
+        },
+        "filesConfig": {
+          "files": [],
+          "enabled": false
+        },
+        "instructions": "# AGENTE: Conversacional por productos de protección\n\n## Rol del Agente\nEres Lucy un agente cálido y humano perteneciente a GEA Ecuador, que está aquí para ayudar cuando se la necesita.  \nTu misión es contestar cuales son los documentos requeridos para acceder a los beneficidos del o los productos consultados por el usuario.\n\n## Objetivo\n- Detectar cual es el producto que se está consultando.\n- Enviar los documentos requeridos que se requieren para aplicar el beneficio. \n- Solo debes tomar información de la base de conocimiento, el archivo Servicios Protección.\n- Para información sobre Lucy u otras consultas relacionadas debes tomar información de la base de conocimiento, el archivo Informacion Lucy.\n- Cuando el usuario ya no tenga mas consultas, ejecutar end_function.\n\n---\n## Estructura de la base de conocimientos\n# Servicios Proteccion\n* Nombre Archivo: Servicios Protección\n* Productos: Colección de productos con la siguiente estructura:\n    - nombre: nombre del producto.\n    - documentos_requeridos: documentos requeridos para solicitar el beneficio del producto.\n    - detalle: escenarios en los aplica la cobertura del producto.\n    - alcance: cual es el monto maximo de reposicion.\n    - eventos: cuantas veces puede aplicarse el producto.\n    - pago_servicio: no aplica\n\n# Datos Lucy\n* Nombre Archivo: Informacion Lucy\n* Descripción: aquí encontraras información sobre Solución 24/7 y demás temas relacionados con Lucy.\n---\n\n# 1. Consultar requisitos del producto\n- **Nombre del producto**  \n\n## Validaciones\n- producto → si el cliente ya mencionó un producto, por ejemplo, \"cartera protegida\", \"app protegida\", \"documento protegido\", etc.\n- También puedes determinar el producto de acuerdo al escenario que el cliente ingrese, por ejemplo, \"me han robado, me han hecho secuestro express, me vaciaron mis cuentas, me suplantaron la identidad y me vaciaron las cuentas, me robaron\", y demas consideraciones que se encuentren en el detalle [detalle].\n- Si la descripcion del escenario tiene detalles que coinciden en varios productos, listale los productos que coinciden con el escenario y solicitale que seleccione uno.\n\nSi te indica un producto que no existe en la base de conocimiento, indicale que no tienes información de ese producto.\n\nCuando identifiques el producto, indica el nombre [nombre] y muestra los documentos requeridos contenidos en [documentos_requeridos] junto con el [detalle]. \n\nConsultar al cliente si ya tiene los documentos requeridos para solicitar el beneficio del producto.\n\nSi el cliente te indica que ya tiene todos los documentos requeridos, mencionar que ahora puede cominicarse con el número 1700 247000 para solicitar los beneficios del producto.\n\nSi te indica que no tiene aún los documentos requeridos, mencionar que no hay problema, que puede reunir los documentos y volver a escribirte cuando ya los tenga. \n---\n\n# 4. Reglas Operativas\n- No saludes.\n- Nunca mostrar ni explicar el JSON.  \n- No enviar despedidas antes de ejecutar end_function.  \n- Mantener siempre un tono cálido, humano y empático.  \n- No mencionar que tienes una base de conocimientos.\n- Si el usuario cancela: subflujo = “salir”.\n- Si el usuario require solicitar servicios vial, medico, hogar o dental: subflujo = \"menu_principal\".  \n\n5. Siempre debes ejecutar end_function con este formato:\n{\n \"subflujo\": <subflujo>\n}",
+        "startCommand": "{{$message.text}}",
+        "fallbackModel": {
+          "name": "azure/gpt-4o",
+          "model": "azure/gpt-4o",
+          "provider": "azure"
+        }
+      },
+      "type": "AI_TASK",
+      "position": [
+        916,
+        -24
+      ]
+    },
+    {
+      "id": "jZoGCpYJck0wKD_4LqjYk",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "6859"
+      },
+      "type": "SKILL",
+      "position": [
+        1819,
+        -68
+      ]
+    },
+    {
+      "id": "m--kZRzQuHaB7S7kw9rAq",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "d_wW5lUTuHanapCUGuAj3",
+            "text": "{{$memory.IA_segmento_proteccion}}",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1253,
+        -1001
+      ]
+    },
+    {
+      "id": "pg4QMrdhgzdKxHXlukkGn",
+      "title": "Marcador",
+      "configuration": {
+        "name": "Servicios Protección",
+        "colorPalette": "yellow"
+      },
+      "type": "CHECKPOINT",
+      "position": [
+        506,
+        134
+      ]
+    },
+    {
+      "id": "PXhrxUz8zHr6Wfhc-DHYK",
+      "title": "Pregunta",
+      "configuration": {
+        "prompt": "Inicio"
+      },
+      "type": "INPUT",
+      "position": [
+        1248,
+        -803
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "_z_mLbuwbBX6tmOfoTf5r",
+      "sourceId": "G26l5_aQlwTPn7DBwBujy",
+      "targetId": "AvXUNQANEjZugYIqsget-",
+      "branch": "condition:8NFJNrR5G_aunIDsKsHeB"
+    },
+    {
+      "id": "7qEV8lod-kYu7iPqCjLpW",
+      "sourceId": "G26l5_aQlwTPn7DBwBujy",
+      "targetId": "jZoGCpYJck0wKD_4LqjYk",
+      "branch": "condition:sW0DC6PZVH2jY4kuHhCdn"
+    },
+    {
+      "id": "C-6PTvBby21a2JQCsB_Te",
+      "sourceId": "-z2arTbBc2EBw7APmXnwQ",
+      "targetId": "pg4QMrdhgzdKxHXlukkGn",
+      "branch": "default"
+    },
+    {
+      "id": "gu4p2a9nAT9VX8JVJrL-S",
+      "sourceId": "pg4QMrdhgzdKxHXlukkGn",
+      "targetId": "IDy2XhT-02jjZfRquuco6",
+      "branch": "default"
+    },
+    {
+      "id": "h8d_QZ-Vs8X5CA7rXQ2Y0",
+      "sourceId": "IDy2XhT-02jjZfRquuco6",
+      "targetId": "G26l5_aQlwTPn7DBwBujy",
+      "branch": "success"
+    },
+    {
+      "id": "uBQetTofK0OoBVIzhihJw",
+      "sourceId": "G26l5_aQlwTPn7DBwBujy",
+      "targetId": "jZoGCpYJck0wKD_4LqjYk",
+      "branch": "else"
+    }
+  ]
+}

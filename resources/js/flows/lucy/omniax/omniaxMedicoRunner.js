@@ -32,6 +32,7 @@ import { botFromOmniaxResponse } from './omniaxNoticias.js';
 import { runCabinaGateOrBlock } from '../gea/cabinaGate.js';
 import { bot } from '../flowHelpers.js';
 import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
+import { OMX_SIN_ASIGNACION_DOCK } from './omniaxDockCopy.js';
 
 function parseOmniaxBool(value) {
     if (value === true || value === 1 || value === '1' || value === 'true') return true;
@@ -225,13 +226,22 @@ export async function runOmniaxMedicoEnter(task, state) {
                     messages: [bot('¿Dónde te gustaría agendar tu cita?')],
                 };
             }
+            setMenu(
+                ctx,
+                OMX_SIN_ASIGNACION_DOCK.headline,
+                OMX_SIN_ASIGNACION_DOCK.hint,
+                [
+                    {
+                        id: 'asesor',
+                        label: 'Continuar con asesor',
+                        next: 'omx_med_asesor_load',
+                    },
+                    { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
+                ],
+            );
             return {
                 nextNodeId: 'omx_med_sin_asignacion',
-                messages: [
-                    bot(
-                        'Según Omniax, no aplica asignación de establecimiento para este caso. Un asesor debe continuar contigo.',
-                    ),
-                ],
+                messages: [],
             };
         }
 

@@ -4,7 +4,7 @@
             <div class="chat-header__avatar-wrap">
                 <img
                     v-if="!avatarFailed"
-                    src="/images/lucy-avatar.png"
+                    src="/images/lucy-avatar.jpg"
                     alt="Lucy"
                     class="chat-header__avatar-img"
                     @error="onAvatarError"

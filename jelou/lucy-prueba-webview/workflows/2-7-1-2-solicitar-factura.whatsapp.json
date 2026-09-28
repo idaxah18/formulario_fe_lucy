@@ -1,0 +1,37 @@
+{
+  "workflowId": 7707,
+  "workflowName": "2.7.1.2 Solicitar factura",
+  "workflowDescription": "Solicitar factura",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "K1fuhHU_fXHi94gl_99Az",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "4236"
+      },
+      "type": "SKILL",
+      "position": [
+        1354,
+        330
+      ]
+    },
+    {
+      "id": "nYrPap7Zkj-www3Qfl5sI",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        818,
+        338
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "8JbGP2XCKfJjfYWg8OR5J",
+      "sourceId": "nYrPap7Zkj-www3Qfl5sI",
+      "targetId": "K1fuhHU_fXHi94gl_99Az",
+      "branch": "default"
+    }
+  ]
+}

@@ -1,0 +1,314 @@
+{
+  "toolId": 2006,
+  "workflowId": 7090,
+  "toolName": "Consultar Registros Datum",
+  "toolDescription": "Crear un tool donde se mande 3 inputs, botId, clientId, clientSecret.\nLuego crear inputs que no sean obligatorios, llamados limit, page, sortByOrder, search y searchBy y enviar todo en el siguiente url.\nhttps://api.jelou.ai/v2/databases/281/rows?limit=60&",
+  "triggerType": "DEFAULT",
+  "ownership": "FORKED",
+  "inputs": [
+    {
+      "id": "LsoUs5LqacxVFBrSgH5DT",
+      "name": "baseId",
+      "displayName": "baseId",
+      "description": "Identificador de la base",
+      "type": "STRING",
+      "required": true,
+      "defaultValue": null,
+      "configuration": null,
+      "position": 0
+    },
+    {
+      "id": "S2-JooWijV2O9yOWnpysi",
+      "name": "bodyJson",
+      "displayName": "Json Body",
+      "description": "Cuerpo del envio",
+      "type": "STRING",
+      "required": true,
+      "defaultValue": null,
+      "configuration": null,
+      "position": 0
+    },
+    {
+      "id": "xeB774mB1QTPNadIDVYOD",
+      "name": "clientId",
+      "displayName": "clientId",
+      "description": "Identificador del cliente",
+      "type": "STRING",
+      "required": true,
+      "defaultValue": null,
+      "configuration": null,
+      "position": 0
+    },
+    {
+      "id": "GveL_LcyAeiW-M49slg8E",
+      "name": "clientSecret",
+      "displayName": "clientSecret",
+      "description": "Clave secreta del cliente",
+      "type": "STRING",
+      "required": true,
+      "defaultValue": null,
+      "configuration": null,
+      "position": 0
+    },
+    {
+      "id": "7JEX7cNg8a8p517x7hqfh",
+      "name": "rowId",
+      "displayName": "Row Id",
+      "description": "Id del registro",
+      "type": "STRING",
+      "required": true,
+      "defaultValue": null,
+      "configuration": null,
+      "position": 0
+    }
+  ],
+  "outputs": [
+    {
+      "id": "EfZUBIj0koBme02GC2nzN",
+      "name": "CODE_ERROR",
+      "displayName": "Error Code",
+      "description": "Error Code",
+      "type": "FAILED",
+      "required": true,
+      "schema": null,
+      "position": 0
+    },
+    {
+      "id": "cAPt-ww_OuDGjKtgN9GhR",
+      "name": "HTTP_ERROR",
+      "displayName": "Error HTTP",
+      "description": "Error HTTP",
+      "type": "FAILED",
+      "required": true,
+      "schema": null,
+      "position": 0
+    },
+    {
+      "id": "5f22V_v4uL-NQ5SrQbe6O",
+      "name": "IF_ERROR",
+      "displayName": "Error If",
+      "description": "Error If",
+      "type": "FAILED",
+      "required": true,
+      "schema": null,
+      "position": 0
+    },
+    {
+      "id": "Ykc_ARduj0vwJdnmhgy7V",
+      "name": "respuesta",
+      "displayName": "Respuesta",
+      "description": "Respuesta del servicio",
+      "type": "SUCCESS",
+      "required": true,
+      "schema": null,
+      "position": 0
+    }
+  ],
+  "nodes": [
+    {
+      "id": "74FceURbNAy9Pfoppw3ZC",
+      "configuration": {
+        "title": "Error Code",
+        "outputId": "EfZUBIj0koBme02GC2nzN"
+      },
+      "type": "END",
+      "position": [
+        1400,
+        600
+      ]
+    },
+    {
+      "id": "A_0SHBJX5lPy2vTvMwOlE",
+      "title": "Start",
+      "configuration": {
+        "title": "Start"
+      },
+      "type": "START",
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "bYFbnRL7cAqVo6F_t53ad",
+      "configuration": {
+        "title": "Error Code",
+        "outputId": "EfZUBIj0koBme02GC2nzN"
+      },
+      "type": "END",
+      "position": [
+        2100,
+        900
+      ]
+    },
+    {
+      "id": "eXa5V6bctRkYU8hv_5thk",
+      "configuration": {
+        "title": "Respuesta",
+        "outputId": "Ykc_ARduj0vwJdnmhgy7V"
+      },
+      "type": "END",
+      "position": [
+        2450,
+        1050
+      ]
+    },
+    {
+      "id": "NVANpdkglsKCSErxsBA3q",
+      "configuration": {
+        "title": "Error HTTP",
+        "outputId": "cAPt-ww_OuDGjKtgN9GhR"
+      },
+      "type": "END",
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "id": "t9xnll2FAQaW1yPJbKKg1",
+      "title": "Código",
+      "configuration": {
+        "content": "$output.set('respuesta', $context.get('respuesta'))",
+        "workflowId": 218,
+        "description": "Este nodo establece la respuesta procesada como la salida del tool.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        1750,
+        750
+      ]
+    },
+    {
+      "id": "zL4GyZRweMxmQsjVeOxBV",
+      "title": "HTTP",
+      "configuration": {
+        "url": "https://api.jelou.ai/v2/databases/{{$input.baseId}}/rows/{{$input.rowId}}",
+        "body": {
+          "type": "application/json",
+          "content": "{{$input.bodyJson}}",
+          "enabled": true
+        },
+        "method": "PUT",
+        "output": "respuesta",
+        "headers": [
+          {
+            "id": "Content-type",
+            "key": "Content-type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "settings": {
+          "retries": 0,
+          "timeout": 30000,
+          "sslCertificate": true
+        },
+        "parameters": [
+          {
+            "id": "limit",
+            "key": "limit",
+            "value": "50",
+            "enabled": false
+          },
+          {
+            "id": "page",
+            "key": "page",
+            "value": "{{$input.page}}",
+            "enabled": false
+          },
+          {
+            "id": "sortByOrder",
+            "key": "sortByOrder",
+            "value": "{{$input.sortByOrder}}",
+            "enabled": false
+          },
+          {
+            "id": "search",
+            "key": "search",
+            "value": "{{$input.search}}",
+            "enabled": false
+          },
+          {
+            "id": "searchBy",
+            "key": "searchBy",
+            "value": "{{$input.searchBy}}",
+            "enabled": false
+          }
+        ],
+        "workflowId": 218,
+        "authentication": {
+          "type": "basic",
+          "enabled": true,
+          "password": "{{$input.clientSecret}}",
+          "username": "{{$input.clientId}}"
+        }
+      },
+      "type": "HTTP",
+      "position": [
+        350,
+        150
+      ]
+    },
+    {
+      "id": "zQxYDFmQ11NlkEf5DUaBe",
+      "title": "Código",
+      "configuration": {
+        "content": "const responseHttp = $context.getHttpResponse('respuesta')\nconst data = responseHttp.json()\n$context.set('respuesta', data)",
+        "workflowId": 218,
+        "description": "Este nodo procesa la respuesta de la llamada API y la almacena en el contexto para su uso en otros nodos.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        1050,
+        450
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "0cHlnbhXufvKCatkLEuJZ",
+      "sourceId": "zL4GyZRweMxmQsjVeOxBV",
+      "targetId": "NVANpdkglsKCSErxsBA3q",
+      "branch": "failed"
+    },
+    {
+      "id": "0utIMaKBODIbWIQqyudtd",
+      "sourceId": "t9xnll2FAQaW1yPJbKKg1",
+      "targetId": "eXa5V6bctRkYU8hv_5thk",
+      "branch": "success"
+    },
+    {
+      "id": "0Yo7WYvaI6WtVFVg4hkyP",
+      "sourceId": "zQxYDFmQ11NlkEf5DUaBe",
+      "targetId": "74FceURbNAy9Pfoppw3ZC",
+      "branch": "failed"
+    },
+    {
+      "id": "AMusKUGi4HsmgkUQButD_",
+      "sourceId": "A_0SHBJX5lPy2vTvMwOlE",
+      "targetId": "zL4GyZRweMxmQsjVeOxBV",
+      "branch": "default"
+    },
+    {
+      "id": "DBOlz5wfwA_4rmStssO32",
+      "sourceId": "zL4GyZRweMxmQsjVeOxBV",
+      "targetId": "zQxYDFmQ11NlkEf5DUaBe",
+      "branch": "success"
+    },
+    {
+      "id": "kJhgboDcRTfLR8nFy8EeN",
+      "sourceId": "zQxYDFmQ11NlkEf5DUaBe",
+      "targetId": "t9xnll2FAQaW1yPJbKKg1",
+      "branch": "success"
+    },
+    {
+      "id": "wr6WZ7dxfT61KMtgUPizN",
+      "sourceId": "t9xnll2FAQaW1yPJbKKg1",
+      "targetId": "bYFbnRL7cAqVo6F_t53ad",
+      "branch": "failed"
+    }
+  ]
+}

@@ -5,11 +5,18 @@ namespace App\Support;
 final class GeaPhone
 {
     /** Normaliza WhatsApp 593… → 09… (tool Asistencia en Curso / Notificar Cabina). */
-    public static function normalizeRemitente(?string $telefono): string
+    /**
+     * @param  bool  $allowDefault  Solo scripts/CLI legacy; el chat webview debe enviar teléfono explícito.
+     */
+    public static function normalizeRemitente(?string $telefono, bool $allowDefault = false): string
     {
         $digits = preg_replace('/\D+/', '', (string) $telefono) ?? '';
         if ($digits === '') {
-            return (string) config('services.gea_omniax.telefono_default', '0999999999');
+            if ($allowDefault) {
+                return (string) config('services.gea_omniax.telefono_default', '0999999999');
+            }
+
+            throw new \InvalidArgumentException('telefono_requerido');
         }
         if (str_starts_with($digits, '593') && strlen($digits) >= 12) {
             $local = '0'.substr($digits, 3);
@@ -28,5 +35,11 @@ final class GeaPhone
         }
 
         return $digits;
+    }
+
+    /** Normaliza o lanza si falta (APIs del chat webview). */
+    public static function requireRemitente(?string $telefono): string
+    {
+        return self::normalizeRemitente($telefono, false);
     }
 }

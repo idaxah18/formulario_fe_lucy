@@ -1,0 +1,406 @@
+{
+  "workflowId": 9878,
+  "workflowName": "V2 Crear asistencia sin dirección sin ubicación",
+  "workflowDescription": "V2 Crear asistencia sin dirección sin ubicación",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "-70vnzNH28PIo8rIEjt11",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "J_HeKmboQ_IH4TL6ZMRYr",
+            "text": "Listo  {{$memory.nombreGEA}}, en breve un asesor se comunicará contigo para darte detalles de tu servicio.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        4366,
+        499
+      ]
+    },
+    {
+      "id": "1S-lnUVbPaslZzwpHQ51n",
+      "title": "Datum",
+      "configuration": {
+        "row": {
+          "data": {
+            "botId": "{{$user.botId}}",
+            "legalId": "{{$memory.identificacion}}",
+            "service": "{{$memory.service}}",
+            "createdAt": "{{$memory.now}}",
+            "updatedAt": "{{$memory.now}}",
+            "referenceId": "{{$user.id}}",
+            "assistanceId": "{{$memory.id_asistencia}}",
+            "licensePlate": "{{$memory.placa}}",
+            "surveyStatus": "",
+            "asisstanceType": "{{$memory.asisstanceType}}",
+            "deliveredSurvey": "",
+            "supplierContact": "",
+            "assistanceManagement": "{{$memory.assistanceManagement}}"
+          },
+          "inputDisplayName": {
+            "botId": "{{$user.botId}}",
+            "legalId": "{{$memory.identificacion}}",
+            "service": "{{$memory.service}}",
+            "createdAt": "{{$memory.now}}",
+            "updatedAt": "{{$memory.now}}",
+            "referenceId": "{{$user.id}}",
+            "assistanceId": "{{$memory.id_asistencia}}",
+            "licensePlate": "{{$memory.placa}}",
+            "surveyStatus": "",
+            "asisstanceType": "{{$memory.asisstanceType}}",
+            "deliveredSurvey": "",
+            "supplierContact": "",
+            "assistanceManagement": "{{$memory.assistanceManagement}}"
+          }
+        },
+        "action": "create",
+        "variable": "InsertLog",
+        "databaseId": 76,
+        "displayName": "InsertLog"
+      },
+      "type": "DATUM",
+      "position": [
+        3400,
+        218
+      ]
+    },
+    {
+      "id": "ApLwc3jmM_vdRdU0FSb7c",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "gsJhk3EusAShs2mnlMWWx",
+            "text": "Lo sentimos el servicio no está disponible, por favor intenta más tarde.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1659,
+        659
+      ]
+    },
+    {
+      "id": "Bs570M1bu-OvA0PqagBYu",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "7258"
+      },
+      "type": "SKILL",
+      "position": [
+        3372,
+        529
+      ]
+    },
+    {
+      "id": "ezmCuESt1A00cV6t70LcL",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        818,
+        338
+      ]
+    },
+    {
+      "id": "K-ZcEOOC-LKkK5novy1xr",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "7258"
+      },
+      "type": "SKILL",
+      "position": [
+        2359,
+        653
+      ]
+    },
+    {
+      "id": "kwtZG4tG9eommFd3i8eSN",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "lat": "",
+          "lng": "",
+          "direccion": "NO APLICA DIRECCION",
+          "jumpToErrorMessage": "false"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        1667,
+        197
+      ]
+    },
+    {
+      "id": "l6w4Otuoe4sjNX1FybRcK",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "7258"
+      },
+      "type": "SKILL",
+      "position": [
+        3680,
+        951
+      ]
+    },
+    {
+      "id": "lbe2mWSh70qmfwYP1bkq_",
+      "title": "Code v2",
+      "configuration": {
+        "title": "Code v2",
+        "content": "const whatsappId = $user.get(\"id\");\nconst telefono = $utils._.replace(whatsappId, \"593\", \"0\");\n$memory.set('telefono', telefono, 86400)",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        2239,
+        267
+      ]
+    },
+    {
+      "id": "lNLDMVdfIOpejAB1rIGFh",
+      "title": "Asistencia Chatbot GEA",
+      "configuration": {
+        "input": {
+          "lat": "{{$memory.lat}}",
+          "lng": "{{$memory.lng}}",
+          "pais": "ec",
+          "placa": "{{$memory.placa}}",
+          "chasis": "{{$memory.chasis}}",
+          "telefono": "{{$memory.telefono}}",
+          "direccion": "{{$memory.direccion}}",
+          "idServicio": "{{$memory.id_servicio}}",
+          "idVehiculo": "{{$memory.id_vehiculo}}",
+          "accessToken": "{{$memory.accessToken}}",
+          "cveAfiliado": "{{$memory.identificacion}}",
+          "nombresCliente": "{{$memory.nombreGEA}}",
+          "planAsistencia": "{{$memory.plan_asistencia}}"
+        },
+        "version": "V 2.0.0",
+        "toolData": {
+          "toolId": 2599,
+          "toolName": "Asistencia Chatbot GEA",
+          "thumbnail": 13,
+          "toolkitId": 431,
+          "workflowId": 9528,
+          "principalColor": "#E6F6F9",
+          "complementaryColor": "#00B3C7"
+        },
+        "variable": "responseAsistenciaChatbot",
+        "inputDisplayName": {
+          "lat": "{{$memory.lat}}",
+          "lng": "{{$memory.lng}}",
+          "pais": "ec",
+          "placa": "{{$memory.placa}}",
+          "chasis": "{{$memory.chasis}}",
+          "telefono": "{{$memory.telefono}}",
+          "direccion": "{{$memory.direccion}}",
+          "idServicio": "{{$memory.id_servicio}}",
+          "idVehiculo": "{{$memory.id_vehiculo}}",
+          "accessToken": "{{$memory.accessToken}}",
+          "cveAfiliado": "{{$memory.identificacion}}",
+          "nombresCliente": "{{$memory.nombreGEA}}",
+          "planAsistencia": "{{$memory.plan_asistencia}}"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        2464,
+        149
+      ]
+    },
+    {
+      "id": "SD4kv1HAzxDRoXkT7gQnF",
+      "title": "Auth",
+      "configuration": {
+        "input": {
+          "ambiente": {
+            "value": "PRODUCCION"
+          },
+          "paisCode": "test-ec",
+          "client_id": "iT34S8gXi0Ar52NKvtxS4J1Dpsmz9W9l",
+          "client_secret": "83"
+        },
+        "version": "private 2.0.4",
+        "toolData": {
+          "toolId": 1946,
+          "toolName": "Auth",
+          "thumbnail": 7,
+          "toolkitId": 431,
+          "workflowId": 6821,
+          "principalColor": "#3c4e9e",
+          "complementaryColor": "#ffffff"
+        },
+        "variable": "accessToken",
+        "inputDisplayName": {
+          "paisCode": "test-ec",
+          "client_id": "iT34S8gXi0Ar52NKvtxS4J1Dpsmz9W9l",
+          "client_secret": "83"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        1261,
+        341
+      ]
+    },
+    {
+      "id": "tJ-VwmQZH_xx0a0fGYxcv",
+      "title": "Code v2",
+      "configuration": {
+        "title": "Code v2",
+        "content": "const _responseAsistenciaChatbot = $memory.getJson('responseAsistenciaChatbot', {});\nconst numero_caso = _responseAsistenciaChatbot.data?.numero_caso;\nconst id_asistencia = _responseAsistenciaChatbot.data?.id_asistencia;\nconst fecha = $utils.dayjs().tz('America/Guayaquil');\nconst fechaActual = fecha.subtract(5, 'hour');\n// Your success code goes here\nif (numero_caso) {\n    $memory.set('numero_caso', numero_caso, 86400);\n    $memory.set('id_asistencia', id_asistencia, 86400);\n    $memory.set('now', fechaActual.format('YYYY-MM-DDTHH:mm:ss'));\n}",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        2997,
+        272
+      ]
+    },
+    {
+      "id": "Tj8ZWEp3TUPXuWsv2iWdg",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "zxGEGsd2cqENDC_dH9mHt",
+            "text": "Ups! No hemos podido solicitar tu asistencia correctamente.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2918,
+        596
+      ]
+    },
+    {
+      "id": "UoQbHDgvUaK0AEtLGB0ix",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "id_log": "{{$memory.InsertLog._id}}"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        3827,
+        440
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "1Uh46Xbl_EruxD5yJ_WO1",
+      "sourceId": "tJ-VwmQZH_xx0a0fGYxcv",
+      "targetId": "1S-lnUVbPaslZzwpHQ51n",
+      "branch": "success"
+    },
+    {
+      "id": "2B7Z2UMrJ39nJUBWEv7n6",
+      "sourceId": "tJ-VwmQZH_xx0a0fGYxcv",
+      "targetId": "Bs570M1bu-OvA0PqagBYu",
+      "branch": "failed"
+    },
+    {
+      "id": "69CunFOuB7mAO6DzaktYm",
+      "sourceId": "SD4kv1HAzxDRoXkT7gQnF",
+      "targetId": "ApLwc3jmM_vdRdU0FSb7c",
+      "branch": "output:pIFMZsYfP-fEFuqFHJTKU:failed"
+    },
+    {
+      "id": "ADc-wY1LQNdXRExGeaUSz",
+      "sourceId": "lbe2mWSh70qmfwYP1bkq_",
+      "targetId": "lNLDMVdfIOpejAB1rIGFh",
+      "branch": "success"
+    },
+    {
+      "id": "c4CbkuOGFCXD6rI3rTXya",
+      "sourceId": "ezmCuESt1A00cV6t70LcL",
+      "targetId": "SD4kv1HAzxDRoXkT7gQnF",
+      "branch": "default"
+    },
+    {
+      "id": "C7OmrVzZ_94Xn6pf5pjM1",
+      "sourceId": "SD4kv1HAzxDRoXkT7gQnF",
+      "targetId": "kwtZG4tG9eommFd3i8eSN",
+      "branch": "output:dCbSEWstx811FGWQruk5z:success"
+    },
+    {
+      "id": "fw9QU3YsNE5U94CnKGjss",
+      "sourceId": "1S-lnUVbPaslZzwpHQ51n",
+      "targetId": "UoQbHDgvUaK0AEtLGB0ix",
+      "branch": "success"
+    },
+    {
+      "id": "LeLP7KLbI4J8rum48PUPb",
+      "sourceId": "kwtZG4tG9eommFd3i8eSN",
+      "targetId": "lbe2mWSh70qmfwYP1bkq_",
+      "branch": "default"
+    },
+    {
+      "id": "lNUZmkE8oRPFrFqgPIxLI",
+      "sourceId": "lNLDMVdfIOpejAB1rIGFh",
+      "targetId": "Tj8ZWEp3TUPXuWsv2iWdg",
+      "branch": "output:8lvUaYfmdqOZsbQaoNit:failed"
+    },
+    {
+      "id": "ngq6leux1yeFSYWrGpw9r",
+      "sourceId": "lNLDMVdfIOpejAB1rIGFh",
+      "targetId": "Tj8ZWEp3TUPXuWsv2iWdg",
+      "branch": "output:laCG80S8C_2hN7eATBhf:failed"
+    },
+    {
+      "id": "qhynWNfjK7JGc3gFQ6wuN",
+      "sourceId": "SD4kv1HAzxDRoXkT7gQnF",
+      "targetId": "ApLwc3jmM_vdRdU0FSb7c",
+      "branch": "output:gW8ioMIcWsrMVEu9yNkgJ:failed"
+    },
+    {
+      "id": "r1zJ_uK0lqjklwzKndh5i",
+      "sourceId": "1S-lnUVbPaslZzwpHQ51n",
+      "targetId": "l6w4Otuoe4sjNX1FybRcK",
+      "branch": "failed"
+    },
+    {
+      "id": "uxABv_4_gYtdRky0og1w9",
+      "sourceId": "UoQbHDgvUaK0AEtLGB0ix",
+      "targetId": "-70vnzNH28PIo8rIEjt11",
+      "branch": "default"
+    },
+    {
+      "id": "V80bsZhNlJzBJSlJgEssI",
+      "sourceId": "lbe2mWSh70qmfwYP1bkq_",
+      "targetId": "K-ZcEOOC-LKkK5novy1xr",
+      "branch": "failed"
+    },
+    {
+      "id": "wE3NOiI5nADtu4QyhcXxr",
+      "sourceId": "SD4kv1HAzxDRoXkT7gQnF",
+      "targetId": "ApLwc3jmM_vdRdU0FSb7c",
+      "branch": "output:ceRk0XpZzt-Xj5ly5EfX1:failed"
+    },
+    {
+      "id": "yAlb1LVgEasJ45vfyW5Lf",
+      "sourceId": "lNLDMVdfIOpejAB1rIGFh",
+      "targetId": "tJ-VwmQZH_xx0a0fGYxcv",
+      "branch": "output:9LHkprr8Wls7SGx9nwp8:success"
+    },
+    {
+      "id": "Z4nBRuFPp-MHIov-WIoy0",
+      "sourceId": "lNLDMVdfIOpejAB1rIGFh",
+      "targetId": "Tj8ZWEp3TUPXuWsv2iWdg",
+      "branch": "output:qBeC5Ui-lZGKqzxG5wji:failed"
+    }
+  ]
+}

@@ -1,0 +1,634 @@
+{
+  "workflowId": 18792,
+  "workflowName": "Venta Asistencias - Inicio",
+  "workflowDescription": "Skill de inicio para ventas de asistencias",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "_Eifwh5XHTJkGM7_Y_ShK",
+      "title": "Botones",
+      "configuration": {
+        "messages": [
+          {
+            "id": "eKv7uthZU67pbsOrd7yqE",
+            "text": "Hola, soy Lucy, tu solución inteligente.\n\nSe que te interesa contar con nuestra asistencia App Protegido Plus de Solución 24/7.\n\n¿Dime como te puedo ayudar?",
+            "type": "buttons",
+            "title": "",
+            "caption": "",
+            "options": [
+              {
+                "id": "e4705be1-8c62-4d7b-88fa-47ce98a45762",
+                "url": "",
+                "type": "postback",
+                "title": "Contratar",
+                "payload": {
+                  "type": "edge",
+                  "memory": {
+                    "VA_opcion_btn": "CONTRATAR"
+                  },
+                  "skillId": "10089",
+                  "targetId": "TM9jkc565nNfwBUmVGutf"
+                },
+                "description": ""
+              },
+              {
+                "id": "cc101a6d-1f6c-4b23-9bec-f59b1e6292ee",
+                "url": "",
+                "type": "postback",
+                "title": "Chatear con Asesor",
+                "payload": {
+                  "type": "edge",
+                  "memory": {
+                    "VA_opcion_btn": "CHATEAR_ASESOR"
+                  },
+                  "skillId": "10089",
+                  "targetId": "TM9jkc565nNfwBUmVGutf"
+                },
+                "description": ""
+              },
+              {
+                "id": "4799d2c1-0a91-4289-a06c-522e6cdc95be",
+                "url": "",
+                "type": "postback",
+                "title": "Quiero llamar",
+                "payload": {
+                  "type": "edge",
+                  "memory": {
+                    "VA_opcion_btn": "QUIERO_LLAMAR"
+                  },
+                  "skillId": "10089",
+                  "targetId": "TM9jkc565nNfwBUmVGutf"
+                },
+                "description": ""
+              }
+            ],
+            "settings": {
+              "isBlockingEnabled": false,
+              "oneTimeUseButtons": false
+            }
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        3090,
+        233
+      ]
+    },
+    {
+      "id": "0PmFCWO1hvuMxqnWsSI60",
+      "title": "Update Datum Record",
+      "configuration": {
+        "input": {
+          "data": "{{$memory.VA_data_report}}",
+          "table_id": "2145",
+          "record_id": "{{$memory.VA_id_log}}"
+        },
+        "version": "v 1.0",
+        "toolData": {
+          "toolId": 1943,
+          "toolName": "Update Datum Record",
+          "thumbnail": 7,
+          "toolkitId": 548,
+          "workflowId": 6810,
+          "principalColor": "#000000",
+          "complementaryColor": "#ffffff"
+        },
+        "variable": "updateRecord",
+        "inputDisplayName": {
+          "data": "{{$memory.VA_data_report}}",
+          "table_id": "2145",
+          "record_id": "{{$memory.VA_id_log}}"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        7075,
+        -322
+      ]
+    },
+    {
+      "id": "4sMqepzRDUqPbB6Lpg_w5",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "DWlx2934mtt1cfP4w6q6m",
+            "name": "",
+            "terms": [
+              {
+                "id": "R6peK5GzW1oSQ2kWXs4x8",
+                "type": "",
+                "value1": "{{$memory.VA_opcion_btn}}",
+                "value2": "CONTRATAR",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.VA_opcion_btn}}",
+                  "value2": "CONTRATAR"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          },
+          {
+            "id": "W3mVD1wjJU1sw35vUdoUt",
+            "name": "",
+            "terms": [
+              {
+                "id": "84kjUBkbKNAqLTlh9OsoD",
+                "type": "",
+                "value1": "{{$memory.VA_opcion_btn}}",
+                "value2": "CHATEAR_ASESOR",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.VA_opcion_btn}}",
+                  "value2": "CHATEAR_ASESOR"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          },
+          {
+            "id": "VcsaGz3m_73Q4oqYOYHSR",
+            "name": "",
+            "terms": [
+              {
+                "id": "kaBGaiE3MEyhRGNzfF29v",
+                "type": "",
+                "value1": "{{$memory.VA_opcion_btn}}",
+                "value2": "QUIERO_LLAMAR",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.VA_opcion_btn}}",
+                  "value2": "QUIERO_LLAMAR"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        4662,
+        298
+      ]
+    },
+    {
+      "id": "95-sCjOmdqF831HTm8Azl",
+      "title": "Imagen",
+      "configuration": {
+        "messages": [
+          {
+            "id": "J1Bpixw_aNLO2CfCvkNZm",
+            "url": "https://s3.us-west-2.amazonaws.com/cdn.devlabs.tech/18792%2Fimage%2F08316020-0ef5-408a-ac22-d5d658d12214-1744644974275.png",
+            "type": "image",
+            "caption": "*Servicios adicionales incluidos*\n📌 Asesoría legal telefónica\n📌 Reparación de pantalla de celular\n📌 Asistencia técnica telefónica\n📌 Técnico PC remoto, en línea o in situ\n📌 Atención médica telefónica"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        2205,
+        154
+      ]
+    },
+    {
+      "id": "APrdAD6Bxknmme1BT8tmn",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        818,
+        338
+      ]
+    },
+    {
+      "id": "cepYbRdTzHBlb1LLcE5vU",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "YTL-phnilhiZQP8mjQDeU",
+            "text": "La cédula que ingresaste no es válida, por favor, inténtalo nuevamente.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        6651,
+        413
+      ]
+    },
+    {
+      "id": "fcOb0YwlWNGgWOTN9zJ5c",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "const identificacion = $memory.get('VA_identificacion', '')\nconst is_valid_cedula = validLegalIdEc(identificacion)\n\n$memory.set('is_valid_cedula', is_valid_cedula, 86400)\n\n// Función del dígito verificador para cédulas ecuatorianas\nfunction validLegalIdEc(legalId) {\n    if (typeof (legalId) == 'string' && legalId.length == 10 && /^\\d+$/.test(legalId)) {\n        var digitos = legalId.split('').map(Number)\n        var codigo_provincia = digitos[0] * 10 + digitos[1]\n\n        if (codigo_provincia >= 1 && (codigo_provincia <= 24 || codigo_provincia == 30)) {\n            var digito_verificador = digitos.pop()\n\n            var digito_calculado = digitos.reduce(\n                function (valorPrevio, valorActual, indice) {\n                    return valorPrevio - (valorActual * (2 - indice % 2)) % 9 - (valorActual == 9) * 9;\n                }, 1000) % 10\n            return digito_calculado === digito_verificador\n        }\n    }\n    return false\n}",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        5807,
+        -131
+      ]
+    },
+    {
+      "id": "gV5GPrKVWrk-r18UmTYJU",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "try {\n    const data = {\n        \"identification\": $memory.get(\"VA_identificacion\", ''),\n    }\n\n    $memory.setJson(\"VA_data_report\", JSON.stringify(data, 86400))\n} catch (ex) { }",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        6764,
+        -299
+      ]
+    },
+    {
+      "id": "H1Amv4Axl4__QPTbVO_na",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "10091"
+      },
+      "type": "SKILL",
+      "position": [
+        5731,
+        443
+      ]
+    },
+    {
+      "id": "H4-1wKZzK8cAM0Q-PyV3K",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "const now = $utils.dayjs().tz('America/Guayaquil')\nconst data = {\n    \"user_id\": $user.get(\"id\"),\n    \"user_name\": $user.get(\"names\"),\n    \"identification\": \"\",\n    \"campaign\": \"Bco Internacional\",\n    \"product\": \"App Protegido Plus\",\n    \"option_btn\": \"\",\n    \"date_time\": now\n}\n\n$memory.setJson(\"VA_data_report\", JSON.stringify(data, 86400))",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        1388,
+        297
+      ]
+    },
+    {
+      "id": "JrkE2zQMSG7-rnWjXpqcN",
+      "title": "Pausa",
+      "configuration": {
+        "time": "seconds",
+        "duration": 5,
+        "timeInSeconds": 5
+      },
+      "type": "PAUSE",
+      "position": [
+        2635,
+        374
+      ]
+    },
+    {
+      "id": "KJqVEoSFpNpBjhMRkLJ3h",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "ZWm3rN1TaibQ5F-IdBBsf",
+            "text": "Puedes contactarte con un gestor de ventas al siguiente número 023956379",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        5140,
+        761
+      ]
+    },
+    {
+      "id": "MipzKfLL2moIBpO8XRnte",
+      "title": "Create Datum Record",
+      "configuration": {
+        "input": {
+          "data": "{{$memory.VA_data_report}}",
+          "table_id": "2145"
+        },
+        "version": "v 1.0",
+        "toolData": {
+          "toolId": 1942,
+          "toolName": "Create Datum Record",
+          "thumbnail": 7,
+          "toolkitId": 548,
+          "workflowId": 6809,
+          "principalColor": "#000000",
+          "complementaryColor": "#ffffff"
+        },
+        "variable": "VA_id_log",
+        "inputDisplayName": {
+          "data": "{{$memory.VA_data_report}}",
+          "table_id": "2145"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        1721,
+        277
+      ]
+    },
+    {
+      "id": "P8zBjxZzNtm5wkaWvjyQW",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "zQkzU-MhSWt-7G-zAguZv",
+            "name": "",
+            "terms": [
+              {
+                "id": "n8cBQbXGYsijQA9Sr025Z",
+                "type": "",
+                "value1": "{{$memory.is_valid_cedula}}",
+                "value2": "true",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.is_valid_cedula}}",
+                  "value2": "true"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        6117,
+        -90
+      ]
+    },
+    {
+      "id": "pm2PXnlW7iS7_AkqdH-zv",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "10090"
+      },
+      "type": "SKILL",
+      "position": [
+        7642,
+        -237
+      ]
+    },
+    {
+      "id": "TM9jkc565nNfwBUmVGutf",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "try {\n    const data = {\n        \"option_btn\": $memory.get(\"VA_opcion_btn\", ''),\n    }\n\n    $memory.setJson(\"VA_data_report\", JSON.stringify(data, 86400))\n} catch (ex) {\n}",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        3705,
+        331
+      ]
+    },
+    {
+      "id": "u6qgEKm1IXJ78vJ0kXSAn",
+      "title": "Pregunta",
+      "configuration": {
+        "prompt": "Ayúdanos ingresando tu número de cédula",
+        "variable": "VA_identificacion"
+      },
+      "type": "INPUT",
+      "position": [
+        5277,
+        -233
+      ]
+    },
+    {
+      "id": "wBy5zvLMnHLoax7t2NEs-",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "kjeoA_N2UJmxd00k67Vpi",
+            "text": "Muy bien, enseguida te contactaré con un asesor ...",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        5274,
+        443
+      ]
+    },
+    {
+      "id": "XXb7lySdi553yjnuxF0Qh",
+      "title": "Update Datum Record",
+      "configuration": {
+        "input": {
+          "data": "{{$memory.VA_data_report}}",
+          "table_id": "2145",
+          "record_id": "{{$memory.VA_id_log}}"
+        },
+        "version": "v 1.0",
+        "toolData": {
+          "toolId": 1943,
+          "toolName": "Update Datum Record",
+          "thumbnail": 7,
+          "toolkitId": 548,
+          "workflowId": 6810,
+          "principalColor": "#000000",
+          "complementaryColor": "#ffffff"
+        },
+        "variable": "updateRecord",
+        "inputDisplayName": {
+          "data": "{{$memory.VA_data_report}}",
+          "table_id": "2145",
+          "record_id": "{{$memory.VA_id_log}}"
+        }
+      },
+      "type": "TOOL",
+      "position": [
+        4075,
+        316
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "_t-yJpi2kcbqaggtjnkv-",
+      "sourceId": "4sMqepzRDUqPbB6Lpg_w5",
+      "targetId": "wBy5zvLMnHLoax7t2NEs-",
+      "branch": "condition:W3mVD1wjJU1sw35vUdoUt"
+    },
+    {
+      "id": "0M9CjhbnHjoaV0kR-DL99",
+      "sourceId": "MipzKfLL2moIBpO8XRnte",
+      "targetId": "95-sCjOmdqF831HTm8Azl",
+      "branch": "output:EvpFQcH4X7RdlrZ593Ip1:failed"
+    },
+    {
+      "id": "0sYaF0C1JlJSLVimnGaxC",
+      "sourceId": "0PmFCWO1hvuMxqnWsSI60",
+      "targetId": "pm2PXnlW7iS7_AkqdH-zv",
+      "branch": "output:_p9oNjxtCjdKJC9BuCCr4:failed"
+    },
+    {
+      "id": "5mLloDl2FO4wU51evZ9LT",
+      "sourceId": "XXb7lySdi553yjnuxF0Qh",
+      "targetId": "4sMqepzRDUqPbB6Lpg_w5",
+      "branch": "output:3vnMGZ4aHTZe2QBsCDUgK:success"
+    },
+    {
+      "id": "725c19fO3aFFkUV78E9Jw",
+      "sourceId": "4sMqepzRDUqPbB6Lpg_w5",
+      "targetId": "u6qgEKm1IXJ78vJ0kXSAn",
+      "branch": "condition:DWlx2934mtt1cfP4w6q6m"
+    },
+    {
+      "id": "9ylUlsex_ntpTjobqGMNb",
+      "sourceId": "0PmFCWO1hvuMxqnWsSI60",
+      "targetId": "pm2PXnlW7iS7_AkqdH-zv",
+      "branch": "output:3vnMGZ4aHTZe2QBsCDUgK:success"
+    },
+    {
+      "id": "aSNTsmsoHv2F9XvQpKc-M",
+      "sourceId": "4sMqepzRDUqPbB6Lpg_w5",
+      "targetId": "wBy5zvLMnHLoax7t2NEs-",
+      "branch": "else"
+    },
+    {
+      "id": "Bc5F6vJnrGgYjegK1TKxc",
+      "sourceId": "fcOb0YwlWNGgWOTN9zJ5c",
+      "targetId": "P8zBjxZzNtm5wkaWvjyQW",
+      "branch": "success"
+    },
+    {
+      "id": "doAySdMdGeKCxO7krgTLA",
+      "sourceId": "APrdAD6Bxknmme1BT8tmn",
+      "targetId": "H4-1wKZzK8cAM0Q-PyV3K",
+      "branch": "default"
+    },
+    {
+      "id": "DpZxP-GXpqc95lfv5d6hJ",
+      "sourceId": "wBy5zvLMnHLoax7t2NEs-",
+      "targetId": "H1Amv4Axl4__QPTbVO_na",
+      "branch": "default"
+    },
+    {
+      "id": "fSrwCezAn7Csgq5s5dozY",
+      "sourceId": "XXb7lySdi553yjnuxF0Qh",
+      "targetId": "4sMqepzRDUqPbB6Lpg_w5",
+      "branch": "output:P9ej46UN4bV67N7nixFLK:failed"
+    },
+    {
+      "id": "GccTLuv42gHEal6JG3zrN",
+      "sourceId": "95-sCjOmdqF831HTm8Azl",
+      "targetId": "JrkE2zQMSG7-rnWjXpqcN",
+      "branch": "default"
+    },
+    {
+      "id": "hOucIS5jHRoMG1Qg7cFVN",
+      "sourceId": "4sMqepzRDUqPbB6Lpg_w5",
+      "targetId": "KJqVEoSFpNpBjhMRkLJ3h",
+      "branch": "condition:VcsaGz3m_73Q4oqYOYHSR"
+    },
+    {
+      "id": "j5RPR8VLijIocIcrcVfcw",
+      "sourceId": "_Eifwh5XHTJkGM7_Y_ShK",
+      "targetId": "TM9jkc565nNfwBUmVGutf",
+      "branch": "option:4799d2c1-0a91-4289-a06c-522e6cdc95be"
+    },
+    {
+      "id": "KE9KL_PWSx0arRBAqPuAb",
+      "sourceId": "TM9jkc565nNfwBUmVGutf",
+      "targetId": "XXb7lySdi553yjnuxF0Qh",
+      "branch": "success"
+    },
+    {
+      "id": "KlcXJPYVsvdZWODVBZdKD",
+      "sourceId": "P8zBjxZzNtm5wkaWvjyQW",
+      "targetId": "gV5GPrKVWrk-r18UmTYJU",
+      "branch": "condition:zQkzU-MhSWt-7G-zAguZv"
+    },
+    {
+      "id": "L4vOIEmv3MjdBJpknAFZg",
+      "sourceId": "MipzKfLL2moIBpO8XRnte",
+      "targetId": "95-sCjOmdqF831HTm8Azl",
+      "branch": "output:4lMXlfATy7tb-cJ4VvavW:success"
+    },
+    {
+      "id": "lhuVnb1A_oLLBE05lyiZV",
+      "sourceId": "gV5GPrKVWrk-r18UmTYJU",
+      "targetId": "0PmFCWO1hvuMxqnWsSI60",
+      "branch": "success"
+    },
+    {
+      "id": "lX1nNDWOIyROcNfbFYGl5",
+      "sourceId": "u6qgEKm1IXJ78vJ0kXSAn",
+      "targetId": "fcOb0YwlWNGgWOTN9zJ5c",
+      "branch": "success"
+    },
+    {
+      "id": "Mbiaz_XIGKz5cDczQEj6S",
+      "sourceId": "_Eifwh5XHTJkGM7_Y_ShK",
+      "targetId": "TM9jkc565nNfwBUmVGutf",
+      "branch": "option:cc101a6d-1f6c-4b23-9bec-f59b1e6292ee"
+    },
+    {
+      "id": "o4bRKU89_PdvPHNiHoDnE",
+      "sourceId": "0PmFCWO1hvuMxqnWsSI60",
+      "targetId": "pm2PXnlW7iS7_AkqdH-zv",
+      "branch": "output:P9ej46UN4bV67N7nixFLK:failed"
+    },
+    {
+      "id": "P42i1FeBHFq-UVvxygndr",
+      "sourceId": "_Eifwh5XHTJkGM7_Y_ShK",
+      "targetId": "TM9jkc565nNfwBUmVGutf",
+      "branch": "option:e4705be1-8c62-4d7b-88fa-47ce98a45762"
+    },
+    {
+      "id": "sBzls-aTPC4tGyq-phDn5",
+      "sourceId": "JrkE2zQMSG7-rnWjXpqcN",
+      "targetId": "_Eifwh5XHTJkGM7_Y_ShK",
+      "branch": "default"
+    },
+    {
+      "id": "TnpEQ9DyBPXKinQh5cyZT",
+      "sourceId": "cepYbRdTzHBlb1LLcE5vU",
+      "targetId": "u6qgEKm1IXJ78vJ0kXSAn",
+      "branch": "default"
+    },
+    {
+      "id": "uk_hn0y6tFv04J_9x7GHv",
+      "sourceId": "H4-1wKZzK8cAM0Q-PyV3K",
+      "targetId": "MipzKfLL2moIBpO8XRnte",
+      "branch": "success"
+    },
+    {
+      "id": "WcRSl79gVGQlkPlhmmmAl",
+      "sourceId": "MipzKfLL2moIBpO8XRnte",
+      "targetId": "95-sCjOmdqF831HTm8Azl",
+      "branch": "output:QjQM5cRDsMJy5vOfDW6Bc:failed"
+    },
+    {
+      "id": "X7cyqDwHa3AUUDCktleJN",
+      "sourceId": "XXb7lySdi553yjnuxF0Qh",
+      "targetId": "4sMqepzRDUqPbB6Lpg_w5",
+      "branch": "output:_p9oNjxtCjdKJC9BuCCr4:failed"
+    },
+    {
+      "id": "Yxf6F8zkL4cisRh8Yzr_2",
+      "sourceId": "P8zBjxZzNtm5wkaWvjyQW",
+      "targetId": "cepYbRdTzHBlb1LLcE5vU",
+      "branch": "else"
+    }
+  ]
+}

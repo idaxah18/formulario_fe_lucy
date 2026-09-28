@@ -19,10 +19,10 @@
         >
             <span
                 class="chat-menu-item__icon"
-                :class="menuIconTone(index)"
+                :class="action.menuTone || menuIconTone(index)"
                 aria-hidden="true"
             >
-                <ChatIcon :name="resolveMenuIcon(action)" />
+                <ChatIcon :name="action.icon || resolveMenuIcon(action)" />
             </span>
             <span class="chat-menu-item__label">{{ cleanLabel(action.label) }}</span>
             <span

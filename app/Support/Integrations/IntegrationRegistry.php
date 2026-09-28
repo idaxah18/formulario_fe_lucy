@@ -25,8 +25,8 @@ final class IntegrationRegistry
             ],
             'jelou_datum' => [
                 'label' => 'Jelou Datum',
-                'description' => 'Venta, derivación, IA Router términos.',
-                'env' => ['JELOU_API_TOKEN'],
+                'description' => 'Venta, derivación, IA Router términos (HTTP Basic en tool 1942; sk_ no sirve en /v2/databases).',
+                'env' => [],
                 'optional' => true,
             ],
             'jelou_pay' => [
@@ -53,6 +53,12 @@ final class IntegrationRegistry
     /** @return list<string> */
     public static function missingEnvKeys(string $integration): array
     {
+        if ($integration === 'jelou_datum') {
+            return self::jelouDatumConfigured()
+                ? []
+                : ['JELOU_DATUM_VENTA_BASIC_* (tabla 1435) y/o JELOU_DATUM_BASIC_* (otras tablas)'];
+        }
+
         $def = self::definitions()[$integration] ?? null;
         if (! $def) {
             return ["UNKNOWN_INTEGRATION:{$integration}"];
@@ -71,7 +77,27 @@ final class IntegrationRegistry
 
     public static function isConfigured(string $integration): bool
     {
+        if ($integration === 'jelou_datum') {
+            return self::jelouDatumConfigured();
+        }
+
         return self::missingEnvKeys($integration) === [];
+    }
+
+    public static function jelouDatumConfigured(): bool
+    {
+        foreach (['JELOU_DATUM_VENTA_BASIC_USER', 'JELOU_DATUM_BASIC_USER'] as $userKey) {
+            $passKey = str_replace('_USER', '_PASSWORD', $userKey);
+            $user = env($userKey);
+            $pass = env($passKey);
+            if ($user !== null && $user !== '' && $pass !== null && $pass !== '') {
+                return true;
+            }
+        }
+
+        $token = env('JELOU_API_TOKEN');
+
+        return $token !== null && $token !== '';
     }
 
     /** Lanza si faltan variables de entorno para esta integración (rutas protegidas por middleware). */

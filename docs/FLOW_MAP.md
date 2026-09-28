@@ -51,8 +51,7 @@ Comandos globales en el chat: `Menú principal`, `Empezar`.
 
 ### 3.2 Médico (`2.2 Médico`)
 
-- Ambulancia, médico a domicilio → **ubicación + dirección** (V2 crear asistencia)
-- Orientación médica telefónica
+- Ambulancia, orientación médica telefónica, médico a domicilio, bienestar y nutrición → **ubicación + dirección** (V2 crear asistencia / skill 4220)
 - Agendar / reagendar cita médica
 - Bienestar y nutrición
 - E-doctor → ver §6
@@ -65,17 +64,17 @@ Plomero, Electricista, Cerrajero, Vidriería, Limpieza y mantenimiento, Spa y pe
 
 ### 3.4 Vial (`2.4 Vial`)
 
-Grúa, Cambio de llanta, Suministro gasolina, Paso de corriente, Cerrajería puertas, Inspector in situ, Asistencia legal, Vial IA.
+Grúa, Cambio de llanta, Suministro gasolina, Paso de corriente, Cerrajería puertas, Inspector in situ, **Asistencia Legal Telf.** (placa, sin GPS, GEA **322** / skill 5231), Vial IA.
 
 ### 3.5 Otras y soporte
 
-- Otras soluciones (`2.5` → `Otras soluciones 2`)
-- Reportar problema (texto libre)
+- Otras soluciones (`2.5` → `Otras soluciones 2`: Sí → GEA **476** sin GPS; Salir → menú 24/7)
+- Reportar problema (texto libre → mensaje agente + menú 24/7; en WA continúa a PMA equipo)
 - Ver más opciones → info / comprar / blog
 
 ### 3.6 Ver más opciones (`2.7`)
 
-- Info asistencia → servicio contratado (hogar/vial/médico/dental/otras) / solicitar factura
+- Info asistencia → servicio contratado (hogar/vial/médico/dental/otras → derivación Datum; en WA PMA) / solicitar factura (derivación Datum `Solicitar factura`; en WA PMA)
 - Comprar asistencia → Venta asistencias (contratar / asesor / llamar)
 - Blog Solución 24/7
 

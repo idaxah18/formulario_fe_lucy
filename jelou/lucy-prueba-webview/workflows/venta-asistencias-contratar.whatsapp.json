@@ -1,0 +1,680 @@
+{
+  "workflowId": 18793,
+  "workflowName": "Venta Asistencias - Contratar",
+  "workflowDescription": "Skill para contratar la asistencia",
+  "workflowDefault": false,
+  "nodes": [
+    {
+      "id": "1352E4vwhfau6wlUNQrzo",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "DTx4GL4NOo4hDhuVDLDf0",
+            "name": "",
+            "terms": [
+              {
+                "id": "ViZ5_dQI95DUpRBdwIv-3",
+                "type": "",
+                "value1": "{{$memory.is_interested}}",
+                "value2": "true",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.is_interested}}",
+                  "value2": "true"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        2785,
+        -77
+      ]
+    },
+    {
+      "id": "1itPo9UI1YinfUl8etsRd",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "const dataLead = $memory.getJson('dataLead', {})\nconst ya_contrato = dataLead.contrato_asistencia === 'SI'\n\n$memory.set('ya_contrato', ya_contrato)",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        4369,
+        -356
+      ]
+    },
+    {
+      "id": "3ZD0PctIMQaoLOBSPVY1k",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "VA_id_table": "1435"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        1325,
+        334
+      ]
+    },
+    {
+      "id": "6EIboKJlXqZkjFSqD8SQ2",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "const responseHttp = $context.getHttpResponse('getDataLead')\nconst data = responseHttp.json()\nconst rows = $utils._.get(data, 'results', [])\n\nlet is_interested = rows.length > 0\n\nif (is_interested) {\n    $memory.setJson('dataLead', rows.at(0, 86400))\n}\n\n$memory.set('is_interested', is_interested, 86400)",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        2417,
+        70
+      ]
+    },
+    {
+      "id": "bi-Uxf1HE4l_XZjyb-ii9",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "EMOWbVlM1g_WRB3F8vhBz",
+            "text": "Muy bien, enseguida te contactaré con un asesor ...",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        3240,
+        312
+      ]
+    },
+    {
+      "id": "bUeXg2b7gVNB4sXHgZU_x",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "X4izfwOq5_jERQopTjBa4",
+            "name": "",
+            "terms": [
+              {
+                "id": "kE7MYikRlz9P4N9j4SGMn",
+                "type": "",
+                "value1": "{{$memory.ya_contrato}}",
+                "value2": "false",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.ya_contrato}}",
+                  "value2": "false"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        4721,
+        -340
+      ]
+    },
+    {
+      "id": "ewsQFXl0vrrjPwIISTv8K",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "g6E3QtKwh98Yyi_cYGxWU",
+            "text": "EL número de celular no es el mismo que tengo registrado. Para validar tu identidad, por favor, realiza este procedimiento desde el mismo número que consultaste en Chip de Banco Internacional.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        4243,
+        -34
+      ]
+    },
+    {
+      "id": "FORPThbo4soc6VSIkSEG5",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "const fecha_hora = $utils.dayjs().tz('America/Guayaquil')\n$memory.set('fecha_hora_contrato', fecha_hora.format('YYYY-MM-DD HH:mm:ss'))",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        6943,
+        -545
+      ]
+    },
+    {
+      "id": "GM-1KHuxe4DlH3QFYiM0j",
+      "title": "brain.nodes.code_name v2",
+      "configuration": {
+        "title": "brain.nodes.code_name v2",
+        "content": "const dataLead = $memory.getJson('dataLead', {})\nconst userId = $user.get('id')\nconst equal_user_id = dataLead.identificador_canal === userId\n\n$memory.set('equal_user_id', equal_user_id)",
+        "instruction": "Migrated from legacy CODE. Same business logic; Memory v2 API.",
+        "memoryVersion": "v2"
+      },
+      "type": "CODE",
+      "position": [
+        3395,
+        -226
+      ]
+    },
+    {
+      "id": "GPXV2v-0FXgusJlHNv56P",
+      "title": "Skill",
+      "configuration": {
+        "skillId": "10091"
+      },
+      "type": "SKILL",
+      "position": [
+        3719,
+        316
+      ]
+    },
+    {
+      "id": "J56KRiGZIje---0iKEFCX",
+      "title": "API",
+      "configuration": {
+        "url": "https://api.jelou.ai/v2/databases/{{$memory.VA_id_table}}/rows/{{$memory.dataLead._id}}",
+        "body": {
+          "type": "application/json",
+          "content": "{\n    \"fecha_hora_contrato\": \"{{$memory.fecha_hora_contrato}}\",\n    \"contrato_asistencia\": \"SI\",\n    \"user_id_contrato\": \"{{$user.id}}\"\n}",
+          "enabled": true
+        },
+        "method": "PUT",
+        "output": "updateDataLead",
+        "headers": [
+          {
+            "id": "e1g3KtCMr9AwChWJv3dKL",
+            "key": "content-type",
+            "value": "application/json",
+            "enabled": true
+          }
+        ],
+        "settings": {
+          "retries": 0,
+          "timeout": 30000,
+          "proxyOptions": {
+            "ip": "185.228.195.219",
+            "auth": {
+              "password": null,
+              "username": null
+            },
+            "host": null,
+            "port": null,
+            "enabled": false,
+            "protocol": "https"
+          },
+          "retryOptions": {
+            "enabled": false,
+            "retries": 0,
+            "retryDelay": "no_delay",
+            "milliseconds": 1000,
+            "retryCondition": "is_network_or_idempotent_request_error",
+            "shouldResetTimeout": false
+          },
+          "sslCertificate": true
+        },
+        "parameters": [
+          {
+            "id": "nBFIfSulbLBTtVK77-5-t",
+            "key": "",
+            "value": "",
+            "enabled": false
+          }
+        ],
+        "authentication": {
+          "type": "basic",
+          "enabled": true,
+          "password": "KpQpRKJk0CDAFOuIeaLDmsBiUzpkwSqNjzMuyuK9FjCWcmdEj3oH2xnJ8zAPYh7P",
+          "username": "4K44KPUkHrjCeC6Bn6Dcfa28owGrGZnL"
+        }
+      },
+      "type": "HTTP",
+      "position": [
+        7275,
+        -573
+      ]
+    },
+    {
+      "id": "NYvX7ebm4At-Mf-oBj5PR",
+      "title": "API",
+      "configuration": {
+        "url": "https://api.jelou.ai/v2/databases/{{$memory.VA_id_table}}/rows",
+        "body": {
+          "type": "no-content",
+          "content": "",
+          "enabled": false
+        },
+        "method": "GET",
+        "output": "getDataLead",
+        "headers": [
+          {
+            "id": "34k5kwL0XjN7_a4UPXM0r",
+            "key": "content-type",
+            "value": "no-content",
+            "enabled": true
+          }
+        ],
+        "settings": {
+          "retries": 0,
+          "timeout": 30000,
+          "proxyOptions": {
+            "ip": "185.228.195.219",
+            "auth": {
+              "password": null,
+              "username": null
+            },
+            "host": null,
+            "port": null,
+            "enabled": false,
+            "protocol": "https"
+          },
+          "retryOptions": {
+            "enabled": false,
+            "retries": 0,
+            "retryDelay": "no_delay",
+            "milliseconds": 1000,
+            "retryCondition": "is_network_or_idempotent_request_error",
+            "shouldResetTimeout": false
+          },
+          "sslCertificate": true
+        },
+        "parameters": [
+          {
+            "id": "T6YhOGgnGg0yN9dokVSWv",
+            "key": "sortBy",
+            "value": "createdAt",
+            "enabled": true
+          },
+          {
+            "id": "mG12su1HuleWplWyaUsnD",
+            "key": "sortByOrder",
+            "value": "desc",
+            "enabled": true
+          },
+          {
+            "id": "7Gsn7_LTz7X7jutMefGHs",
+            "key": "limit",
+            "value": "1",
+            "enabled": true
+          },
+          {
+            "id": "ckQ4RUeu1q0OyXBoiTu95",
+            "key": "identificacion",
+            "value": "{{$memory.VA_identificacion}}",
+            "enabled": true
+          },
+          {
+            "id": "WVM9OZx2BByUYhZTVuSRq",
+            "key": "accion_ejecutada",
+            "value": "CONTRATADO",
+            "enabled": true
+          },
+          {
+            "id": "39LlKroCbXVZVlmAa9dBm",
+            "key": "",
+            "type": "text",
+            "value": "",
+            "enabled": false
+          }
+        ],
+        "authentication": {
+          "type": "basic",
+          "enabled": true,
+          "password": "KpQpRKJk0CDAFOuIeaLDmsBiUzpkwSqNjzMuyuK9FjCWcmdEj3oH2xnJ8zAPYh7P",
+          "username": "4K44KPUkHrjCeC6Bn6Dcfa28owGrGZnL"
+        }
+      },
+      "type": "HTTP",
+      "position": [
+        1812,
+        260
+      ]
+    },
+    {
+      "id": "pmx8V1-uDLXVcd-aRG-OB",
+      "title": "Botones",
+      "configuration": {
+        "messages": [
+          {
+            "id": "lz0Je-ZgUbdxpN7AKCIB2",
+            "text": "¿Autorizas el cargo automático de $5.99 + IVA mensual a tu {{$memory.segmento}} de la asistencia App Protegida Plus?",
+            "type": "buttons",
+            "title": "",
+            "caption": "",
+            "options": [
+              {
+                "id": "35d9943b-86bd-46ec-b369-20bd3384e640",
+                "url": "",
+                "type": "postback",
+                "title": "Aceptar y Continuar",
+                "payload": {
+                  "type": "edge",
+                  "skillId": "10090",
+                  "targetId": "FORPThbo4soc6VSIkSEG5"
+                },
+                "description": ""
+              }
+            ],
+            "settings": {
+              "isBlockingEnabled": false,
+              "oneTimeUseButtons": false
+            }
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        6332,
+        -574
+      ]
+    },
+    {
+      "id": "TE5f75_u4BAezhXtnmUbU",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "04L0bdOu2S0Zt124jkDUc",
+            "text": "Actualmente ya cuentas con este servicio contratado.",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        5249,
+        -110
+      ]
+    },
+    {
+      "id": "w2kKcve-2EWFQ5l1FZXzo",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "segmento": "Tarjeta",
+          "TyCAsistencia": "https://bit.ly/APP60C"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        5804,
+        -380
+      ]
+    },
+    {
+      "id": "xb0v6XgS3Jw7JfY7-AA1a",
+      "title": "Start",
+      "type": "START",
+      "position": [
+        818,
+        338
+      ]
+    },
+    {
+      "id": "XUUGvtClIKM6pICh46Sy8",
+      "title": "Texto",
+      "configuration": {
+        "messages": [
+          {
+            "id": "RJ_9TgXjgjKRiEPlahmoy",
+            "text": "¡Felicidades! Gracias por contratar tu App Protegida Plus. Puedes revisar los términos de tu plan en {{$memory.TyCAsistencia}}.\n\nChatea conmigo para hacer uso de tus servicios a cualquier hora. O también puedes solicitarlos al 1700 247000.\n\n¡Que tengas un buen día! 😄",
+            "type": "text"
+          }
+        ]
+      },
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        7770,
+        -512
+      ]
+    },
+    {
+      "id": "Xvkg630tBLLLAzwp-Wygk",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "88fadnpNZHSvuS4moPYD2",
+            "name": "",
+            "terms": [
+              {
+                "id": "ULVX-KyA0KxlGVbDB-Osw",
+                "type": "",
+                "value1": "{{$memory.equal_user_id}}",
+                "value2": "true",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.equal_user_id}}",
+                  "value2": "true"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        3743,
+        -214
+      ]
+    },
+    {
+      "id": "ZleF1IRDgJZBHUuQjVpnL",
+      "title": "Condicional",
+      "configuration": {
+        "conditions": [
+          {
+            "id": "pRAGoZN-UKh_Mu2Ahkw2T",
+            "name": "",
+            "terms": [
+              {
+                "id": "owbrxdfWoiS7XWuLbLAdJ",
+                "type": "",
+                "value1": "{{$memory.dataLead.segmento}}",
+                "value2": "Cuentas",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.dataLead.segmento}}",
+                  "value2": "Cuentas"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          },
+          {
+            "id": "KQW15mX3n4ZLj2TAE0x8H",
+            "name": "",
+            "terms": [
+              {
+                "id": "yGhpAxVVIKDBWIkITg-uh",
+                "type": "",
+                "value1": "{{$memory.dataLead.segmento}}",
+                "value2": "Tarjetas",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.dataLead.segmento}}",
+                  "value2": "Tarjetas"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      },
+      "type": "CONDITIONAL",
+      "position": [
+        5269,
+        -552
+      ]
+    },
+    {
+      "id": "ZyBimlUakGaaT79zSnq-O",
+      "title": "Variable",
+      "configuration": {
+        "variables": {
+          "segmento": "Cuenta",
+          "TyCAsistencia": "https://bit.ly/APP60D"
+        }
+      },
+      "type": "MEMORY",
+      "position": [
+        5793,
+        -735
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "7aHWpMy0kxGzbctkX96nv",
+      "sourceId": "pmx8V1-uDLXVcd-aRG-OB",
+      "targetId": "FORPThbo4soc6VSIkSEG5",
+      "branch": "option:35d9943b-86bd-46ec-b369-20bd3384e640"
+    },
+    {
+      "id": "9BJ5yVREv6yeK7KJElPn1",
+      "sourceId": "1352E4vwhfau6wlUNQrzo",
+      "targetId": "bi-Uxf1HE4l_XZjyb-ii9",
+      "branch": "else"
+    },
+    {
+      "id": "aAFWd-8nYgZ0bytmZk2dz",
+      "sourceId": "3ZD0PctIMQaoLOBSPVY1k",
+      "targetId": "NYvX7ebm4At-Mf-oBj5PR",
+      "branch": "default"
+    },
+    {
+      "id": "aGk4OlvwEsev-IsX475gf",
+      "sourceId": "6EIboKJlXqZkjFSqD8SQ2",
+      "targetId": "bi-Uxf1HE4l_XZjyb-ii9",
+      "branch": "failed"
+    },
+    {
+      "id": "DDoLx39eLR0otaI8chKns",
+      "sourceId": "w2kKcve-2EWFQ5l1FZXzo",
+      "targetId": "pmx8V1-uDLXVcd-aRG-OB",
+      "branch": "default"
+    },
+    {
+      "id": "dxiwSQtVyj--ddInsMVEe",
+      "sourceId": "NYvX7ebm4At-Mf-oBj5PR",
+      "targetId": "6EIboKJlXqZkjFSqD8SQ2",
+      "branch": "success"
+    },
+    {
+      "id": "e2xh8t_8WQChRIWcfekXz",
+      "sourceId": "ZyBimlUakGaaT79zSnq-O",
+      "targetId": "pmx8V1-uDLXVcd-aRG-OB",
+      "branch": "default"
+    },
+    {
+      "id": "fOKrM1sfdO-9TqjgCjW3K",
+      "sourceId": "ZleF1IRDgJZBHUuQjVpnL",
+      "targetId": "w2kKcve-2EWFQ5l1FZXzo",
+      "branch": "condition:KQW15mX3n4ZLj2TAE0x8H"
+    },
+    {
+      "id": "GEVRDCJsASFZOhBfZNeLh",
+      "sourceId": "bUeXg2b7gVNB4sXHgZU_x",
+      "targetId": "ZleF1IRDgJZBHUuQjVpnL",
+      "branch": "condition:X4izfwOq5_jERQopTjBa4"
+    },
+    {
+      "id": "GIbjw2fWKsco2CojnDqzV",
+      "sourceId": "J56KRiGZIje---0iKEFCX",
+      "targetId": "XUUGvtClIKM6pICh46Sy8",
+      "branch": "success"
+    },
+    {
+      "id": "gMHvJUiNcAKH_jCdoHMbo",
+      "sourceId": "bUeXg2b7gVNB4sXHgZU_x",
+      "targetId": "TE5f75_u4BAezhXtnmUbU",
+      "branch": "else"
+    },
+    {
+      "id": "I4jwRXIsXg2Xa0Jkd_1Ue",
+      "sourceId": "ZleF1IRDgJZBHUuQjVpnL",
+      "targetId": "ZyBimlUakGaaT79zSnq-O",
+      "branch": "condition:pRAGoZN-UKh_Mu2Ahkw2T"
+    },
+    {
+      "id": "LyqkauYVKLLjLpWWEwFwV",
+      "sourceId": "Xvkg630tBLLLAzwp-Wygk",
+      "targetId": "1itPo9UI1YinfUl8etsRd",
+      "branch": "condition:88fadnpNZHSvuS4moPYD2"
+    },
+    {
+      "id": "mODzJ_sV8zugzhDJ7lEMQ",
+      "sourceId": "1itPo9UI1YinfUl8etsRd",
+      "targetId": "bUeXg2b7gVNB4sXHgZU_x",
+      "branch": "success"
+    },
+    {
+      "id": "NS6MibZl2Li7dBZWPMbtn",
+      "sourceId": "1352E4vwhfau6wlUNQrzo",
+      "targetId": "GM-1KHuxe4DlH3QFYiM0j",
+      "branch": "condition:DTx4GL4NOo4hDhuVDLDf0"
+    },
+    {
+      "id": "PMYFOFuLXc4gfKCSI_A34",
+      "sourceId": "NYvX7ebm4At-Mf-oBj5PR",
+      "targetId": "bi-Uxf1HE4l_XZjyb-ii9",
+      "branch": "failed"
+    },
+    {
+      "id": "pNRmuJv8YCSVCeyXWQrgH",
+      "sourceId": "6EIboKJlXqZkjFSqD8SQ2",
+      "targetId": "1352E4vwhfau6wlUNQrzo",
+      "branch": "success"
+    },
+    {
+      "id": "RQx5m8RWOVTFitg2Ndqbb",
+      "sourceId": "Xvkg630tBLLLAzwp-Wygk",
+      "targetId": "ewsQFXl0vrrjPwIISTv8K",
+      "branch": "else"
+    },
+    {
+      "id": "sKBmsmRpHTjsxlkacm4Sz",
+      "sourceId": "GM-1KHuxe4DlH3QFYiM0j",
+      "targetId": "Xvkg630tBLLLAzwp-Wygk",
+      "branch": "success"
+    },
+    {
+      "id": "w_UdEWHPr8HZff4Az9C64",
+      "sourceId": "xb0v6XgS3Jw7JfY7-AA1a",
+      "targetId": "3ZD0PctIMQaoLOBSPVY1k",
+      "branch": "default"
+    },
+    {
+      "id": "wjBG2d-ib3rpHleY7-y9G",
+      "sourceId": "FORPThbo4soc6VSIkSEG5",
+      "targetId": "J56KRiGZIje---0iKEFCX",
+      "branch": "success"
+    },
+    {
+      "id": "z2AqfUTJ7shNaINtwXU8j",
+      "sourceId": "bi-Uxf1HE4l_XZjyb-ii9",
+      "targetId": "GPXV2v-0FXgusJlHNv56P",
+      "branch": "default"
+    }
+  ]
+}

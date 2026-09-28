@@ -16,11 +16,40 @@ export function user(text) {
     return { role: 'user', text, at: new Date() };
 }
 
+/** Home del bot (Solución 24/7). Reemplaza el antiguo menú raíz `choose_plan`. */
+export const LUCY_HOME_NODE = 'menu_solucion_24_7';
+
+/** Nodos legacy del menú raíz (ocultos); `enterNode` redirige a {@link LUCY_HOME_NODE}. */
+export const LUCY_LEGACY_ROOT_NODES = ['choose_plan', 'menu_principal'];
+
 /** Menú estándar al final de un subflujo */
-export function standardExitActions(returnNode = 'menu_solucion_24_7') {
+export function standardExitActions(returnNode = LUCY_HOME_NODE) {
+    if (returnNode === LUCY_HOME_NODE) {
+        return [{ id: 'exit_menu', label: 'Menú principal', next: LUCY_HOME_NODE }];
+    }
     return [
-        { id: 'exit_menu', label: 'Menú principal', next: 'menu_principal' },
-        { id: 'exit_solucion', label: '0. Salir del menú', next: returnNode },
+        { id: 'exit_solucion', label: 'Salir del menú', next: returnNode },
+        { id: 'exit_menu', label: 'Menú principal', next: LUCY_HOME_NODE },
+    ];
+}
+
+/** Tras derivación comercial: dock “jugoso” + volver al submenú anterior. */
+export function advisorHandoffMenuActions(returnNode) {
+    return [
+        {
+            id: 'back',
+            label: 'Volver',
+            next: returnNode,
+            icon: 'arrow-left',
+            menuTone: 'tone-blue',
+        },
+        {
+            id: 'exit_menu',
+            label: 'Menú principal',
+            next: LUCY_HOME_NODE,
+            icon: 'home',
+            menuTone: 'tone-blue',
+        },
     ];
 }
 
@@ -61,8 +90,12 @@ export function crearAsistenciaChain(
     const {
         idServicio = null,
         requiresPlaca = false,
+        skipLocation = false,
+        sinUbicacion = false,
         tipoServicio = 'HOGAR',
         planAsistencia = 'ASISTENCIAS',
+        crearJelouRef = 'V2 Crear asistencia',
+        afterCrearNext = 'gea_crear_exit',
     } = options;
     const base = slugify(`${jelouRef}_${serviceLabel}`);
     const locId = `asist_loc_${base}`;
@@ -70,8 +103,12 @@ export function crearAsistenciaChain(
     const doneId = `asist_done_${base}`;
     const placaId = `asist_placa_${base}`;
 
-    const entry = requiresPlaca ? placaId : locId;
+    let entry = locId;
+    if (requiresPlaca) entry = placaId;
+    else if (skipLocation) entry = doneId;
     const nodes = {};
+
+    const afterPlaca = skipLocation ? doneId : locId;
 
     if (requiresPlaca) {
         nodes[placaId] = {
@@ -80,29 +117,31 @@ export function crearAsistenciaChain(
                 `Servicio: **${serviceLabel}**`,
                 'Por favor envíame el número de la placa de tu vehículo o moto (ej: GYE1234).',
             ],
-            input: { field: 'plate', next: locId, echoUser: true },
+            input: { field: 'plate', next: afterPlaca, echoUser: true },
         };
     }
 
-    nodes[locId] = {
-        jelou: jelouRef,
-        say: [
-            ...(requiresPlaca ? [] : [`Servicio: **${serviceLabel}**`]),
-            'Por favor compárteme la ubicación del lugar donde se brindará el servicio 📍',
-        ],
-        actions: [
-            { id: 'share_location', label: '📍 Compartir ubicación', type: 'location', next: dirId },
-        ],
-    };
+    if (!skipLocation) {
+        nodes[locId] = {
+            jelou: jelouRef,
+            say: [
+                ...(requiresPlaca ? [] : [`Servicio: **${serviceLabel}**`]),
+                'Por favor compárteme la ubicación del lugar donde se brindará el servicio 📍',
+            ],
+            actions: [
+                { id: 'share_location', label: '📍 Compartir ubicación', type: 'location', next: dirId },
+            ],
+        };
 
-    nodes[dirId] = {
-        jelou: 'V2 Crear asistencia',
-        say: ['Ahora escribe la dirección o una referencia de esta ubicación.'],
-        input: { next: doneId, echoUser: true, geaField: 'direccion' },
-    };
+        nodes[dirId] = {
+            jelou: crearJelouRef,
+            say: ['Ahora escribe la dirección o una referencia de esta ubicación.'],
+            input: { next: doneId, echoUser: true, geaField: 'direccion' },
+        };
+    }
 
     nodes[doneId] = {
-        jelou: 'V2 Crear asistencia',
+        jelou: crearJelouRef,
         say: ['Registrando tu solicitud de asistencia…'],
         skipSay: true,
         gea: {
@@ -111,7 +150,8 @@ export function crearAsistenciaChain(
             serviceLabel,
             tipoServicio,
             planAsistencia,
-            afterCrearNext: 'gea_crear_exit',
+            sinUbicacion,
+            afterCrearNext,
         },
     };
 

@@ -48,49 +48,84 @@
                 class="chat-dock"
                 :class="{ 'chat-dock--overlay': menuOverlay }"
             >
-                <ChatAuthTabs
-                    v-if="isAuthStep"
-                    :node-id="state.nodeId"
-                    :disabled="busy"
-                    @submit="onText"
-                />
+                <ChatPanelWrap v-if="isAuthStep">
+                    <ChatAuthTabs
+                        :node-id="state.nodeId"
+                        :disabled="busy"
+                        :show-back="canGoBack"
+                        @submit="onText"
+                        @back="onBack"
+                    />
+                </ChatPanelWrap>
 
-                <ChatOmniaxBeneficiarioPanel
-                    v-else-if="isOmniaxBeneficiarioStep"
-                    :disabled="busy"
-                    @submit="onOmniaxBeneficiario"
-                />
+                <ChatPanelWrap v-else-if="isOmniaxBeneficiarioStep">
+                    <ChatOmniaxBeneficiarioPanel
+                        :disabled="busy"
+                        :show-back="canGoBack"
+                        @submit="onOmniaxBeneficiario"
+                        @back="onBack"
+                    />
+                </ChatPanelWrap>
 
-                <ChatOmniaxFechaHoraPanel
-                    v-else-if="isOmniaxFechaHoraStep"
-                    :disabled="busy"
-                    @submit="onOmniaxFechaHora"
-                />
+                <ChatPanelWrap v-else-if="isOmniaxFechaHoraStep">
+                    <ChatOmniaxFechaHoraPanel
+                        :disabled="busy"
+                        :show-back="canGoBack"
+                        @submit="onOmniaxFechaHora"
+                        @back="onBack"
+                    />
+                </ChatPanelWrap>
 
-                <ChatFormPanel
-                    v-else-if="formConfig"
-                    :config="formConfig"
-                    :disabled="busy"
-                    @submit="onText"
-                />
+                <ChatPanelWrap v-else-if="formConfig">
+                    <ChatFormPanel
+                        :config="formConfig"
+                        :disabled="busy"
+                        :show-back="canGoBack"
+                        @submit="onText"
+                        @back="onBack"
+                    />
+                </ChatPanelWrap>
 
-                <ChatIaComposer
-                    v-else-if="isIaChatStep"
-                    :disabled="busy"
-                    @submit="onIaText"
-                />
+                <ChatPanelWrap v-else-if="isIaChatStep">
+                    <div class="chat-panel-title-row chat-panel-title-row--composer">
+                        <span class="chat-ia-composer__label">Chat con Lucy</span>
+                        <ChatBackButton
+                            v-if="canGoBack"
+                            variant="corner"
+                            :disabled="busy"
+                            @click="onBack"
+                        />
+                    </div>
+                    <ChatIaComposer
+                        :disabled="busy"
+                        @submit="onIaText"
+                    />
+                </ChatPanelWrap>
 
                 <template v-else-if="quickActions.length || busy">
                     <p
                         v-if="busy"
                         class="chat-dock-loading"
                     >
-                        Consultando Omniax…
+                        Un momento…
+                    </p>
+                    <p
+                        v-if="dockFeedback && !busy"
+                        class="chat-dock-feedback"
+                        role="status"
+                    >
+                        {{ dockFeedback }}
                     </p>
                     <ChatDockIntro
                         v-if="dockPrompt && !busy"
                         :headline="dockPrompt.headline"
                         :hint="dockPrompt.hint"
+                    />
+                    <ChatBackButton
+                        v-if="canGoBack && !busy"
+                        variant="dock"
+                        class="chat-back--after-intro"
+                        @click="onBack"
                     />
                     <ChatMenuList
                         v-if="!busy"
@@ -138,10 +173,13 @@ import ChatFlowStepper from '@/components/chat/ChatFlowStepper.vue';
 import ChatDockIntro from '@/components/chat/ChatDockIntro.vue';
 import ChatAppFooter from '@/components/chat/ChatAppFooter.vue';
 import ChatIaComposer from '@/components/chat/ChatIaComposer.vue';
+import ChatBackButton from '@/components/chat/ChatBackButton.vue';
+import ChatPanelWrap from '@/components/chat/ChatPanelWrap.vue';
 import { closeWebview, isEmbeddedWebview } from '@/lib/webviewBridge.js';
 import { isIaChatActive, runIaEnter, runIaUserMessage } from '@/flows/lucy/ia/iaEngine.js';
 import { LUCY_ENTRY_NODE } from '@/flows/lucy/lucyFlowGraph.js';
 import {
+    canNavigateBack,
     createLucyChatState,
     getQuickActions,
     isComposerEnabled,
@@ -191,6 +229,7 @@ const isIaChatStep = computed(
     () => isIaChatActive(state.value) && isComposerEnabled(state.value),
 );
 const showWebviewClose = computed(() => isEmbeddedWebview());
+const canGoBack = computed(() => canNavigateBack(state.value));
 
 const dockStepActive = computed(() =>
     isDockStepActive(
@@ -210,6 +249,20 @@ const visibleMessages = computed(() => {
         if (m.role === 'bot' && saySet.has(String(m.text).trim())) return false;
         return true;
     });
+});
+
+/** Con menú en overlay el historial se colapsa; mostramos el último aviso del bot en el dock. */
+const dockFeedback = computed(() => {
+    if (!menuOverlay.value || !dockStepActive.value) return null;
+    const saySet = getCurrentNodeSaySet(state.value.nodeId);
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+        const msg = messages.value[i];
+        if (msg.role !== 'bot') continue;
+        const text = String(msg.text || '').trim();
+        if (!text || saySet.has(text)) continue;
+        return text;
+    }
+    return null;
 });
 
 function resolveEntryNode() {
@@ -370,6 +423,11 @@ function onText(text) {
 
 function onQuick(action) {
     applyReduce({ type: 'quick', action });
+}
+
+function onBack() {
+    if (!canGoBack.value || busy.value) return;
+    applyReduce({ type: 'navigateBack' });
 }
 
 function onOmniaxFechaHora(payload) {

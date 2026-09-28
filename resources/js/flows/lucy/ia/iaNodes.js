@@ -1,4 +1,4 @@
-import { standardExitActions } from '../flowHelpers.js';
+import { LUCY_HOME_NODE, standardExitActions } from '../flowHelpers.js';
 
 function iaChatNode(id, profile, jelouRef, classicNext, introLines) {
     return {
@@ -10,7 +10,7 @@ function iaChatNode(id, profile, jelouRef, classicNext, introLines) {
             actions: [
                 { id: 'classic', label: 'Usar menú guiado', next: classicNext },
                 { id: 'wa_close', label: 'Volver a WhatsApp', type: 'webview_close' },
-                { id: 'menu', label: 'Menú principal', next: 'menu_principal' },
+                { id: 'menu', label: 'Menú principal', next: LUCY_HOME_NODE },
             ],
         },
     };
@@ -56,10 +56,20 @@ export function buildIaNodes() {
             'omx_med_reag_cabina',
             ['Modo **Reagendar cita IA**.'],
         ),
+        ...iaChatNode(
+            'leaf_proteccion',
+            'proteccion',
+            '4 - Servicios Protección - Inicio',
+            LUCY_HOME_NODE,
+            [
+                'Modo **Servicios de protección**: pregúntame por documentos para tu producto o por tu situación (robo, secuestro express, etc.).',
+                'Con todo listo, llama al **1700 247000** para solicitar beneficios.',
+            ],
+        ),
         ia_router_terms_load: {
             jelou: 'IA Router',
             skipSay: true,
-            ia: { enter: 'register_router_terms', afterTermsNext: 'menu_principal' },
+            ia: { enter: 'register_router_terms', afterTermsNext: LUCY_HOME_NODE },
         },
         ia_router_after_reg: {
             jelou: 'IA Router',

@@ -1,0 +1,58 @@
+{
+  "productos": [
+    {
+      "nombre": "Cartera Protegida",
+      "documentos_requeridos": [
+        "Copia de cédula",
+        "Copia de la denuncia ante la Fiscalía General (no denuncia electrónica)",
+        "Copia de estado de cuenta donde refleje el cobro del servicio",
+        "Detalle con valores de los objetos personales sustraídos según cobertura",
+        "Documentos adicionales requeridos por la aseguradora de acuerdo con ley vigente"
+      ],
+      "detalle": "En caso de hurto, robo y/o asalto al afiliado y como consecuencia se hayan sustraído su cartera, bolso o maletín. Incluye reposición de artículos personales como cartera, gafas, maquillaje y llaves.",
+      "alcance": "Hasta $300 por evento",
+      "eventos": "1 evento",
+      "pagoServicio": ""
+    },
+    {
+      "nombre": "App Protegida",
+      "documentos_requeridos": [
+        "Copia de cédula",
+        "Copia de la denuncia ante la Fiscalía General (no denuncia electrónica)",
+        "Copia del estado de cuenta donde se refleje el cobro del servicio",
+        "Detalle del monto sustraído según cobertura",
+        "Documentos adicionales solicitados por la aseguradora según normativa vigente"
+      ],
+      "detalle": "Restitución de dinero a consecuencia de secuestro exprés, robo o extorsión en el que se obligue al afiliado a usar su banca móvil o apps financieras bajo amenaza.",
+      "alcance": "Hasta $1000",
+      "eventos": "2 eventos al año",
+      "pagoServicio": ""
+    },
+    {
+      "nombre": "Documento Protegido",
+      "documentos_requeridos": [
+        "Copia de cédula",
+        "Copia de la denuncia ante la Fiscalía General (no denuncia electrónica)",
+        "Detalle del documento sustraído",
+        "Documentos adicionales solicitados por la aseguradora según ley vigente"
+      ],
+      "detalle": "Protección en caso de secuestro exprés, robo o asalto que derive en la sustracción del documento personal del afiliado.",
+      "alcance": "Hasta $100",
+      "eventos": "2 eventos al año",
+      "pagoServicio": "Deducible de $6,00 por evento"
+    },
+    {
+      "nombre": "Robo de Identidad",
+      "documentos_requeridos": [
+        "Copia de cédula del afiliado",
+        "Documentos que respalden la suplantación de identidad",
+        "Copia del estado de cuenta con el consumo fraudulento",
+        "Documentos adicionales solicitados por la aseguradora conforme normativa vigente"
+      ],
+      "detalle": "Cobertura frente a perjuicios ocasionados por la suplantación total o parcial de identidad del afiliado.",
+      "alcance": "Hasta $1.500,00",
+      "eventos": "2 eventos al año",
+      "pagoServicio": "$75,00 por evento"
+    }
+  ]
+}

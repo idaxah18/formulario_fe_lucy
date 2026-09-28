@@ -25,13 +25,8 @@ export function buildGeaNodes() {
         asistencias_en_curso: {
             jelou: 'Asistencias en curso',
             say: ['Revisando si tienes asistencias activas…'],
-            gea: { enter: 'en_proceso_remitente' },
-            useGeaMenu: true,
-            actions: [
-                { id: 'reag', label: 'Reagendar asistencia', next: 'reagendar_asistencia' },
-                { id: 'cancel', label: 'Cancelar asistencia', next: 'cancelar_asistencia' },
-                ...standardExitActions('choose_plan'),
-            ],
+            skipSay: true,
+            gea: { enter: 'post_auth_asistencias_gate' },
         },
         cancelar_asistencia: {
             jelou: 'Cancelar asistencia',
@@ -46,8 +41,16 @@ export function buildGeaNodes() {
         },
         gea_crear_exit: {
             jelou: 'V2 Crear asistencia',
-            say: ['Tu solicitud fue registrada. ¿Qué deseas hacer ahora?'],
-            actions: standardExitActions('menu_solucion_24_7'),
+            skipSay: true,
+            actions: [
+                {
+                    id: 'home',
+                    label: 'Menú principal',
+                    next: 'menu_solucion_24_7',
+                    icon: 'home',
+                    menuTone: 'tone-blue',
+                },
+            ],
         },
 
         gea_encuesta_id: idAsistenciaInput('gea_encuesta_load', 'Encuesta'),
