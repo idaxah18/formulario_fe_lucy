@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\LucyIaController;
 use App\Http\Controllers\Api\OmniaxDentalController;
 use App\Http\Controllers\Api\OmniaxGeaController;
 use App\Http\Controllers\Api\OmniaxMedicoController;
+use App\Http\Controllers\Api\ProyectosAutomaticoController;
 use App\Support\Integrations\IntegrationRegistry;
 use Illuminate\Support\Facades\Route;
 
@@ -94,6 +95,16 @@ Route::middleware('integration:omniax')->prefix('v1/omniax/gea')->group(function
     Route::put('/asistencias/{idAsistencia}/cancelar', [OmniaxGeaController::class, 'cancelarAsistencia']);
     Route::post('/asistencias/{idAsistencia}/reenviar-evaluacion', [OmniaxGeaController::class, 'reenviarEvaluacion']);
     Route::post('/asistencias/{idAsistencia}/evaluacion-confirmada', [OmniaxGeaController::class, 'evaluacionConfirmada']);
+});
+
+Route::middleware('integration:omniax')->prefix('v1/gea/proyectos-automatico')->group(function () {
+    Route::post('/afiliacion', [ProyectosAutomaticoController::class, 'afiliacion']);
+    Route::post('/vehiculo-afiliacion', [ProyectosAutomaticoController::class, 'vehiculoAfiliacion']);
+    Route::post('/cobertura', [ProyectosAutomaticoController::class, 'cobertura']);
+    Route::post('/validacion-combustible', [ProyectosAutomaticoController::class, 'validacionCombustible']);
+    Route::post('/validacion-coordenadas', [ProyectosAutomaticoController::class, 'validacionCoordenadas']);
+    Route::post('/ubicacion', [ProyectosAutomaticoController::class, 'ubicacion']);
+    Route::post('/asistencia', [ProyectosAutomaticoController::class, 'asistencia']);
 });
 
 Route::middleware('integration:omniax')->prefix('v1/omniax/dental')->group(function () {

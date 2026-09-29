@@ -22,7 +22,7 @@
                 :class="action.menuTone || menuIconTone(index)"
                 aria-hidden="true"
             >
-                <ChatIcon :name="action.icon || resolveMenuIcon(action)" />
+                <ChatIcon :name="menuIconName(action)" />
             </span>
             <span class="chat-menu-item__label">{{ cleanLabel(action.label) }}</span>
             <span
@@ -44,7 +44,13 @@
 <script setup>
 import { ref } from 'vue';
 import ChatIcon from '@/components/chat/ChatIcon.vue';
+import { isRegisteredChatIcon } from '@/constants/chatIconRegistry.js';
 import { menuIconTone, resolveMenuIcon } from '@/constants/menuIcons.js';
+
+function menuIconName(action) {
+    if (action.icon && isRegisteredChatIcon(action.icon)) return action.icon;
+    return resolveMenuIcon(action);
+}
 
 defineProps({
     actions: { type: Array, default: () => [] },

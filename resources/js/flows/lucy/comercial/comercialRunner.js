@@ -114,6 +114,7 @@ export async function runComEnter(task, state) {
             if (!cedula) throw new Error('Ingresa tu cédula al inicio.');
             const res = await fetchVentaLead(cedula);
             if (!res.interested || !res.lead) {
+                com.afterDerivacion = 'venta_derivacion_done';
                 return {
                     messages: [
                         bot(
@@ -138,10 +139,7 @@ export async function runComEnter(task, state) {
             }
             await marcarVentaContrato(String(rowId), telefono);
             return {
-                messages: [
-                    bot('✅ Tu contratación fue registrada correctamente.'),
-                    bot('Un asesor puede contactarte para los siguientes pasos.'),
-                ],
+                messages: [],
                 nextNodeId: 'venta_contratar_ok',
                 patchContext: { com },
             };

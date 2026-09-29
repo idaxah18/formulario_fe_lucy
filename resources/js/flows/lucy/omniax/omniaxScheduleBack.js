@@ -36,7 +36,11 @@ function resolveReagendarBack(nodeId, omx) {
         return nodeId.includes('_den_') ? 'omx_den_reag_pick' : 'omx_med_reag_pick';
     }
     if (nodeId === `${p}_reag_list_load`) return `${p}_reag_start`;
-    if (nodeId === `${p}_reag_start` || nodeId === `${p}_reag_cabina`) {
+    if (
+        nodeId === `${p}_reag_start`
+        || nodeId === `${p}_reag_cabina`
+        || nodeId === `${p}_reag_cabina_preface`
+    ) {
         return p === 'omx_den' ? 'menu_dental' : 'menu_medico';
     }
     if (nodeId === `${p}_benef_form` && omx?.reagendar) return `${p}_reag_start`;
@@ -104,6 +108,9 @@ function resolveIntraStepBack(nodeId, omx) {
     if (!p) return null;
 
     if (nodeId === `${p}_benef_form`) return `${p}_who`;
+    if (nodeId === 'omx_med_sin_cobertura' || nodeId === 'omx_den_sin_cobertura') {
+        return p === 'omx_den' ? 'menu_dental' : 'menu_medico';
+    }
     if (nodeId === 'omx_med_sin_asignacion') return 'omx_med_especialidades_load';
     if (nodeId === 'omx_den_sin_asignacion') return `${p}_who`;
     if (nodeId === 'omx_med_aplica_load') return 'omx_med_especialidades_load';

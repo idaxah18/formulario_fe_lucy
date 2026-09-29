@@ -45,6 +45,10 @@ return [
     ],
 
     'gea_omniax' => [
+        /**
+         * Ambiente test EC. Usar api.geainternacional.com/test-ec (Postman omniax-direct).
+         * test.api.geainternacional.com/test-ec puede devolver cURL 35 en PHP/Windows con Bearer.
+         */
         'base_url' => env('GEA_OMNIAX_BASE_URL', 'https://api.geainternacional.com/test-ec'),
         'client_id' => env('GEA_OMNIAX_CLIENT_ID'),
         'client_secret' => env('GEA_OMNIAX_CLIENT_SECRET'),
@@ -63,5 +67,19 @@ return [
             'user' => env('GEA_JELOU_FUNCTION_USER'),
             'password' => env('GEA_JELOU_FUNCTION_PASSWORD'),
         ],
+    ],
+
+    /** Legacy env — proceso automático usa gea_omniax (test-ec). */
+    'gea_proyectos' => [
+        'base_url' => env(
+            'GEA_PROYECTOS_BASE_URL',
+            'https://test.siga.geainternacional.com/api/v1/proyectos',
+        ),
+        'client_id' => env('GEA_PROYECTOS_CLIENT_ID'),
+        'client_secret' => env('GEA_PROYECTOS_CLIENT_SECRET'),
+        'plan_asistencia' => env('GEA_PROYECTOS_PLAN_ASISTENCIA', 'ASISTENCIAS'),
+        'timeout' => (int) env('GEA_PROYECTOS_TIMEOUT', 45),
+        /** false solo en local si el cert de test.siga está vencido; nunca en producción */
+        'verify_ssl' => filter_var(env('GEA_PROYECTOS_VERIFY_SSL', true), FILTER_VALIDATE_BOOLEAN),
     ],
 ];

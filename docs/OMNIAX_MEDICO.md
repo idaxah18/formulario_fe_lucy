@@ -9,10 +9,12 @@ Variables en `.env` (`GEA_OMNIAX_*`). Tras cambiar `.env`, reinicia `php artisan
 1. Cédula de prueba: `0979461382` (o la que indique GEA).
 2. Nombre cualquiera.
 3. Menú → Solución 24/7 → Médico → **Agendar cita médica**.
-4. **Para mí** → especialidad **MEDICINA GENERAL** (recomendado en QA).
-5. Ubicación de prueba: `-2.164525162397198`, `-79.89574580754577` (o GPS real).
-6. Elige establecimiento **PROVEEDOR JELOU** si aparece en lista.
-7. Fecha y hora disponibles → confirmación.
+4. **Elegibilidad (automática):** `en-proceso` + catálogo de especialidades. Si no hay especialidades o falla Omniax → pantalla “sin cobertura” + asesor (no entras al flujo).
+5. Prefacio cabina → notificar cabina → **Para mí** / beneficiario → especialidad **MEDICINA GENERAL** (recomendado en QA).
+6. Tras especialidad, `aplica-asignacion`: `false` **no** es bloqueo; es agenda simplificada (ubicación + crear). `true` = elegir centro, días y horas.
+7. Ubicación de prueba: `-2.164525162397198`, `-79.89574580754577` (o GPS real).
+8. Si `aplica` fue `true`: establecimiento **PROVEEDOR JELOU**, fecha y hora. Si fue `false`: ubicación y confirmación sin elegir centro en app.
+9. Confirmación final.
 
 Query opcional: `?telefono=0993333333` (sin prefijo país).
 

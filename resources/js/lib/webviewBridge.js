@@ -19,6 +19,7 @@ export function getWebviewContext() {
     return {
         telefono: q.get('telefono') || '',
         flow: q.get('flow') || '',
+        intent: q.get('intent') || '',
         userId: q.get('userId') || q.get('user_id') || '',
     };
 }
@@ -58,4 +59,52 @@ export function closeWebview(payload = {}) {
     }
 
     return body;
+}
+
+/**
+ * Abre URL fuera de la webview (navegador del sistema cuando el contenedor lo soporta).
+ */
+export function openExternalUrl(url) {
+    const href = String(url || '').trim();
+    if (!href) return false;
+
+    const payload = {
+        type: 'jelou:webview:openUrl',
+        source: 'lucy-ecuador-webview',
+        url: href,
+        at: new Date().toISOString(),
+        telefono: getWebviewContext().telefono,
+    };
+
+    try {
+        window.parent?.postMessage?.(payload, '*');
+    } catch {
+        /* ignore */
+    }
+
+    try {
+        window.ReactNativeWebView?.postMessage?.(JSON.stringify(payload));
+    } catch {
+        /* ignore */
+    }
+
+    if (typeof window.webkit?.messageHandlers?.jelou?.postMessage === 'function') {
+        try {
+            window.webkit.messageHandlers.jelou.postMessage(payload);
+        } catch {
+            /* ignore */
+        }
+    }
+
+    const opened = window.open(href, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+        const anchor = document.createElement('a');
+        anchor.href = href;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener noreferrer';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+    return true;
 }

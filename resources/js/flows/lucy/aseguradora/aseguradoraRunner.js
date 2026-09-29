@@ -11,6 +11,7 @@ import {
 import { botFromOmniaxResponse } from '../omniax/omniaxNoticias.js';
 import { bot, standardExitActions } from '../flowHelpers.js';
 import { runCabinaGateOrBlock } from '../gea/cabinaGate.js';
+import { buildCabinaBlockedTransition } from '../cabinaHandoff.js';
 import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
 
 function ensureAseg(ctx) {
@@ -94,7 +95,11 @@ export async function runAsegEnter(task, state) {
         case 'cabina_aseguradora': {
             const gate = await runCabinaGateOrBlock(ctx, 'VIAL', 'menu_aseguradora', 'ASEGURADORA');
             if (gate.blocked) {
-                return { messages: gate.messages, nextNodeId: gate.nextNodeId, patchContext: { aseg } };
+                const blocked = buildCabinaBlockedTransition(gate, 'menu_aseguradora');
+                return {
+                    ...blocked,
+                    patchContext: { aseg, ...blocked.patchContext },
+                };
             }
             return {
                 messages: [],

@@ -1,4 +1,32 @@
-import { standardExitActions } from '../flowHelpers.js';
+import { advisorHandoffMenuActions, standardExitActions } from '../flowHelpers.js';
+import { CABINA_REGISTRO_HANDOFF_DONE } from '../advisorHandoffCopy.js';
+
+function sinAfiliacionScreen(returnMenu) {
+    return {
+        jelou: 'Proceso automático — afiliación',
+        say: [
+            'No encontramos una **afiliación activa** asociada a tu cédula para este servicio.',
+            'Puede que no tengas el plan contratado, que los datos no coincidan o que el servicio no esté en tu cobertura.',
+            'Si lo deseas, un asesor puede revisar tu caso y ayudarte a continuar.',
+        ],
+        actions: [
+            {
+                id: 'asesor',
+                label: 'Contactar a un asesor',
+                next: 'gea_auto_sin_afiliacion_asesor_load',
+                icon: 'user-star',
+                menuTone: 'tone-warm',
+            },
+            {
+                id: 'back',
+                label: 'Volver al menú',
+                next: returnMenu,
+                icon: 'arrow-left',
+                menuTone: 'tone-blue',
+            },
+        ],
+    };
+}
 
 function idAsistenciaInput(nextNode, jelou = 'Utilidades GEA') {
     return {
@@ -39,6 +67,32 @@ export function buildGeaNodes() {
             skipSay: true,
             gea: { enter: 'cancelar' },
         },
+        [CABINA_REGISTRO_HANDOFF_DONE]: {
+            jelou: 'Notificar Cabina Asistencia en Proceso',
+            skipSay: true,
+            actions: [],
+        },
+        gea_auto_sin_afiliacion_hogar: sinAfiliacionScreen('menu_hogar'),
+        gea_auto_sin_afiliacion_vial: sinAfiliacionScreen('menu_vial'),
+        gea_auto_sin_afiliacion_asesor_load: {
+            jelou: 'Derivación a asesor',
+            skipSay: true,
+            com: { enter: 'derivacion_asesor' },
+        },
+        gea_auto_sin_afiliacion_done: {
+            jelou: 'Derivación a asesor',
+            skipSay: true,
+            actions: [
+                {
+                    id: 'home',
+                    label: 'Menú principal',
+                    next: 'menu_solucion_24_7',
+                    icon: 'home',
+                    menuTone: 'tone-blue',
+                },
+            ],
+        },
+
         gea_crear_exit: {
             jelou: 'V2 Crear asistencia',
             skipSay: true,

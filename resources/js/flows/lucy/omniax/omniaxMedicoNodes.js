@@ -3,12 +3,37 @@
  */
 
 import { advisorHandoffSay } from '../advisorHandoffCopy.js';
+import { buildCabinaPrefaceNode } from '../flowHelpers.js';
 
 export const OMX_MED_FECHA_HORA_NODE = 'omx_med_fecha_hora';
 export const OMX_MED_BENEF_FORM_NODE = 'omx_med_benef_form';
 
 export function buildOmniaxMedicoNodes() {
     return {
+        omx_med_elegibilidad_load: {
+            jelou: '2.2 Agendar cita médica - elegibilidad',
+            skipSay: true,
+            omniax: {
+                enter: 'elegibilidad_agendar',
+                kind: 'medico',
+                tipoServicio: 'MEDICO',
+            },
+        },
+        omx_med_sin_cobertura: {
+            jelou: '2.2 Agendar cita médica - sin cobertura',
+            skipSay: true,
+            useOmniaxMenu: true,
+        },
+        omx_med_cabina_preface: buildCabinaPrefaceNode(
+            'omx_med_cabina_preface',
+            'omx_med_cabina',
+            'cita_medica',
+        ),
+        omx_med_reag_cabina_preface: buildCabinaPrefaceNode(
+            'omx_med_reag_cabina_preface',
+            'omx_med_reag_cabina',
+            'cita_reagendar',
+        ),
         omx_med_cabina: {
             jelou: 'Notificar Cabina Asistencia en Proceso',
             say: ['Validando asistencias en curso…'],
@@ -17,7 +42,7 @@ export function buildOmniaxMedicoNodes() {
                 enter: 'cabina_gate',
                 kind: 'medico',
                 tipoServicio: 'MEDICO',
-                afterCabinaNext: 'omx_med_start',
+                afterCabinaNext: 'omx_med_who',
             },
         },
         omx_med_reag_cabina: {
@@ -217,7 +242,7 @@ export function buildOmniaxMedicoNodes() {
             jelou: 'Error Omniax',
             skipSay: true,
             actions: [
-                { id: 'retry', label: 'Reintentar', next: 'omx_med_start' },
+                { id: 'retry', label: 'Reintentar', next: 'omx_med_elegibilidad_load' },
                 { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
             ],
         },

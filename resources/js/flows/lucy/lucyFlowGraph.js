@@ -2,6 +2,7 @@ import { HSM_CATEGORIES } from './hsmCatalog.js';
 import { advisorHandoffSay } from './advisorHandoffCopy.js';
 import {
     advisorHandoffMenuActions,
+    buildCabinaPrefaceNode,
     crearAsistenciaChain,
     LUCY_HOME_NODE,
     slugify,
@@ -13,6 +14,8 @@ import { buildAseguradoraSiniestroNodes } from './aseguradora/aseguradoraNodes.j
 import { buildIaNodes } from './ia/iaNodes.js';
 import { buildGeaNodes } from './gea/geaNodes.js';
 import { geaChainOptions } from './gea/geaServiceIds.js';
+import { buildAutomaticoServiceChains } from './gea/automaticoChain.js';
+import { usesProcesoAutomatico } from './gea/automaticoCatalog.js';
 import { buildOmniaxDentalNodes } from './omniax/omniaxDentalNodes.js';
 import { buildOmniaxMedicoNodes } from './omniax/omniaxMedicoNodes.js';
 
@@ -58,6 +61,21 @@ const SEGMENT_MENU_STYLE = {
     otras: { icon: 'handshake', menuTone: 'tone-olive' },
 };
 
+const COMPRAR_ASISTENCIA_SEGMENTS = [
+    { id: 'd', label: 'Dental', key: 'dental', producto: 'Comprar asistencia - Dental' },
+    { id: 'm', label: 'Médico', key: 'medico', producto: 'Comprar asistencia - Médico' },
+    { id: 'h', label: 'Hogar', key: 'hogar', producto: 'Comprar asistencia - Hogar' },
+    { id: 'v', label: 'Vial', key: 'vial', producto: 'Comprar asistencia - Vial' },
+    {
+        id: 'o',
+        label: 'Otras asistencias',
+        key: 'otras',
+        producto: 'Comprar asistencia - Otras asistencias',
+        icon: 'arrow-right-from-line',
+        menuTone: 'tone-olive',
+    },
+];
+
 function buildInfoServicioContratadoLeaves() {
     const nodes = {};
     for (const seg of INFO_SERVICIO_CONTRATADO_SEGMENTS) {
@@ -82,10 +100,32 @@ function buildInfoServicioContratadoLeaves() {
     return nodes;
 }
 
-function buildServiceChains(labels, jelouRef, returnNode, chainExtra = {}) {
+const VIAL_SERVICE_MENU = [
+    { label: 'Grúa por avería', icon: 'truck', menuTone: 'tone-asist-vial' },
+    { label: 'Grúa (otro motivo)', icon: 'truck', menuTone: 'tone-asist-vial' },
+    { label: 'Cambio de llanta', icon: 'life-buoy', menuTone: 'tone-asist-vial' },
+    { label: 'Suministro de gasolina', icon: 'fuel', menuTone: 'tone-asist-vial' },
+    { label: 'Paso de corriente', icon: 'unplug', menuTone: 'tone-asist-vial' },
+    { label: 'Cerrajería de puertas', icon: 'lock-open', menuTone: 'tone-asist-vial' },
+    { label: 'Inspector in situ', icon: 'user-star', menuTone: 'tone-asist-vial' },
+];
+
+const HOGAR_SERVICE_MENU = [
+    { label: 'Plomero', icon: 'faucet', menuTone: 'tone-asist-hogar' },
+    { label: 'Electricista', icon: 'zap', menuTone: 'tone-asist-hogar' },
+    { label: 'Cerrajero', icon: 'anvil', menuTone: 'tone-asist-hogar' },
+    { label: 'Vidriería', icon: 'mirror-rectangular', menuTone: 'tone-asist-hogar' },
+    { label: 'Limpieza y mantenimiento', icon: 'broom-sparkles', menuTone: 'tone-asist-hogar' },
+    { label: 'Spa y peluquería', icon: 'bubbles', menuTone: 'tone-asist-hogar' },
+    { label: 'Handyman', icon: 'toolbox', menuTone: 'tone-asist-hogar' },
+];
+
+function buildServiceChains(serviceDefs, jelouRef, returnNode, chainExtra = {}) {
+    const items = serviceDefs.map((def) => (typeof def === 'string' ? { label: def } : def));
     let nodes = {};
     const actions = [];
-    for (const label of labels) {
+    for (const item of items) {
+        const label = item.label;
         const chain = crearAsistenciaChain(
             label,
             jelouRef,
@@ -93,9 +133,29 @@ function buildServiceChains(labels, jelouRef, returnNode, chainExtra = {}) {
             geaChainOptions(label, jelouRef, chainExtra),
         );
         nodes = merge(nodes, chain.nodes);
-        actions.push({ id: slugify(label), label, next: chain.entry });
+        const action = { id: slugify(label), label, next: chain.entry };
+        if (item.icon) {
+            action.icon = item.icon;
+            action.menuTone = item.menuTone || 'tone-blue';
+        }
+        actions.push(action);
     }
     return { nodes, actions };
+}
+
+/** Hogar/vial: listado GEA → proceso automático; resto → asistencias/gea (cabina). */
+function buildHybridGeaServiceChains(serviceDefs, jelouRef, returnNode, chainExtra = {}) {
+    const items = serviceDefs.map((def) => (typeof def === 'string' ? { label: def } : def));
+    const automaticItems = items.filter((item) => usesProcesoAutomatico(item.label, jelouRef));
+    const legacyItems = items.filter((item) => !usesProcesoAutomatico(item.label, jelouRef));
+
+    const automatic = buildAutomaticoServiceChains(automaticItems, jelouRef, returnNode);
+    const legacy = buildServiceChains(legacyItems, jelouRef, returnNode, chainExtra);
+
+    return {
+        nodes: merge(automatic.nodes, legacy.nodes),
+        actions: [...automatic.actions, ...legacy.actions],
+    };
 }
 
 function buildCore() {
@@ -178,21 +238,8 @@ function buildCore() {
 }
 
 function buildSolucion247() {
-    const hogar = buildServiceChains(
-        ['Plomero', 'Electricista', 'Cerrajero', 'Vidriería', 'Limpieza y mantenimiento', 'Spa y peluquería', 'Handyman'],
-        '2.3 Hogar',
-    );
-    const vial = buildServiceChains(
-        [
-            'Grúa',
-            'Cambio de llanta',
-            'Suministro de gasolina',
-            'Paso de corriente',
-            'Cerrajería de puertas',
-            'Inspector in situ',
-        ],
-        '2.4 Vial',
-    );
+    const hogar = buildHybridGeaServiceChains(HOGAR_SERVICE_MENU, '2.3 Hogar');
+    const vial = buildHybridGeaServiceChains(VIAL_SERVICE_MENU, '2.4 Vial');
     const vialLegalTelefonica = crearAsistenciaChain(
         'Asistencia Legal telefónica',
         '2.4 Vial',
@@ -306,8 +353,8 @@ function buildSolucion247() {
             '2.1 Dental',
             'Dental 🦷 ¿Qué deseas?',
             [
-                { id: 'ag', label: 'Agendar cita', next: 'omx_den_cabina' },
-                { id: 're', label: 'Reagendar cita', next: 'omx_den_reag_cabina' },
+                { id: 'ag', label: 'Agendar cita', next: 'omx_den_elegibilidad_load' },
+                { id: 're', label: 'Reagendar cita', next: 'omx_den_reag_cabina_preface' },
                 { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
             ],
         ),
@@ -316,8 +363,8 @@ function buildSolucion247() {
             '2.1.1 Agendar cita',
             '¿Qué tipo de cita deseas agendar?',
             [
-                { id: 'cd', label: '🦷 Cita dental', next: 'omx_den_cabina' },
-                { id: 'cm', label: '👨🏻‍⚕️ Cita médica', next: 'omx_med_cabina' },
+                { id: 'cd', label: '🦷 Cita dental', next: 'omx_den_elegibilidad_load' },
+                { id: 'cm', label: '👨🏻‍⚕️ Cita médica', next: 'omx_med_elegibilidad_load' },
                 { id: 'ia', label: 'Agendar cita IA', next: 'agendar_cita_ia' },
             ],
         ),
@@ -327,14 +374,62 @@ function buildSolucion247() {
             '2.2 Médico',
             'Médico 🏥 ¿Qué necesitas?',
             [
-                { id: 'amb', label: 'Ambulancia', next: medicoAsist.actions[0].next },
-                { id: 'ori', label: 'Orientación médica telefónica', next: medicoAsist.actions[1].next },
-                { id: 'ag', label: 'Agendar cita médica', next: 'omx_med_cabina' },
-                { id: 're', label: 'Reagendar cita médica', next: 'omx_med_reag_cabina' },
-                { id: 'dom', label: 'Médico a domicilio', next: medicoAsist.actions[2].next },
-                { id: 'nut', label: 'Bienestar y nutrición', next: medicoAsist.actions[3].next },
-                { id: 'edo', label: 'E-doctor', next: 'activar_edoctor_inicio' },
-                { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
+                {
+                    id: 'amb',
+                    label: 'Ambulancia',
+                    next: medicoAsist.actions[0].next,
+                    icon: 'ambulance',
+                    menuTone: 'tone-asist-medica',
+                },
+                {
+                    id: 'ori',
+                    label: 'Orientación médica telefónica',
+                    next: medicoAsist.actions[1].next,
+                    icon: 'smartphone',
+                    menuTone: 'tone-asist-medica',
+                },
+                {
+                    id: 'ag',
+                    label: 'Agendar cita médica',
+                    next: 'omx_med_elegibilidad_load',
+                    icon: 'calendar-check',
+                    menuTone: 'tone-asist-medica',
+                },
+                {
+                    id: 're',
+                    label: 'Reagendar cita médica',
+                    next: 'omx_med_reag_cabina_preface',
+                    icon: 'calendar-clock',
+                    menuTone: 'tone-asist-medica',
+                },
+                {
+                    id: 'dom',
+                    label: 'Médico a domicilio',
+                    next: medicoAsist.actions[2].next,
+                    icon: 'briefcase-medical',
+                    menuTone: 'tone-asist-medica',
+                },
+                {
+                    id: 'nut',
+                    label: 'Bienestar y nutrición',
+                    next: medicoAsist.actions[3].next,
+                    icon: 'apple',
+                    menuTone: 'tone-asist-medica',
+                },
+                {
+                    id: 'edo',
+                    label: 'E-doctor',
+                    next: 'activar_edoctor_inicio',
+                    icon: 'globe-check',
+                    menuTone: 'tone-asist-medica',
+                },
+                {
+                    id: 'back',
+                    label: 'Salir del menú',
+                    next: 'menu_solucion_24_7',
+                    icon: 'arrow-left',
+                    menuTone: 'tone-blue',
+                },
             ],
         ),
         menuNode(
@@ -343,7 +438,13 @@ function buildSolucion247() {
             'Hogar 🏡 Elige el servicio:',
             [
                 ...hogar.actions,
-                { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
+                {
+                    id: 'back',
+                    label: 'Salir del menú',
+                    next: 'menu_solucion_24_7',
+                    icon: 'arrow-left',
+                    menuTone: 'tone-blue',
+                },
             ],
         ),
         hogar.nodes,
@@ -354,8 +455,20 @@ function buildSolucion247() {
             'Bienvenid@ a tu solución vial 🚗',
             [
                 ...vial.actions,
-                { id: 'leg', label: 'Asistencia legal telefónica', next: vialLegalTelefonica.entry },
-                { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
+                {
+                    id: 'leg',
+                    label: 'Asistencia legal telefónica',
+                    next: vialLegalTelefonica.entry,
+                    icon: 'smartphone',
+                    menuTone: 'tone-asist-vial',
+                },
+                {
+                    id: 'back',
+                    label: 'Salir del menú',
+                    next: 'menu_solucion_24_7',
+                    icon: 'arrow-left',
+                    menuTone: 'tone-blue',
+                },
             ],
         ),
         vial.nodes,
@@ -409,8 +522,20 @@ function buildSolucion247() {
                 icon: 'info',
                 menuTone: 'tone-blue',
             },
-            { id: 'comp', label: 'Comprar asistencia', next: 'comprar_asistencia' },
-            { id: 'blog', label: 'Blog Solución 24/7', next: 'blog_solucion' },
+            {
+                id: 'comp',
+                label: 'Comprar asistencia',
+                next: 'comprar_asistencia',
+                icon: 'shopping-cart-plus',
+                menuTone: 'tone-gold',
+            },
+            {
+                id: 'blog',
+                label: 'Blog Solución 24/7',
+                next: 'blog_solucion',
+                icon: 'sticky-note',
+                menuTone: 'tone-green',
+            },
             {
                 id: 'back',
                 label: 'Salir del menú',
@@ -472,7 +597,6 @@ function buildSolucion247() {
                 jelou: '2.7.3 Blog Solución 24/7',
                 say: [
                     'Conoce tips, novedades y guías de tus asistencias en el blog oficial Solución 24/7.',
-                    'https://blog.solucion24-7.com.ec',
                 ],
                 actions: [
                     {
@@ -480,7 +604,7 @@ function buildSolucion247() {
                         label: 'Abrir blog Solución 24/7',
                         type: 'link',
                         url: 'https://blog.solucion24-7.com.ec',
-                        icon: 'sparkles',
+                        icon: 'sticky-note',
                         menuTone: 'tone-blue',
                     },
                     {
@@ -493,18 +617,70 @@ function buildSolucion247() {
                 ],
             },
         },
-        menuNode('comprar_asistencia', '2.7.2 Comprar un servicio de asistencia', '¿Qué deseas comprar?', [
-            { id: 'd', label: '🦷 Dental', next: 'venta_asistencias' },
-            { id: 'm', label: '🧑🏻‍⚕️ Médico', next: 'venta_asistencias' },
-            { id: 'h', label: '🏠 Hogar', next: 'venta_asistencias' },
-            { id: 'v', label: '🚗 Vial', next: 'venta_asistencias' },
-            { id: 'o', label: '🛠️ Otras asistencias', next: 'venta_asistencias' },
-            { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
-        ]),
+        menuNode(
+            'comprar_asistencia',
+            '2.7.2 Comprar un servicio de asistencia',
+            '¿Qué deseas comprar?',
+            [
+                ...COMPRAR_ASISTENCIA_SEGMENTS.map((seg) => {
+                    const style = SEGMENT_MENU_STYLE[seg.key] || {};
+                    return {
+                        id: seg.id,
+                        label: seg.label,
+                        next: 'venta_asistencias',
+                        icon: seg.icon || style.icon,
+                        menuTone: seg.menuTone || style.menuTone,
+                        meta: {
+                            com: {
+                                producto: seg.producto,
+                                notas: `Venta asistencias / ${seg.label}`,
+                            },
+                        },
+                    };
+                }),
+                {
+                    id: 'back',
+                    label: 'Salir del menú',
+                    next: 'ver_mas_opciones',
+                    icon: 'arrow-left',
+                    menuTone: 'tone-blue',
+                },
+            ],
+        ),
         menuNode('venta_asistencias', 'Venta Asistencias - Inicio', '¿Cómo prefieres continuar?', [
-            { id: 'con', label: 'Contratar', next: 'venta_contratar' },
-            { id: 'ase', label: 'Chatear con Asesor', next: 'derivacion_asesor' },
-            { id: 'lla', label: 'Quiero llamar', next: 'derivacion_asesor' },
+            {
+                id: 'con',
+                label: 'Contratar',
+                next: 'venta_contratar',
+                icon: 'file',
+                menuTone: 'tone-blue',
+            },
+            {
+                id: 'ase',
+                label: 'Chatear con Asesor',
+                next: 'derivacion_asesor',
+                icon: 'headset',
+                menuTone: 'tone-blue',
+                meta: {
+                    com: {
+                        afterDerivacion: 'venta_derivacion_done',
+                        notas: 'Venta asistencias - chatear con asesor',
+                    },
+                },
+            },
+            {
+                id: 'lla',
+                label: 'Quiero llamar',
+                next: 'derivacion_asesor',
+                icon: 'phone',
+                menuTone: 'tone-blue',
+                meta: {
+                    com: {
+                        afterDerivacion: 'venta_derivacion_done',
+                        notas: 'Venta asistencias - quiero llamar',
+                    },
+                },
+            },
         ]),
         {
             venta_contratar: {
@@ -513,17 +689,47 @@ function buildSolucion247() {
                 com: { enter: 'venta_contratar' },
             },
             venta_contratar_ok: {
-                say: ['¿Qué deseas hacer ahora?'],
-                actions: standardExitActions('menu_solucion_24_7'),
+                jelou: 'Venta Asistencias - Contratar',
+                skipSay: true,
+                actions: [
+                    {
+                        id: 'home',
+                        label: 'Menú principal',
+                        next: LUCY_HOME_NODE,
+                        icon: 'home',
+                        menuTone: 'tone-blue',
+                    },
+                ],
+            },
+            venta_derivacion_done: {
+                jelou: 'Derivación a asesor',
+                skipSay: true,
+                actions: [
+                    {
+                        id: 'home',
+                        label: 'Menú principal',
+                        next: 'menu_solucion_24_7',
+                        icon: 'home',
+                        menuTone: 'tone-blue',
+                    },
+                ],
             },
             derivacion_asesor: {
                 jelou: 'Derivación a asesor',
-                say: ['Te conectamos con un asesor comercial.'],
-                actions: [{ id: 'go', label: 'Solicitar contacto', next: 'derivacion_asesor_load' }],
+                say: ['Cuando estés listo, solicita que un asesor comercial te contacte.'],
+                actions: [
+                    {
+                        id: 'go',
+                        label: 'Solicitar contacto',
+                        next: 'derivacion_asesor_load',
+                        icon: 'user-star',
+                        menuTone: 'tone-blue',
+                    },
+                ],
             },
             derivacion_asesor_load: {
                 skipSay: true,
-                com: { enter: 'derivacion_asesor', afterDerivacion: LUCY_HOME_NODE },
+                com: { enter: 'derivacion_asesor' },
             },
         },
     );
@@ -545,13 +751,15 @@ function buildAseguradora() {
     const asegMenu = [];
     for (const action of asegChains.actions) {
         const plateId = `aseg_placa_${action.id}`;
+        const prefaceId = `aseg_cabina_preface_${action.id}`;
         const cabId = `aseg_cab_${action.id}`;
         const valId = `aseg_val_${action.id}`;
         plateNodes[plateId] = {
             jelou: 'V2 Aseguradora - Inicio',
             say: ['Por favor envíame el número de la placa (ej: GYE1234).'],
-            input: { field: 'plate', next: cabId },
+            input: { field: 'plate', next: prefaceId },
         };
+        plateNodes[prefaceId] = buildCabinaPrefaceNode(prefaceId, cabId, 'aseguradora');
         plateNodes[cabId] = {
             skipSay: true,
             aseg: { enter: 'cabina_aseguradora', afterCabinaNext: valId },

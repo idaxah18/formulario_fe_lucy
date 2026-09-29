@@ -1,4 +1,11 @@
-import { advisorHandoffSay, isAdvisorHandoffDoneNode } from './advisorHandoffCopy.js';
+import {
+    advisorHandoffSay,
+    cabinaPrefaceDockLines,
+    isAdvisorHandoffDoneNode,
+    isCabinaPrefaceNode,
+    CABINA_REGISTRO_HANDOFF_DONE,
+} from './advisorHandoffCopy.js';
+import { isDerivacionTerminalNode } from './navBack.js';
 import { LUCY_FLOW_NODES } from './lucyFlowGraph.js';
 import { getComDockCopy } from './comercial/comercialEngine.js';
 import { getAsegDockCopy } from './aseguradora/aseguradoraEngine.js';
@@ -35,12 +42,21 @@ export function getDockPrompt(state) {
         return { headline: comDock.headline, hint: comDock.hint || '' };
     }
 
+    if (isCabinaPrefaceNode(state.nodeId)) {
+        const lines = cabinaPrefaceDockLines(node, state);
+        return { headline: lines[0] || '', hint: lines.slice(1).join('\n') };
+    }
+
     if (isAdvisorHandoffDoneNode(state.nodeId)) {
         let variant = 'comercial';
-        if (state.nodeId === 'reportar_problema_done') variant = 'problema';
-        else if (state.nodeId === 'asistencia_activa_asesor_done') variant = 'asistencia_en_curso';
+        if (state.nodeId === CABINA_REGISTRO_HANDOFF_DONE) {
+            variant = state.context?.cabinaHandoff?.variant || 'cabina_vigente';
+        } else if (isDerivacionTerminalNode(state.nodeId)) {
+            variant = 'derivacion_registrada';
+        } else if (state.nodeId === 'reportar_problema_done') variant = 'problema';
         else if (state.nodeId === 'otras_soluciones_gea_done') variant = 'otras_soluciones';
         else if (state.nodeId === 'gea_crear_exit') variant = 'asistencia_en_curso';
+        else if (state.nodeId === 'venta_contratar_ok') variant = 'comercial';
         else if (/_asesor_done$/.test(state.nodeId)) variant = 'cita_agenda';
 
         const simulated = Boolean(

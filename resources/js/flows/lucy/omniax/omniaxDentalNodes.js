@@ -3,12 +3,37 @@
  */
 
 import { advisorHandoffSay } from '../advisorHandoffCopy.js';
+import { buildCabinaPrefaceNode } from '../flowHelpers.js';
 
 export const OMX_DEN_FECHA_HORA_NODE = 'omx_den_fecha_hora';
 export const OMX_DEN_BENEF_FORM_NODE = 'omx_den_benef_form';
 
 export function buildOmniaxDentalNodes() {
     return {
+        omx_den_elegibilidad_load: {
+            jelou: '2.1.1 Agendar cita dental - elegibilidad',
+            skipSay: true,
+            omniax: {
+                enter: 'elegibilidad_agendar',
+                kind: 'dental',
+                tipoServicio: 'DENTAL',
+            },
+        },
+        omx_den_sin_cobertura: {
+            jelou: '2.1.1 Agendar cita dental - sin cobertura',
+            skipSay: true,
+            useOmniaxMenu: true,
+        },
+        omx_den_cabina_preface: buildCabinaPrefaceNode(
+            'omx_den_cabina_preface',
+            'omx_den_cabina',
+            'cita_dental',
+        ),
+        omx_den_reag_cabina_preface: buildCabinaPrefaceNode(
+            'omx_den_reag_cabina_preface',
+            'omx_den_reag_cabina',
+            'cita_reagendar',
+        ),
         omx_den_cabina: {
             jelou: 'Notificar Cabina Asistencia en Proceso',
             say: ['Validando asistencias en curso…'],
@@ -17,7 +42,7 @@ export function buildOmniaxDentalNodes() {
                 enter: 'cabina_gate',
                 kind: 'dental',
                 tipoServicio: 'DENTAL',
-                afterCabinaNext: 'omx_den_start',
+                afterCabinaNext: 'omx_den_who',
             },
         },
         omx_den_reag_cabina: {
@@ -219,7 +244,7 @@ export function buildOmniaxDentalNodes() {
             jelou: 'Error Omniax dental',
             skipSay: true,
             actions: [
-                { id: 'retry', label: 'Reintentar', next: 'omx_den_start' },
+                { id: 'retry', label: 'Reintentar', next: 'omx_den_elegibilidad_load' },
                 { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
             ],
         },

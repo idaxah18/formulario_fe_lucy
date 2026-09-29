@@ -22,7 +22,7 @@ export function buildIaNodes() {
             'dental_ia',
             'dental',
             'Dental IA',
-            'omx_den_cabina',
+            'omx_den_elegibilidad_load',
             [
                 'Modo **Dental IA**: escribe tu solicitud como en WhatsApp.',
                 'También puedes usar el menú guiado de agendar cita.',
@@ -46,14 +46,14 @@ export function buildIaNodes() {
             'agendar_cita_ia',
             'agendar',
             'Agendar cita IA',
-            'omx_med_cabina',
+            'omx_med_elegibilidad_load',
             ['Modo **Agendar cita IA** (médico/dental).'],
         ),
         ...iaChatNode(
             'reagendar_cita_ia',
             'reagendar',
             'reagendar cita IA',
-            'omx_med_reag_cabina',
+            'omx_med_reag_cabina_preface',
             ['Modo **Reagendar cita IA**.'],
         ),
         ...iaChatNode(

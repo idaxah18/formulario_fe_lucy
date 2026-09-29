@@ -65,6 +65,26 @@ export function stubRegistered(serviceLabel, jelouRef, returnNode = 'menu_soluci
     };
 }
 
+/** Pantalla antes de Notificar Cabina (dock jugoso + botón continuar). */
+export function buildCabinaPrefaceNode(prefaceId, loadNodeId, prefaceKind = 'servicio', serviceLabel = '') {
+    const isCita = String(prefaceKind).startsWith('cita');
+    return {
+        jelou: 'Notificar Cabina Asistencia en Proceso',
+        skipSay: true,
+        cabinaPreface: prefaceKind,
+        ...(serviceLabel ? { serviceLabel } : {}),
+        actions: [
+            {
+                id: 'go',
+                label: isCita ? 'Continuar' : 'Registrar mi solicitud',
+                next: loadNodeId,
+                icon: 'check',
+                menuTone: 'tone-blue',
+            },
+        ],
+    };
+}
+
 export function wizardTextSteps(steps, jelouRef, returnNode) {
     const nodes = {};
     steps.forEach((step, i) => {
@@ -100,15 +120,16 @@ export function crearAsistenciaChain(
     const base = slugify(`${jelouRef}_${serviceLabel}`);
     const locId = `asist_loc_${base}`;
     const dirId = `asist_dir_${base}`;
-    const doneId = `asist_done_${base}`;
+    const prefaceId = `asist_preface_${base}`;
+    const cabinaLoadId = `asist_cabina_${base}`;
     const placaId = `asist_placa_${base}`;
 
     let entry = locId;
     if (requiresPlaca) entry = placaId;
-    else if (skipLocation) entry = doneId;
+    else if (skipLocation) entry = prefaceId;
     const nodes = {};
 
-    const afterPlaca = skipLocation ? doneId : locId;
+    const afterPlaca = skipLocation ? prefaceId : locId;
 
     if (requiresPlaca) {
         nodes[placaId] = {
@@ -136,11 +157,13 @@ export function crearAsistenciaChain(
         nodes[dirId] = {
             jelou: crearJelouRef,
             say: ['Ahora escribe la dirección o una referencia de esta ubicación.'],
-            input: { next: doneId, echoUser: true, geaField: 'direccion' },
+            input: { next: prefaceId, echoUser: true, geaField: 'direccion' },
         };
     }
 
-    nodes[doneId] = {
+    nodes[prefaceId] = buildCabinaPrefaceNode(prefaceId, cabinaLoadId, 'servicio', serviceLabel);
+
+    nodes[cabinaLoadId] = {
         jelou: crearJelouRef,
         say: ['Registrando tu solicitud de asistencia…'],
         skipSay: true,

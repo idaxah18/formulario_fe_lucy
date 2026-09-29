@@ -119,7 +119,8 @@ export function asistenciaActivaMenuStyle(item) {
     if (tipo === 'Dental') return { icon: 'toothbrush-sparkles', menuTone: 'tone-asist-dental' };
     if (tipo === 'Hogar') return { icon: 'house', menuTone: 'tone-asist-hogar' };
     if (tipo === 'Vial') return { icon: 'car', menuTone: 'tone-asist-vial' };
-    return null;
+    if (tipo === 'Asistencia GEA') return { icon: 'cog', menuTone: 'tone-blue' };
+    return { icon: 'cog', menuTone: 'tone-blue' };
 }
 
 export function buildDerivacionAsistenciaPayload(item, { cedula, nombre, telefono }) {

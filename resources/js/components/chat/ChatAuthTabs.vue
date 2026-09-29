@@ -184,10 +184,15 @@ const nombreInput = ref(null);
 
 const maxTab = computed(() => NODE_TAB[props.nodeId] ?? 0);
 
-const sliderStyle = computed(() => ({
-    width: `${100 / tabs.length}%`,
-    transform: `translateX(${activeTab.value * 100}%)`,
-}));
+/** Ancho y desplazamiento alineados al `p-1` de `.chat-tabs__list` (0.5rem total horizontal). */
+const sliderStyle = computed(() => {
+    const n = tabs.length;
+    const index = activeTab.value;
+    return {
+        width: `calc((100% - 0.5rem) / ${n})`,
+        transform: `translateX(calc(${index} * 100%))`,
+    };
+});
 
 function focusForTab(index) {
     nextTick(() => {

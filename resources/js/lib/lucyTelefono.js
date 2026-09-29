@@ -60,12 +60,12 @@ export function readPersistedLucyTelefono() {
 
 /** Teléfono activo para APIs: query (producción) → contexto del chat → sesión de prueba. */
 export function resolveLucyTelefono(context = null) {
-    const fromQuery = getTelefonoFromQuery();
-    if (fromQuery) return fromQuery;
     if (context?.telefono) {
         const n = normalizeLucyTelefono(context.telefono);
         if (n) return n;
     }
+    const fromQuery = getTelefonoFromQuery();
+    if (fromQuery) return fromQuery;
     return readPersistedLucyTelefono();
 }
 

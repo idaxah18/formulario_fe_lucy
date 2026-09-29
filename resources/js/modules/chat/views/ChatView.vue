@@ -103,12 +103,14 @@
                 </ChatPanelWrap>
 
                 <template v-else-if="quickActions.length || busy">
-                    <p
-                        v-if="busy"
-                        class="chat-dock-loading"
-                    >
-                        Un momento…
-                    </p>
+                    <ChatDockLoading
+                        v-if="busy && busyOmniax"
+                        label="Cargando..."
+                    />
+                    <ChatDockLoading
+                        v-else-if="busy"
+                        label="Un momento…"
+                    />
                     <p
                         v-if="dockFeedback && !busy"
                         class="chat-dock-feedback"
@@ -159,6 +161,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { applyWebviewIntentToContext } from '@/flows/lucy/webviewIntent.js';
 import ChatShell from '@/layouts/ChatShell.vue';
 import ChatNarrative from '@/components/chat/ChatNarrative.vue';
 import ChatUserChip from '@/components/chat/ChatUserChip.vue';
@@ -174,10 +177,11 @@ import ChatDockIntro from '@/components/chat/ChatDockIntro.vue';
 import ChatAppFooter from '@/components/chat/ChatAppFooter.vue';
 import ChatIaComposer from '@/components/chat/ChatIaComposer.vue';
 import ChatBackButton from '@/components/chat/ChatBackButton.vue';
+import ChatDockLoading from '@/components/chat/ChatDockLoading.vue';
 import ChatPanelWrap from '@/components/chat/ChatPanelWrap.vue';
 import { closeWebview, isEmbeddedWebview } from '@/lib/webviewBridge.js';
 import { isIaChatActive, runIaEnter, runIaUserMessage } from '@/flows/lucy/ia/iaEngine.js';
-import { LUCY_ENTRY_NODE } from '@/flows/lucy/lucyFlowGraph.js';
+import { LUCY_ENTRY_NODE, LUCY_FLOW_NODES } from '@/flows/lucy/lucyFlowGraph.js';
 import {
     canNavigateBack,
     createLucyChatState,
@@ -199,7 +203,9 @@ import { runAsegEnter } from '@/flows/lucy/aseguradora/aseguradoraEngine.js';
 import { runGeaEnter } from '@/flows/lucy/gea/geaEngine.js';
 import { runOmniaxEnter } from '@/flows/lucy/omniax/omniaxEngine.js';
 
-const MENU_VIEWPORT_RATIO = 0.75;
+/** Activa overlay si el dock supera este ratio del viewport; desactiva solo bajo el umbral inferior (evita parpadeo). */
+const MENU_OVERLAY_ON_RATIO = 0.78;
+const MENU_OVERLAY_OFF_RATIO = 0.68;
 
 const route = useRoute();
 const listEl = ref(null);
@@ -207,10 +213,13 @@ const dockRef = ref(null);
 const messages = ref([]);
 const state = ref(createLucyChatState(resolveEntryNode()));
 const busy = ref(false);
+/** true mientras corre una tarea Omniax (API citas / cabina / listados). */
+const busyOmniax = ref(false);
 const geoError = ref('');
 const menuOverlay = ref(false);
 
 let dockObserver = null;
+let overlayMeasureRaf = 0;
 
 const quickActions = computed(() => getQuickActions(state.value));
 const formConfig = computed(() =>
@@ -274,6 +283,9 @@ function resolveEntryNode() {
 }
 
 function measureMenuOverlay() {
+    if (busy.value) {
+        return;
+    }
     if (
         formConfig.value ||
         isAuthStep.value ||
@@ -284,29 +296,58 @@ function measureMenuOverlay() {
         menuOverlay.value = false;
         return;
     }
+
+    const node = LUCY_FLOW_NODES[state.value.nodeId];
+    const actionCount = quickActions.value.length;
+    if ((node?.useOmniaxMenu || node?.useGeaMenu) && actionCount >= 3) {
+        menuOverlay.value = true;
+        return;
+    }
+
     const dock = dockRef.value;
     if (!dock) return;
     const vh = window.visualViewport?.height || window.innerHeight;
-    menuOverlay.value = dock.scrollHeight / vh > MENU_VIEWPORT_RATIO;
+    if (!vh) return;
+    const ratio = dock.scrollHeight / vh;
+
+    if (menuOverlay.value) {
+        if (ratio < MENU_OVERLAY_OFF_RATIO) {
+            menuOverlay.value = false;
+        }
+    } else if (ratio > MENU_OVERLAY_ON_RATIO) {
+        menuOverlay.value = true;
+    }
+}
+
+function scheduleMeasureMenuOverlay() {
+    if (overlayMeasureRaf) {
+        cancelAnimationFrame(overlayMeasureRaf);
+    }
+    overlayMeasureRaf = requestAnimationFrame(() => {
+        overlayMeasureRaf = 0;
+        measureMenuOverlay();
+    });
 }
 
 function setupDockObserver() {
     dockObserver?.disconnect();
     const dock = dockRef.value;
     if (!dock || typeof ResizeObserver === 'undefined') return;
-    dockObserver = new ResizeObserver(() => measureMenuOverlay());
+    dockObserver = new ResizeObserver(() => scheduleMeasureMenuOverlay());
     dockObserver.observe(dock);
 }
 
 async function runOmniaxTask(task) {
     if (!task || busy.value) return;
     busy.value = true;
+    busyOmniax.value = true;
     try {
         const result = await runOmniaxEnter(task, state.value);
         applyReduce({ type: 'omniaxResult', result });
     } catch (e) {
         applyReduce({ type: 'omniaxError', message: formatOmniaxErrorMessage(e) });
     } finally {
+        busyOmniax.value = false;
         busy.value = false;
     }
 }
@@ -400,7 +441,7 @@ function applyReduce(event) {
         return;
     }
     nextTick(() => {
-        measureMenuOverlay();
+        scheduleMeasureMenuOverlay();
         setupDockObserver();
         if (result.omniaxEnter) runOmniaxTask(result.omniaxEnter);
         if (result.geaEnter) runGeaTask(result.geaEnter);
@@ -470,14 +511,19 @@ function bootstrap() {
     state.value = createLucyChatState(resolveEntryNode());
     geoError.value = '';
     menuOverlay.value = false;
+    applyWebviewIntentToContext(state.value.context);
     applyReduce({ type: 'init' });
     if (route.query.flow === 'aseguradora') {
         state.value.context.skipToAseguradora = true;
     }
+    const intentRaw = String(route.query.intent || '').trim();
+    if (intentRaw && !state.value.context.webviewIntent) {
+        console.warn('[Lucy] intent desconocido en URL:', intentRaw);
+    }
 }
 
 function onViewportChange() {
-    measureMenuOverlay();
+    scheduleMeasureMenuOverlay();
 }
 
 onMounted(() => {
@@ -489,13 +535,26 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     dockObserver?.disconnect();
+    if (overlayMeasureRaf) cancelAnimationFrame(overlayMeasureRaf);
     window.removeEventListener('resize', onViewportChange);
     window.visualViewport?.removeEventListener('resize', onViewportChange);
 });
 
-watch(() => route.query.flow, () => bootstrap());
+watch(
+    () => [route.query.flow, route.query.intent],
+    () => bootstrap(),
+);
 watch(
     [quickActions, formConfig, isAuthStep, isOmniaxFechaHoraStep, isOmniaxBeneficiarioStep],
-    () => nextTick(measureMenuOverlay),
+    () => nextTick(scheduleMeasureMenuOverlay),
 );
+watch(
+    () => state.value.nodeId,
+    () => nextTick(scheduleMeasureMenuOverlay),
+);
+watch(busy, (isBusy, wasBusy) => {
+    if (wasBusy && !isBusy) {
+        nextTick(scheduleMeasureMenuOverlay);
+    }
+});
 </script>

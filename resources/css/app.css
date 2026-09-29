@@ -209,7 +209,22 @@
     }
 
     .chat-dock-loading {
-        @apply mb-4 text-center text-sm font-medium text-lucy-blue;
+        @apply mb-4 flex items-center justify-center gap-3 py-2;
+    }
+
+    .chat-dock-loading__spinner {
+        @apply h-5 w-5 shrink-0 rounded-full border-2 border-lucy-blue/20 border-t-lucy-blue;
+        animation: chat-dock-spin 0.65s linear infinite;
+    }
+
+    .chat-dock-loading__label {
+        @apply text-sm font-medium text-lucy-blue;
+    }
+
+    @keyframes chat-dock-spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .chat-dock-feedback {
@@ -229,8 +244,9 @@
     }
 
     .chat-menu-item--selected {
-        @apply scale-[1.02] border-lucy-blue bg-gradient-to-r from-lucy-blue/15 via-lucy-gold/15 to-white shadow-md;
+        @apply border-lucy-blue bg-gradient-to-r from-lucy-blue/15 via-lucy-gold/15 to-white shadow-md;
         animation: menu-select-pop 0.38s ease-out;
+        transform-origin: center;
     }
 
     .chat-menu-item__ripple {
@@ -243,10 +259,10 @@
             transform: scale(1);
         }
         45% {
-            transform: scale(1.03);
+            transform: scale(1.01);
         }
         100% {
-            transform: scale(1.02);
+            transform: scale(1);
         }
     }
 
@@ -498,7 +514,7 @@
     }
 
     .chat-tabs__trigger {
-        @apply relative z-[1] flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2.5 text-sm font-bold text-slate-500 transition-colors duration-200;
+        @apply relative z-[1] flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2.5 text-sm font-bold text-slate-500 transition-colors duration-200;
     }
 
     .chat-tabs__trigger--active {

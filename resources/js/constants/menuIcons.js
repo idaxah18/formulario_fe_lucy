@@ -6,6 +6,14 @@ export function resolveMenuIcon(action) {
     if (blob.includes('menú principal') || blob.includes('menu principal') || blob.includes('volver')) return 'home';
     if (blob.includes('salir') || blob.includes('0.')) return 'arrow-left';
     if (blob.includes('plomero') || blob.includes('electricista') || blob.includes('cerrajero') || blob.includes('handyman')) return 'wrench';
+    if (blob.includes('ambulancia')) return 'ambulance';
+    if (blob.includes('orientación') && blob.includes('telef')) return 'smartphone';
+    if (blob.includes('orientacion') && blob.includes('telef')) return 'smartphone';
+    if (blob.includes('reagendar')) return 'calendar-clock';
+    if (blob.includes('agendar') && blob.includes('cita')) return 'calendar-check';
+    if (blob.includes('domicilio')) return 'briefcase-medical';
+    if (blob.includes('nutrición') || blob.includes('nutricion') || blob.includes('bienestar')) return 'apple';
+    if (blob.includes('e-doctor') || blob.includes('edoctor')) return 'globe-check';
     if (blob.includes('dental') || blob.includes('médic') || blob.includes('medic') || blob.includes('salud')) return 'heart';
     if (blob.includes('grúa') || blob.includes('grua') || blob.includes('vehícul') || blob.includes('placa') || blob.includes('vial')) return 'truck';
     if (blob.includes('legal') || blob.includes('siniestro') || blob.includes('asegur')) return 'shield';

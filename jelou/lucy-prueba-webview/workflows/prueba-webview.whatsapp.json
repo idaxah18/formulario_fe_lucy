@@ -19,7 +19,7 @@
             "type": "webview",
             "text": "Chat Lucy Ecuador (prueba)",
             "buttonText": "Abrir chat web",
-            "url": "{{$memory.lucy_webview_base_url}}/?embedded=1&telefono={{$memory.telefono_webview}}",
+            "url": "{{$memory.lucy_webview_base_url}}/?embedded=1&telefono={{$memory.telefono_webview}}&intent={{$memory.lucy_webview_intent}}",
             "settings": {
               "isBlockingEnabled": true,
               "responseVariable": "lucyWebviewClose",
@@ -40,7 +40,8 @@
       ],
       "configuration": {
         "variables": {
-          "lucy_webview_base_url": "https://TU-TUNEL.ngrok-free.app"
+          "lucy_webview_base_url": "https://TU-TUNEL.ngrok-free.app",
+          "lucy_webview_intent": "medico"
         }
       }
     },

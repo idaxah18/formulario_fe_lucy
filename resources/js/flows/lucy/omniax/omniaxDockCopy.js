@@ -1,6 +1,9 @@
-/** `aplica_asignacion_establecimiento: false` — título azul + cuerpo gris en el dock (no burbujas). */
-export const OMX_SIN_ASIGNACION_DOCK = {
-    headline: 'No aplica para este servicio.',
+/** Afiliado sin cobertura / sin especialidades — pantalla antes de entrar al flujo. */
+export const OMX_SIN_COBERTURA_DOCK = {
+    headline: 'No encontramos cobertura para agendar en línea.',
     hint:
-        'Según Omniax, no aplica asignación de establecimiento para este caso. Un asesor debe continuar contigo.',
+        'Con esta cédula no podemos continuar el agendamiento automático. Un asesor puede ayudarte a contratar o activar tu plan.',
 };
+
+/** @deprecated Usar OMX_SIN_COBERTURA_DOCK; se mantiene alias por compatibilidad. */
+export const OMX_SIN_ASIGNACION_DOCK = OMX_SIN_COBERTURA_DOCK;

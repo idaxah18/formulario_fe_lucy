@@ -10,6 +10,7 @@ const ID_BY_SERVICE_LABEL = {
     'Limpieza y mantenimiento': '484',
     'Spa y peluquería': '512',
     Handyman: '515',
+    'Grúa (otro motivo)': '256',
     Grúa: '256',
     'Cambio de llanta': '258',
     'Suministro de gasolina': '258',

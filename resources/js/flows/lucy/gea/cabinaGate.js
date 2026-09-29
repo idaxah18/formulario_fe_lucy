@@ -43,6 +43,7 @@ export async function runCabinaGateOrBlock(
             'Veo que ya tienes una asistencia en curso y estamos trabajando en ella. Para continuar de la mejor manera, un especialista se pondrá en contacto contigo pronto.';
         return {
             blocked: true,
+            blockedVariant: 'cabina_vigente',
             messages: [bot(vigenteText)],
             nextNodeId: returnNode,
         };
@@ -50,6 +51,7 @@ export async function runCabinaGateOrBlock(
     if (cabina.branch !== 'success') {
         return {
             blocked: true,
+            blockedVariant: 'cabina_error',
             messages: [bot('Ups! No se logró iniciar la asistencia, intenta más tarde.')],
             nextNodeId: returnNode,
         };

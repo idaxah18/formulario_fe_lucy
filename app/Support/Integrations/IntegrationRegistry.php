@@ -18,6 +18,12 @@ final class IntegrationRegistry
                 'description' => 'Médico, dental, GEA, ASAP, cabina, cancelar, etc.',
                 'env' => ['GEA_OMNIAX_CLIENT_ID', 'GEA_OMNIAX_CLIENT_SECRET'],
             ],
+            'gea_proyectos' => [
+                'label' => 'SIGA Proyectos (obsoleto)',
+                'description' => 'Ya no se usa; proceso automático va por GEA_OMNIAX_* / test-ec.',
+                'env' => ['GEA_PROYECTOS_CLIENT_ID', 'GEA_PROYECTOS_CLIENT_SECRET'],
+                'optional' => true,
+            ],
             'lopdp' => [
                 'label' => 'LOPDP (header api-key)',
                 'description' => 'Tool 2620 Aceptacion LOPDP — distinto al token Omniax.',

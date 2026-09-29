@@ -9,9 +9,13 @@ import {
     TELEFONO_EC_RE,
 } from '@/lib/lucyTelefono.js';
 
-import { bot, user, LUCY_HOME_NODE, LUCY_LEGACY_ROOT_NODES } from './flowHelpers.js';
+import { openExternalUrl } from '@/lib/webviewBridge.js';
+import { advisorHandoffMenuActions, bot, user, LUCY_HOME_NODE, LUCY_LEGACY_ROOT_NODES } from './flowHelpers.js';
+import { CABINA_REGISTRO_HANDOFF_DONE } from './advisorHandoffCopy.js';
 import {
+    isComHandoffTerminalNode,
     isGeaServiceTerminalNode,
+    isApiConsumerNode,
     resolveBackNodeId,
     resolveNavigateBackTarget,
     shouldShowBackButton,
@@ -44,6 +48,7 @@ import {
     getGeaMenuActions,
     syncGeaFromNode,
 } from './gea/geaEngine.js';
+import { recordAutomaticoAnswer } from './gea/automaticoPreguntas.js';
 import {
     applyOmniaxQuickMeta,
     clearOmniaxMenu,
@@ -51,6 +56,7 @@ import {
     getOmniaxMenuActions,
     syncOmniaxKind,
 } from './omniax/omniaxEngine.js';
+import { applyWebviewIntentToContext } from './webviewIntent.js';
 
 function packEnter(enter) {
     return {
@@ -82,6 +88,8 @@ export function createLucyChatState(entryNode = LUCY_ENTRY_NODE) {
             context.telefono = persisted;
         }
     }
+
+    applyWebviewIntentToContext(context);
 
     return {
         nodeId: entryNode,
@@ -158,6 +166,17 @@ export function isComposerEnabled(state) {
 
 
 export function getQuickActions(state) {
+    if (state.nodeId === CABINA_REGISTRO_HANDOFF_DONE) {
+        const returnNode = state.context?.cabinaHandoff?.returnNode || LUCY_HOME_NODE;
+        return advisorHandoffMenuActions(returnNode).map((a) => ({
+            id: a.id,
+            label: a.label,
+            next: a.next,
+            icon: a.icon,
+            menuTone: a.menuTone,
+        }));
+    }
+
     const node = getNode(state.nodeId);
     const dynamicOmx = getOmniaxMenuActions(state);
 
@@ -297,7 +316,7 @@ function enterNode(state, nodeId, messages, options = {}) {
     }
 
     const fromNodeId = state.nodeId;
-    if (recordHistory && fromNodeId && fromNodeId !== nodeId) {
+    if (recordHistory && fromNodeId && fromNodeId !== nodeId && !isApiConsumerNode(fromNodeId)) {
         pushNavHistory(state, fromNodeId);
     }
 
@@ -511,7 +530,10 @@ export function reduceLucyChat(state, messages, event) {
         }
 
         if (!result.stayOnNode && result.nextNodeId) {
-            if (isGea && isGeaServiceTerminalNode(result.nextNodeId)) {
+            if (isGeaServiceTerminalNode(result.nextNodeId)) {
+                clearNavStack(nextState);
+            }
+            if (isCom && isComHandoffTerminalNode(result.nextNodeId)) {
                 clearNavStack(nextState);
             }
 
@@ -724,10 +746,9 @@ export function reduceLucyChat(state, messages, event) {
         }
 
         if (action.type === 'link' && action.url) {
-            const url = String(action.url);
             newMessages.push(user(action.label || 'Abrir enlace'));
             if (typeof window !== 'undefined') {
-                window.open(url, '_blank', 'noopener,noreferrer');
+                openExternalUrl(action.url);
             }
             return {
                 state: nextState,
@@ -985,9 +1006,16 @@ export function reduceLucyChat(state, messages, event) {
 
         if (node.input.field === 'nombre') nextState.context.nombre = text;
 
-        if (node.input.geaField === 'direccion') {
+        if (node.input.geaField) {
             const gea = nextState.context.gea || {};
-            gea.direccion = text;
+            gea[node.input.geaField] = text;
+            if (node.input.geaField === 'descripcion_problema') {
+                recordAutomaticoAnswer(gea, {
+                    pregunta: 'Cuéntanos brevemente cuál es el problema que presentas.',
+                    respuesta: text,
+                    aplicaAutomatico: true,
+                });
+            }
             nextState.context.gea = gea;
         }
         if (node.input.asegField) {

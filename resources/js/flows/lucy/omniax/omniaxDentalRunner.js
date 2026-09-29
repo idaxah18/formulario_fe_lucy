@@ -25,9 +25,10 @@ import {
 } from './omniaxAsistencias.js';
 import { botFromOmniaxResponse } from './omniaxNoticias.js';
 import { bot } from '../flowHelpers.js';
-import { OMX_SIN_ASIGNACION_DOCK } from './omniaxDockCopy.js';
+import { buildSinCoberturaTransition, routeAfterAplicaAsignacion } from './omniaxEligibility.js';
 import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
 import { runCabinaGateOrBlock } from '../gea/cabinaGate.js';
+import { buildCabinaBlockedTransition } from '../cabinaHandoff.js';
 import {
     applyOmniaxQuickMeta,
     clearOmniaxMenu,
@@ -75,20 +76,44 @@ export async function runOmniaxDentalEnter(task, state) {
     clearMenu(ctx);
 
     switch (task) {
+        case 'elegibilidad_agendar': {
+            try {
+                const res = await fetchAsistenciasEnProceso(cedula, false);
+                omx.aplica_seguimiento_dental = Boolean(res.data?.aplica_seguimiento_dental);
+                const list = res.data?.asistencias || [];
+                const intro = list.length
+                    ? [botFromOmniaxResponse(res), bot('Puedes generar una nueva cita dental a continuación.')]
+                    : [];
+                const apRes = await fetchAplicaAsignacion(cedula, null);
+                omx.aplica_asignacion_establecimiento = parseOmniaxBool(
+                    apRes.data?.aplica_asignacion_establecimiento,
+                );
+                omx.agenda_completa = omx.aplica_asignacion_establecimiento;
+                omx.elegibilidad_ok = true;
+                return {
+                    nextNodeId: 'omx_den_cabina_preface',
+                    messages: intro,
+                    patchContext: { omniax: omx },
+                };
+            } catch {
+                return buildSinCoberturaTransition(ctx, omx, 'dental');
+            }
+        }
+
         case 'cabina_gate': {
             const gate = await runCabinaGateOrBlock(ctx, omx.tipoServicio || 'DENTAL', 'menu_dental', 'ASISTENCIAS', {
                 allowVigenteForAppointments: true,
             });
             if (gate.blocked) {
+                const blocked = buildCabinaBlockedTransition(gate, 'menu_dental');
                 return {
-                    messages: gate.messages,
-                    nextNodeId: gate.nextNodeId,
-                    patchContext: { omniax: omx },
+                    ...blocked,
+                    patchContext: { omniax: omx, ...blocked.patchContext },
                 };
             }
             return {
                 messages: [],
-                nextNodeId: omx.afterCabinaNext || 'omx_den_start',
+                nextNodeId: omx.afterCabinaNext || 'omx_den_who',
                 patchContext: { omniax: omx },
             };
         }
@@ -170,30 +195,7 @@ export async function runOmniaxDentalEnter(task, state) {
             omx.aplica_asignacion_establecimiento = parseOmniaxBool(
                 res.data?.aplica_asignacion_establecimiento,
             );
-            omx.agenda_completa = omx.aplica_asignacion_establecimiento;
-            if (omx.aplica_asignacion_establecimiento) {
-                return {
-                    nextNodeId: 'omx_den_donde',
-                    messages: [bot('¿Dónde te gustaría agendar tu cita?')],
-                };
-            }
-            setMenu(
-                ctx,
-                OMX_SIN_ASIGNACION_DOCK.headline,
-                OMX_SIN_ASIGNACION_DOCK.hint,
-                [
-                    {
-                        id: 'asesor',
-                        label: 'Continuar con asesor',
-                        next: 'omx_den_asesor_load',
-                    },
-                    { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
-                ],
-            );
-            return {
-                nextNodeId: 'omx_den_sin_asignacion',
-                messages: [],
-            };
+            return routeAfterAplicaAsignacion(omx, 'dental');
         }
 
         case 'disponibilidad_dias': {
@@ -381,12 +383,15 @@ export async function runOmniaxDentalEnter(task, state) {
         }
 
         case 'crear': {
-            if (!omx.id_establecimiento || !omx.fecha || !omx.hora) {
+            const needsEst = omx.agenda_completa !== false;
+            if ((needsEst && !omx.id_establecimiento) || !omx.fecha || !omx.hora) {
                 return {
                     nextNodeId: 'omx_den_error',
                     messages: [
                         bot(
-                            'Faltan datos para crear la cita dental (establecimiento, fecha u hora). Completa el flujo desde el inicio.',
+                            'Faltan datos para crear la cita dental (fecha, hora'
+                                + (needsEst ? ' o establecimiento' : '')
+                                + '). Completa el flujo desde el inicio.',
                         ),
                     ],
                 };

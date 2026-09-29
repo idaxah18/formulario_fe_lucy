@@ -16,6 +16,7 @@ import {
 } from './asistenciasActivas.js';
 import { isAdvisorHandoffDoneNode } from '../advisorHandoffCopy.js';
 import { runCabinaGateOrBlock } from './cabinaGate.js';
+import { buildCabinaBlockedTransition } from '../cabinaHandoff.js';
 import {
     actualizarUbicacionAsistencia,
     calificarCuestionario,
@@ -37,6 +38,13 @@ import {
     pushEncuestaRespuesta,
 } from './geaEncuesta.js';
 import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
+import {
+    buildAsistenciasHubExitAction,
+    getPostAuthIntentTargetNode,
+    resolveWebviewIntent,
+} from '../webviewIntent.js';
+import { runAutomaticoEnter } from './automaticoRunner.js';
+import { recordAutomaticoAnswer } from './automaticoPreguntas.js';
 
 function ensureGea(ctx) {
     if (!ctx.gea) ctx.gea = {};
@@ -74,6 +82,10 @@ export function getGeaEnterTask(state, node) {
 export function applyGeaQuickMeta(state, action) {
     if (!action?.meta?.gea) return;
     const patch = { ...action.meta.gea };
+    if (patch.autoPreguntaRecord) {
+        recordAutomaticoAnswer(ensureGea(state.context), patch.autoPreguntaRecord);
+        delete patch.autoPreguntaRecord;
+    }
     if (patch.selectedAsistenciaIndex != null) {
         ensureGea(state.context).selectedAsistenciaIndex = Number(patch.selectedAsistenciaIndex);
     }
@@ -86,6 +98,16 @@ export function applyGeaQuickMeta(state, action) {
     }
     if (patch.respuestaProveedor != null) {
         ensureGea(state.context).respuestaProveedor = String(patch.respuestaProveedor);
+    }
+    if (patch.setTipoVehiculo) {
+        const gea = ensureGea(state.context);
+        const apiTipo = String(patch.setTipoVehiculo).trim().toUpperCase();
+        gea.vehiculo = {
+            ...(gea.vehiculo || {}),
+            tipo_vehiculo: apiTipo,
+        };
+        gea.tipoVehiculoMenuActive = false;
+        delete patch.setTipoVehiculo;
     }
     Object.assign(ensureGea(state.context), patch);
 }
@@ -159,18 +181,15 @@ function showAsistenciasActivasHub(ctx, gea, merged, { resetPage = false } = {})
         });
     }
 
-    actions.push({
-        id: 'home',
-        label: 'Menú principal',
-        next: 'menu_solucion_24_7',
-        icon: 'home',
-        menuTone: 'tone-blue',
-    });
+    actions.push(buildAsistenciasHubExitAction(ctx));
 
-    const hint =
+    let hint =
         sorted.length > pageSize
             ? `Mostrando ${start + 1}–${Math.min(start + pageSize, sorted.length)} de ${sorted.length} (más recientes primero).`
             : `${sorted.length} asistencia(s), más recientes primero.`;
+    if (resolveWebviewIntent(ctx)) {
+        hint += ' También puedes escribir Menú principal para volver al inicio.';
+    }
 
     setMenu(
         ctx,
@@ -222,8 +241,15 @@ export async function runGeaEnter(task, state) {
     const telefono = requireLucyTelefono(ctx);
     gea.telefono = telefono;
 
-    if (!String(task).startsWith('encuesta_')) {
+    const preserveGeaMenu =
+        task === 'auto_vehiculo_pick'
+        || task === 'auto_tipo_vehiculo_pick';
+    if (!String(task).startsWith('encuesta_') && !preserveGeaMenu) {
         clearGeaMenu(ctx);
+    }
+
+    if (String(task).startsWith('auto_')) {
+        return runAutomaticoEnter(task, state);
     }
 
     switch (task) {
@@ -280,9 +306,10 @@ export async function runGeaEnter(task, state) {
             });
 
             if (!merged.length) {
+                const intentNode = getPostAuthIntentTargetNode(ctx);
                 return {
                     messages: [],
-                    nextNodeId: 'menu_solucion_24_7',
+                    nextNodeId: intentNode || 'menu_solucion_24_7',
                     patchContext: { gea },
                 };
             }
@@ -383,10 +410,10 @@ export async function runGeaEnter(task, state) {
                 gea.planAsistencia || 'ASISTENCIAS',
             );
             if (gate.blocked) {
+                const blocked = buildCabinaBlockedTransition(gate, 'menu_solucion_24_7');
                 return {
-                    messages: gate.messages,
-                    nextNodeId: gate.nextNodeId,
-                    patchContext: { gea },
+                    ...blocked,
+                    patchContext: { gea, ...blocked.patchContext },
                 };
             }
             return { rerunTask: 'crear' };
