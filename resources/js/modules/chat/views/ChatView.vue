@@ -1,7 +1,13 @@
 <template>
-    <ChatShell :show-webview-close="showWebviewClose" @webview-close="onWebviewClose">
+    <ChatShell
+        :show-webview-close="showWebviewClose"
+        :hide-stepper="citaConfirmFullscreen"
+        :stepper-auth="stepperWizardChrome"
+        :immersive="citaConfirmFullscreen"
+        @webview-close="onWebviewClose"
+    >
         <template
-            v-if="flowStepper.visible"
+            v-if="flowStepper.visible && !citaConfirmFullscreen"
             #stepper
         >
             <ChatFlowStepper
@@ -12,12 +18,20 @@
 
         <div
             class="chat-main"
-            :class="{ 'chat-main--menu-overlay': menuOverlay }"
+            :class="{
+                'chat-main--menu-overlay': menuOverlay && !citaConfirmFullscreen,
+                'chat-main--dock-stack': dockStackedMenu && !citaConfirmFullscreen,
+                'chat-main--cita-confirm': citaConfirmFullscreen,
+            }"
         >
             <div
                 ref="listEl"
                 class="chat-messages"
-                :class="{ 'chat-messages--collapsed': menuOverlay }"
+                :class="{
+                    'chat-messages--collapsed':
+                        citaConfirmFullscreen
+                        || (menuOverlay && !isOmniaxCitaDone && !isFlowTerminalStep),
+                }"
                 role="log"
                 aria-live="polite"
             >
@@ -25,8 +39,12 @@
                     v-for="(msg, index) in visibleMessages"
                     :key="index"
                 >
+                    <ChatOmniaxCitaConfirmCard
+                        v-if="msg.layout === 'omniax_cita_confirm' && msg.confirm"
+                        :confirm="msg.confirm"
+                    />
                     <ChatNarrative
-                        v-if="msg.role === 'bot'"
+                        v-else-if="msg.role === 'bot'"
                         :text="msg.text"
                     />
                     <ChatUserChip
@@ -39,14 +57,19 @@
                     v-if="geoError && !menuOverlay"
                     class="chat-inline-error"
                 >
-                    {{ geoError }}
+                    {{ rewriteLucySolucionCopy(geoError) }}
                 </p>
             </div>
 
             <aside
                 ref="dockRef"
                 class="chat-dock"
-                :class="{ 'chat-dock--overlay': menuOverlay }"
+                :class="{
+                    'chat-dock--overlay': menuOverlay && !citaConfirmFullscreen,
+                    'chat-dock--cita-fullscreen': citaConfirmFullscreen,
+                    'chat-dock--wizard': dockWizardChrome,
+                    'chat-dock--fill': dockStackedMenu && !citaConfirmFullscreen,
+                }"
             >
                 <ChatPanelWrap v-if="isAuthStep">
                     <ChatAuthTabs
@@ -58,20 +81,14 @@
                     />
                 </ChatPanelWrap>
 
-                <ChatPanelWrap v-else-if="isOmniaxBeneficiarioStep">
+                <ChatPanelWrap
+                    v-else-if="isOmniaxBeneficiarioStep"
+                    :wizard-card="useFlowWizardChrome"
+                >
                     <ChatOmniaxBeneficiarioPanel
                         :disabled="busy"
                         :show-back="canGoBack"
                         @submit="onOmniaxBeneficiario"
-                        @back="onBack"
-                    />
-                </ChatPanelWrap>
-
-                <ChatPanelWrap v-else-if="isOmniaxFechaHoraStep">
-                    <ChatOmniaxFechaHoraPanel
-                        :disabled="busy"
-                        :show-back="canGoBack"
-                        @submit="onOmniaxFechaHora"
                         @back="onBack"
                     />
                 </ChatPanelWrap>
@@ -91,7 +108,7 @@
                         <span class="chat-ia-composer__label">Chat con Lucy</span>
                         <ChatBackButton
                             v-if="canGoBack"
-                            variant="corner"
+                            variant="mini"
                             :disabled="busy"
                             @click="onBack"
                         />
@@ -102,40 +119,134 @@
                     />
                 </ChatPanelWrap>
 
+                <template v-else-if="citaConfirmFullscreen && citaConfirmInDock">
+                    <div class="omx-cita-fullscreen__scroll">
+                        <ChatOmniaxCitaConfirmCard
+                            :confirm="citaConfirmInDock"
+                            fullscreen
+                        />
+                    </div>
+                    <div class="omx-cita-fullscreen__actions">
+                        <ChatMenuList
+                            :actions="quickActions"
+                            :disabled="busy"
+                            :grid="menuIsGrid"
+                            :stacked-layout="dockStackedMenu"
+                            :compact-layout="dockCompactMenu"
+                            @select="onQuick"
+                        />
+                    </div>
+                </template>
+
                 <template v-else-if="quickActions.length || busy">
-                    <ChatDockLoading
-                        v-if="busy && busyOmniax"
-                        label="Cargando..."
-                    />
-                    <ChatDockLoading
-                        v-else-if="busy"
-                        label="Un momento…"
-                    />
-                    <p
-                        v-if="dockFeedback && !busy"
-                        class="chat-dock-feedback"
-                        role="status"
+                    <div
+                        v-if="dockWizardChrome"
+                        class="chat-cita-wizard-shell"
                     >
-                        {{ dockFeedback }}
-                    </p>
-                    <ChatDockIntro
-                        v-if="dockPrompt && !busy"
-                        :headline="dockPrompt.headline"
-                        :hint="dockPrompt.hint"
-                    />
-                    <ChatBackButton
-                        v-if="canGoBack && !busy"
-                        variant="dock"
-                        class="chat-back--after-intro"
-                        @click="onBack"
-                    />
-                    <ChatMenuList
-                        v-if="!busy"
-                        :actions="quickActions"
-                        :disabled="busy"
-                        :grid="menuIsGrid"
-                        @select="onQuick"
-                    />
+                        <div class="chat-flow-wizard-card">
+                            <ChatDockLoading
+                                v-if="busy && busyOmniax"
+                                label="Cargando..."
+                            />
+                            <ChatDockLoading
+                                v-else-if="busy"
+                                label="Un momento…"
+                            />
+                            <p
+                                v-if="dockFeedback && !busy"
+                                class="chat-dock-feedback"
+                                role="status"
+                            >
+                                {{ rewriteLucySolucionCopy(dockFeedback) }}
+                            </p>
+                        <ChatDockIntro
+                            v-if="dockPrompt && !busy"
+                            :headline="dockPrompt.headline"
+                            :hint="dockPrompt.hint"
+                        />
+                            <ChatDualActionButton
+                                v-if="dockDualCapsule && !busy"
+                                class="chat-back--after-intro"
+                                show-back
+                                :continue-text="dualForwardAction.label"
+                                :continue-disabled="busy"
+                                :back-disabled="busy"
+                                @back="onBack"
+                                @continue="onQuick(dualForwardAction)"
+                            />
+                            <ChatBackButton
+                                v-else-if="canGoBack && !busy"
+                                variant="mini"
+                                class="chat-back--after-intro"
+                                @click="onBack"
+                            />
+                            <ChatMenuList
+                                v-if="!busy && !dockDualCapsule"
+                                :actions="quickActions"
+                                :disabled="busy"
+                                :grid="menuIsGrid"
+                                :stacked-layout="dockStackedMenu"
+                            :compact-layout="dockCompactMenu"
+                                @select="onQuick"
+                            />
+                        </div>
+                    </div>
+                    <div
+                        v-else
+                        class="chat-dock-quick"
+                        :class="{ 'chat-dock-stack': dockStackedMenu }"
+                    >
+                        <div
+                            class="chat-dock-stack__chrome"
+                            :class="{ 'chat-dock-stack__chrome--inline': !dockStackedMenu }"
+                        >
+                            <ChatDockLoading
+                                v-if="busy && busyOmniax"
+                                label="Cargando..."
+                            />
+                            <ChatDockLoading
+                                v-else-if="busy"
+                                label="Un momento…"
+                            />
+                            <p
+                                v-if="dockFeedback && !busy"
+                                class="chat-dock-feedback"
+                                role="status"
+                            >
+                                {{ rewriteLucySolucionCopy(dockFeedback) }}
+                            </p>
+                            <ChatDockIntro
+                                v-if="dockPrompt && !busy"
+                                :headline="dockPrompt.headline"
+                                :hint="dockPrompt.hint"
+                            />
+                            <ChatBackButton
+                                v-if="canGoBack && !busy && !dockDualCapsule"
+                                variant="mini"
+                                class="chat-back--after-intro"
+                                @click="onBack"
+                            />
+                        </div>
+                        <ChatDualActionButton
+                            v-if="dockDualCapsule && !busy"
+                            show-back
+                            :continue-text="dualForwardAction.label"
+                            :continue-disabled="busy"
+                            :back-disabled="busy"
+                            @back="onBack"
+                            @continue="onQuick(dualForwardAction)"
+                        />
+                        <ChatMenuList
+                            v-else-if="!busy"
+                            class="chat-dock-stack__menu"
+                            :actions="quickActions"
+                            :disabled="busy"
+                            :grid="menuIsGrid"
+                            :stacked-layout="dockStackedMenu"
+                            :compact-layout="dockCompactMenu"
+                            @select="onQuick"
+                        />
+                    </div>
                 </template>
 
                 <p
@@ -149,12 +260,13 @@
                     v-if="geoError && menuOverlay"
                     class="chat-inline-error mt-3"
                 >
-                    {{ geoError }}
+                    {{ rewriteLucySolucionCopy(geoError) }}
                 </p>
             </aside>
 
             <ChatAppFooter />
         </div>
+
     </ChatShell>
 </template>
 
@@ -164,22 +276,27 @@ import { useRoute } from 'vue-router';
 import { applyWebviewIntentToContext } from '@/flows/lucy/webviewIntent.js';
 import ChatShell from '@/layouts/ChatShell.vue';
 import ChatNarrative from '@/components/chat/ChatNarrative.vue';
+import ChatOmniaxCitaConfirmCard from '@/components/chat/ChatOmniaxCitaConfirmCard.vue';
 import ChatUserChip from '@/components/chat/ChatUserChip.vue';
 import ChatMenuList from '@/components/chat/ChatMenuList.vue';
 import ChatFormPanel from '@/components/chat/ChatFormPanel.vue';
 import ChatAuthTabs from '@/components/chat/ChatAuthTabs.vue';
-import ChatOmniaxFechaHoraPanel from '@/components/chat/ChatOmniaxFechaHoraPanel.vue';
-import { OMX_DEN_BENEF_FORM_NODE, OMX_DEN_FECHA_HORA_NODE } from '@/flows/lucy/omniax/omniaxDentalNodes.js';
-import { OMX_MED_BENEF_FORM_NODE, OMX_MED_FECHA_HORA_NODE } from '@/flows/lucy/omniax/omniaxMedicoNodes.js';
+import { OMX_DEN_BENEF_FORM_NODE } from '@/flows/lucy/omniax/omniaxDentalNodes.js';
+import { OMX_MED_BENEF_FORM_NODE } from '@/flows/lucy/omniax/omniaxMedicoNodes.js';
 import ChatOmniaxBeneficiarioPanel from '@/components/chat/ChatOmniaxBeneficiarioPanel.vue';
 import ChatFlowStepper from '@/components/chat/ChatFlowStepper.vue';
 import ChatDockIntro from '@/components/chat/ChatDockIntro.vue';
 import ChatAppFooter from '@/components/chat/ChatAppFooter.vue';
 import ChatIaComposer from '@/components/chat/ChatIaComposer.vue';
 import ChatBackButton from '@/components/chat/ChatBackButton.vue';
+import ChatDualActionButton from '@/components/chat/ChatDualActionButton.vue';
 import ChatDockLoading from '@/components/chat/ChatDockLoading.vue';
 import ChatPanelWrap from '@/components/chat/ChatPanelWrap.vue';
-import { closeWebview, isEmbeddedWebview } from '@/lib/webviewBridge.js';
+import {
+    isEmbeddedWebview,
+    notifyJelouUserCloseCallback,
+    returnToWhatsApp,
+} from '@/lib/webviewBridge.js';
 import { isIaChatActive, runIaEnter, runIaUserMessage } from '@/flows/lucy/ia/iaEngine.js';
 import { LUCY_ENTRY_NODE, LUCY_FLOW_NODES } from '@/flows/lucy/lucyFlowGraph.js';
 import {
@@ -189,7 +306,7 @@ import {
     isComposerEnabled,
     reduceLucyChat,
 } from '@/flows/lucy/lucyChatEngine.js';
-import { getFlowStepper, isAuthFlowStep } from '@/flows/lucy/flowStepper.js';
+import { getFlowStepper, isAuthFlowStep, isFlowWizardChrome } from '@/flows/lucy/flowStepper.js';
 import {
     getCurrentNodeSaySet,
     getDockPrompt,
@@ -202,6 +319,11 @@ import { runComEnter } from '@/flows/lucy/comercial/comercialEngine.js';
 import { runAsegEnter } from '@/flows/lucy/aseguradora/aseguradoraEngine.js';
 import { runGeaEnter } from '@/flows/lucy/gea/geaEngine.js';
 import { runOmniaxEnter } from '@/flows/lucy/omniax/omniaxEngine.js';
+import { bindMobileKeyboardInset } from '@/lib/useMobileKeyboardInset.js';
+import { splitMenuActions } from '@/lib/menuListPagination.js';
+import { isAdvisorHandoffDoneNode, isCabinaPrefaceNode } from '@/flows/lucy/advisorHandoffCopy.js';
+import { shouldDisableMenuOverlay } from '@/flows/lucy/flowDockUi.js';
+import { rewriteLucySolucionCopy, shouldUseDockDualCapsule } from '@/lib/lucySolucionCopy.js';
 
 /** Activa overlay si el dock supera este ratio del viewport; desactiva solo bajo el umbral inferior (evita parpadeo). */
 const MENU_OVERLAY_ON_RATIO = 0.78;
@@ -220,19 +342,70 @@ const menuOverlay = ref(false);
 
 let dockObserver = null;
 let overlayMeasureRaf = 0;
+let unbindKeyboardInset = null;
 
 const quickActions = computed(() => getQuickActions(state.value));
 const formConfig = computed(() =>
     isAuthStep.value ? null : getInputFormConfig(state.value),
 );
 const menuIsGrid = computed(() => isNpsMenu(quickActions.value));
+
+/** Cierre de flujo (cabina, crear GEA, cita): nunca modo overlay de menú largo. */
+const isFlowTerminalStep = computed(() => isAdvisorHandoffDoneNode(state.value.nodeId));
+
+const EN_PROCESO_DOCK_FILL_NODES = new Set([
+    'asistencias_activas_hub',
+    'omx_med_en_proceso_hub',
+    'omx_den_en_proceso_hub',
+    'omx_med_reag_pick',
+    'omx_den_reag_pick',
+]);
+
+const dockLocationStep = computed(() =>
+    quickActions.value.some((action) => action?.type === 'location'),
+);
+
+/** Lista con scroll + botones fijos abajo (solo si hay ítems anclados: asistencias en curso, etc.). */
+const dockStackedMenu = computed(() => {
+    if (menuIsGrid.value || dockCompactMenu.value) return false;
+    const actions = quickActions.value;
+    if (!actions.length) return false;
+    const { pinned, items } = splitMenuActions(actions);
+    if (!pinned.length) return false;
+    if (EN_PROCESO_DOCK_FILL_NODES.has(state.value.nodeId)) return true;
+    return items.length > 0;
+});
+
+const dockCompactMenu = computed(() => {
+    const nodeId = state.value.nodeId || '';
+    const node = LUCY_FLOW_NODES[nodeId];
+    const dynamicList = Boolean(
+        node?.useOmniaxMenu || node?.useGeaMenu || node?.useAsegMenu || node?.useComMenu,
+    );
+    const shortStaticChoice = !dynamicList
+        && !menuIsGrid.value
+        && !EN_PROCESO_DOCK_FILL_NODES.has(nodeId)
+        && quickActions.value.length > 0
+        && quickActions.value.length <= 3;
+    const shortAutoChoice = nodeId.startsWith('auto_');
+    return (
+        isFlowTerminalStep.value
+        || isCabinaPrefaceNode(nodeId)
+        || nodeId === 'omx_med_who'
+        || nodeId === 'omx_den_who'
+        || nodeId === 'omx_med_donde'
+        || nodeId === 'omx_den_donde'
+        || shortAutoChoice
+        || shortStaticChoice
+        || (!menuIsGrid.value && dockLocationStep.value)
+    );
+});
+
 const dockPrompt = computed(() => (formConfig.value || isAuthStep.value ? null : getDockPrompt(state.value)));
 const flowStepper = computed(() => getFlowStepper(state.value));
 const isAuthStep = computed(() => isAuthFlowStep(state.value.nodeId));
-const OMNX_FECHA_HORA_NODES = [OMX_MED_FECHA_HORA_NODE, OMX_DEN_FECHA_HORA_NODE];
 const OMNX_BENEF_NODES = [OMX_MED_BENEF_FORM_NODE, OMX_DEN_BENEF_FORM_NODE];
 
-const isOmniaxFechaHoraStep = computed(() => OMNX_FECHA_HORA_NODES.includes(state.value.nodeId));
 const isOmniaxBeneficiarioStep = computed(() => OMNX_BENEF_NODES.includes(state.value.nodeId));
 const isIaChatStep = computed(
     () => isIaChatActive(state.value) && isComposerEnabled(state.value),
@@ -240,13 +413,53 @@ const isIaChatStep = computed(
 const showWebviewClose = computed(() => isEmbeddedWebview());
 const canGoBack = computed(() => canNavigateBack(state.value));
 
+const dualForwardAction = computed(() => {
+    if (!shouldUseDockDualCapsule({
+        canGoBack: canGoBack.value,
+        actions: quickActions.value,
+        busy: busy.value,
+        grid: menuIsGrid.value,
+    })) {
+        return null;
+    }
+    return quickActions.value[0] || null;
+});
+const dockDualCapsule = computed(() => Boolean(dualForwardAction.value));
+
+const isOmniaxCitaDone = computed(
+    () => state.value.nodeId === 'omx_med_done' || state.value.nodeId === 'omx_den_done',
+);
+
+const citaConfirmInDock = computed(() => {
+    if (!isOmniaxCitaDone.value) return null;
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+        const m = messages.value[i];
+        if (m.layout === 'omniax_cita_confirm' && m.confirm) return m.confirm;
+    }
+    return null;
+});
+
+const citaConfirmFullscreen = computed(
+    () => isOmniaxCitaDone.value && Boolean(citaConfirmInDock.value),
+);
+
+const stepperWizardChrome = computed(
+    () => isFlowWizardChrome(state.value) && !citaConfirmFullscreen.value,
+);
+const dockWizardChrome = computed(
+    () =>
+        isFlowWizardChrome(state.value)
+        && !menuOverlay.value
+        && !citaConfirmFullscreen.value,
+);
+const useFlowWizardChrome = dockWizardChrome;
+
 const dockStepActive = computed(() =>
     isDockStepActive(
         state.value,
         quickActions.value.length > 0,
         Boolean(formConfig.value) ||
             isAuthStep.value ||
-            isOmniaxFechaHoraStep.value ||
             isOmniaxBeneficiarioStep.value,
     ),
 );
@@ -255,6 +468,7 @@ const visibleMessages = computed(() => {
     if (!dockStepActive.value) return messages.value;
     const saySet = getCurrentNodeSaySet(state.value.nodeId);
     return messages.value.filter((m) => {
+        if (m.layout === 'omniax_cita_confirm' && isOmniaxCitaDone.value) return false;
         if (m.role === 'bot' && saySet.has(String(m.text).trim())) return false;
         return true;
     });
@@ -283,22 +497,56 @@ function resolveEntryNode() {
 }
 
 function measureMenuOverlay() {
+    const nodeId = state.value.nodeId;
+
+    if (shouldDisableMenuOverlay(nodeId)) {
+        menuOverlay.value = false;
+        return;
+    }
+
     if (busy.value) {
         return;
     }
     if (
         formConfig.value ||
         isAuthStep.value ||
-        isOmniaxFechaHoraStep.value ||
         isOmniaxBeneficiarioStep.value ||
         !quickActions.value.length
     ) {
         menuOverlay.value = false;
         return;
     }
-
-    const node = LUCY_FLOW_NODES[state.value.nodeId];
+    const node = LUCY_FLOW_NODES[nodeId];
     const actionCount = quickActions.value.length;
+
+    if (EN_PROCESO_DOCK_FILL_NODES.has(nodeId) && actionCount > 0) {
+        menuOverlay.value = true;
+        return;
+    }
+
+    const dynamicList = Boolean(
+        node?.useOmniaxMenu || node?.useGeaMenu || node?.useAsegMenu || node?.useComMenu,
+    );
+    if (!dynamicList && actionCount > 0 && actionCount <= 3) {
+        menuOverlay.value = false;
+        return;
+    }
+
+    if (!dynamicList && actionCount > 3) {
+        menuOverlay.value = true;
+        return;
+    }
+
+    if (
+        /^menu_/.test(nodeId)
+        && actionCount > 0
+        && !node?.useOmniaxMenu
+        && !node?.useGeaMenu
+    ) {
+        menuOverlay.value = true;
+        return;
+    }
+
     if ((node?.useOmniaxMenu || node?.useGeaMenu) && actionCount >= 3) {
         menuOverlay.value = true;
         return;
@@ -353,7 +601,13 @@ async function runOmniaxTask(task) {
 }
 
 async function runGeaTask(task) {
-    if (!task || busy.value) return;
+    if (!task) return;
+    for (let attempt = 0; attempt < 8 && busy.value; attempt += 1) {
+        await new Promise((resolve) => {
+            setTimeout(resolve, 40);
+        });
+    }
+    if (busy.value) return;
     busy.value = true;
     try {
         const result = await runGeaEnter(task, state.value);
@@ -395,8 +649,17 @@ function onIaText(text) {
     applyReduce({ type: 'text', text });
 }
 
-function onWebviewClose() {
-    closeWebview({ nodeId: state.value.nodeId, reason: 'header_button' });
+async function onWebviewClose() {
+    if (busy.value) return;
+    busy.value = true;
+    try {
+        const result = await notifyJelouUserCloseCallback();
+        if (result?.skipped && result.reason === 'no_execution_id') {
+            returnToWhatsApp({ nodeId: state.value.nodeId, reason: 'header_button' });
+        }
+    } finally {
+        busy.value = false;
+    }
 }
 
 async function runComTask(task) {
@@ -419,7 +682,7 @@ function applyReduce(event) {
     if (result.scroll) scrollToBottom();
     if (result.requestLocation) requestLocation();
     if (result.webviewClose) {
-        closeWebview({
+        returnToWhatsApp({
             nodeId: result.webviewClose.nodeId,
             reason: result.webviewClose.reason || 'flow',
         });
@@ -468,11 +731,8 @@ function onQuick(action) {
 
 function onBack() {
     if (!canGoBack.value || busy.value) return;
+    document.documentElement.style.setProperty('--keyboard-offset', '0px');
     applyReduce({ type: 'navigateBack' });
-}
-
-function onOmniaxFechaHora(payload) {
-    applyReduce({ type: 'omniaxFechaHora', ...payload });
 }
 
 function onOmniaxBeneficiario(payload) {
@@ -529,12 +789,15 @@ function onViewportChange() {
 onMounted(() => {
     bootstrap();
     setupDockObserver();
+    unbindKeyboardInset = bindMobileKeyboardInset();
     window.addEventListener('resize', onViewportChange);
     window.visualViewport?.addEventListener('resize', onViewportChange);
 });
 
 onBeforeUnmount(() => {
     dockObserver?.disconnect();
+    unbindKeyboardInset?.();
+    unbindKeyboardInset = null;
     if (overlayMeasureRaf) cancelAnimationFrame(overlayMeasureRaf);
     window.removeEventListener('resize', onViewportChange);
     window.visualViewport?.removeEventListener('resize', onViewportChange);
@@ -545,12 +808,17 @@ watch(
     () => bootstrap(),
 );
 watch(
-    [quickActions, formConfig, isAuthStep, isOmniaxFechaHoraStep, isOmniaxBeneficiarioStep],
+    [quickActions, formConfig, isAuthStep, isOmniaxBeneficiarioStep],
     () => nextTick(scheduleMeasureMenuOverlay),
 );
 watch(
     () => state.value.nodeId,
-    () => nextTick(scheduleMeasureMenuOverlay),
+    (id) => {
+        if (shouldDisableMenuOverlay(id)) {
+            menuOverlay.value = false;
+        }
+        nextTick(scheduleMeasureMenuOverlay);
+    },
 );
 watch(busy, (isBusy, wasBusy) => {
     if (wasBusy && !isBusy) {

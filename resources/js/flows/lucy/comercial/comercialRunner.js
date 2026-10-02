@@ -1,5 +1,6 @@
 import { createPayCheckoutLink, crearDerivacionLead, fetchVentaLead, marcarVentaContrato } from '@/api/comercialApi.js';
 import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
+import { notifyJelouDerivacionCallback } from '@/lib/webviewBridge.js';
 import { isAdvisorHandoffDoneNode } from '../advisorHandoffCopy.js';
 import { bot, LUCY_HOME_NODE, standardExitActions } from '../flowHelpers.js';
 
@@ -67,7 +68,7 @@ export async function runComEnter(task, state) {
                     return {
                         messages: [
                             bot(
-                                'No pudimos generar el enlace de pago. Intenta desde WhatsApp o más tarde.',
+                                'No pudimos generar el enlace de pago. Intenta de nuevo más tarde.',
                             ),
                         ],
                         nextNodeId: com.afterPayFail || LUCY_HOME_NODE,
@@ -82,7 +83,7 @@ export async function runComEnter(task, state) {
                             `Has recibido una solicitud de pago.\n\n*Plan: ${planName}*\n*Monto: $${price} mensual incluido IVA*\n\nPaga en el siguiente enlace:\n${shortUrl}`,
                         ),
                         bot(
-                            'Cuando completes el pago en la pasarela, vuelve aquí o continúa en WhatsApp para la activación.',
+                            'Cuando completes el pago en la pasarela, vuelve aquí para continuar la activación.',
                         ),
                     ],
                     nextNodeId: com.afterPayOk || `${product}_ok`,
@@ -90,17 +91,10 @@ export async function runComEnter(task, state) {
                 };
             } catch (e) {
                 const simulated = e.response?.data?.simulated;
-                const msg =
-                    e.response?.data?.message ||
-                    e.message ||
-                    'No pudimos crear el enlace de pago.';
                 if (simulated || e.response?.status === 503) {
                     return {
                         messages: [
-                            bot(`⚠️ ${msg}`),
-                            bot(
-                                '(Modo prueba: configura JELOU_PAY_BEARER en el servidor para enlaces reales.)',
-                            ),
+                            bot('No pudimos generar el enlace de pago. Intenta de nuevo más tarde.'),
                         ],
                         nextNodeId: com.afterPayFail || LUCY_HOME_NODE,
                         patchContext: { com },
@@ -162,14 +156,16 @@ export async function runComEnter(task, state) {
             }
             const messages = isAdvisorHandoffDoneNode(nextNodeId)
                 ? []
-                : [
-                      bot('Muy bien, enseguida te contactaré con un asesor comercial.'),
-                      bot(
-                          simulated
-                              ? '(Solicitud registrada en modo simulación — configura JELOU_DATUM_VENTA_BASIC_* en .env para Datum real.)'
-                              : '(Solicitud registrada en sistema.)',
-                      ),
-                  ];
+                : [bot('Muy bien, enseguida te contactaré con un asesor comercial.')];
+            await notifyJelouDerivacionCallback({
+                tipo: com.tipo || 'operacion',
+                producto,
+                notas: com.notas || '',
+                cedula,
+                nombre: nombre || '',
+                telefono,
+                nodo: nextNodeId,
+            });
             return {
                 messages,
                 nextNodeId,

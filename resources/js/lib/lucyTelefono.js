@@ -73,7 +73,7 @@ export function requireLucyTelefono(context = null) {
     const tel = resolveLucyTelefono(context);
     if (!tel) {
         throw new Error(
-            'Falta tu número de celular. Vuelve al inicio e ingrésalo (paso Teléfono) o usa ?telefono= en la URL.',
+            'Falta tu número de celular. Vuelve al inicio e ingrésalo.',
         );
     }
     return tel;

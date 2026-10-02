@@ -4,12 +4,14 @@
 
 import { advisorHandoffSay } from '../advisorHandoffCopy.js';
 import { buildCabinaPrefaceNode } from '../flowHelpers.js';
+import { citaPlanNodes } from './omniaxEligibility.js';
 
 export const OMX_DEN_FECHA_HORA_NODE = 'omx_den_fecha_hora';
 export const OMX_DEN_BENEF_FORM_NODE = 'omx_den_benef_form';
 
 export function buildOmniaxDentalNodes() {
     return {
+        ...citaPlanNodes('dental'),
         omx_den_elegibilidad_load: {
             jelou: '2.1.1 Agendar cita dental - elegibilidad',
             skipSay: true,
@@ -52,41 +54,81 @@ export function buildOmniaxDentalNodes() {
                 enter: 'cabina_gate',
                 kind: 'dental',
                 tipoServicio: 'DENTAL',
-                afterCabinaNext: 'omx_den_reag_start',
+                afterCabinaNext: 'omx_den_reag_list_load',
             },
+        },
+        omx_den_en_proceso_load: {
+            jelou: '2.1.1 Agendar cita dental - en proceso',
+            skipSay: true,
+            omniax: { enter: 'en_proceso_agendar', kind: 'dental', reagendar: false },
+        },
+        omx_den_seguimiento_ask: {
+            jelou: 'Seguimiento dental',
+            say: ['¿Deseas continuar con el seguimiento dental desde tu ubicación?'],
+            actions: [
+                {
+                    id: 'si',
+                    label: 'Sí',
+                    next: 'omx_den_seguimiento_share',
+                    meta: { omx: true, usuario_acepta_seguimiento: true },
+                },
+                {
+                    id: 'no',
+                    label: 'No',
+                    next: 'omx_den_en_proceso_hub_load',
+                    meta: { omx: true, usuario_acepta_seguimiento: false },
+                },
+            ],
+        },
+        omx_den_en_proceso_hub_load: {
+            jelou: 'Asistencias dentales en proceso',
+            skipSay: true,
+            omniax: { enter: 'en_proceso_hub_after_seguimiento', kind: 'dental', reagendar: false },
+        },
+        omx_den_en_proceso_hub: {
+            jelou: 'Asistencias dentales en proceso',
+            skipSay: true,
+            useOmniaxMenu: true,
+            omniax: { refreshMenuEnter: 'en_proceso_hub', kind: 'dental', reagendar: false },
+        },
+        omx_den_en_proceso_pick_load: {
+            jelou: 'Detalle asistencia dental',
+            skipSay: true,
+            omniax: { enter: 'en_proceso_pick', kind: 'dental', reagendar: false },
+        },
+        omx_den_seguimiento_share: {
+            jelou: 'Seguimiento dental — ubicación',
+            say: ['Por favor compárteme tu ubicación actual 📍'],
+            actions: [
+                {
+                    id: 'share_location',
+                    label: '📍 Compartir ubicación',
+                    type: 'location',
+                    next: 'omx_den_seguimiento_crear_load',
+                },
+            ],
+        },
+        omx_den_seguimiento_crear_load: {
+            jelou: 'Seguimiento dental — registro',
+            skipSay: true,
+            omniax: { enter: 'crear_seguimiento_dental', kind: 'dental', reagendar: false },
         },
         omx_den_start: {
             jelou: '2.1.1 Agendar cita dental - Omniax',
             skipSay: true,
-            omniax: { enter: 'en_proceso', kind: 'dental', reagendar: false },
-        },
-        omx_den_reag_start: {
-            jelou: '2.1.2 Reagendar cita dental',
-            omniax: { kind: 'dental', reagendar: true },
-            say: ['¿Para quién reagendamos la cita dental?'],
-            actions: [
-                {
-                    id: 'para_mi',
-                    label: 'Para mí',
-                    next: 'omx_den_reag_list_load',
-                    meta: { omx: true, para_beneficiario: false },
-                },
-                {
-                    id: 'benef',
-                    label: 'Beneficiario',
-                    next: 'omx_den_benef_form',
-                },
-            ],
+            omniax: { enter: 'long_flow_dental', kind: 'dental', reagendar: false },
         },
         omx_den_reag_list_load: {
             jelou: 'Listado reagendar dental',
             skipSay: true,
-            omniax: { enter: 'en_proceso_reagendar' },
+            useOmniaxMenu: true,
+            omniax: { enter: 'en_proceso_reagendar', kind: 'dental', reagendar: true },
         },
         omx_den_reag_pick: {
             jelou: 'Reagendar dental',
             skipSay: true,
             useOmniaxMenu: true,
+            omniax: { kind: 'dental', reagendar: true, refreshMenuEnter: 'en_proceso_reagendar' },
         },
         omx_den_reagendar_load: {
             jelou: 'Reagendar cita dental',
@@ -100,7 +142,7 @@ export function buildOmniaxDentalNodes() {
                 {
                     id: 'para_mi',
                     label: 'Para mí',
-                    next: 'omx_den_aplica_load',
+                    next: 'omx_den_start',
                     meta: { omx: true, para_beneficiario: false },
                 },
                 {
@@ -143,13 +185,13 @@ export function buildOmniaxDentalNodes() {
             jelou: 'Ciudades',
             skipSay: true,
             useOmniaxMenu: true,
-            omniax: { enter: 'zonas_ciudades' },
+            omniax: { enter: 'zonas_ciudades', kind: 'dental', refreshMenuEnter: 'zonas_ciudades' },
         },
         omx_den_zonas_load: {
             jelou: 'Zonas',
             skipSay: true,
             useOmniaxMenu: true,
-            omniax: { enter: 'zonas_lista' },
+            omniax: { enter: 'zonas_lista', kind: 'dental', refreshMenuEnter: 'zonas_lista' },
         },
         omx_den_est_gps_load: {
             jelou: 'Establecimientos',
@@ -162,6 +204,12 @@ export function buildOmniaxDentalNodes() {
             skipSay: true,
             useOmniaxMenu: true,
             omniax: { enter: 'establecimientos_zona' },
+        },
+        omx_den_franja_load: {
+            jelou: 'Franja horaria dental',
+            skipSay: true,
+            useOmniaxMenu: true,
+            omniax: { enter: 'disponibilidad_franja' },
         },
         omx_den_dias_load: {
             jelou: 'Fechas disponibles dental',
@@ -210,6 +258,18 @@ export function buildOmniaxDentalNodes() {
                 { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
             ],
         },
+        omx_den_reag_sin_fechas: {
+            jelou: 'Sin fechas reagendar',
+            say: ['Lo sentimos. No existen fechas disponibles.'],
+            actions: [
+                {
+                    id: 'volver',
+                    label: 'Volver al listado de citas',
+                    next: 'omx_den_reag_list_load',
+                },
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
+            ],
+        },
         omx_den_verificar_disponibilidad_load: {
             jelou: 'Verificar disponibilidad',
             skipSay: true,
@@ -228,17 +288,14 @@ export function buildOmniaxDentalNodes() {
                     id: 'share_location',
                     label: '📍 Compartir ubicación',
                     type: 'location',
-                    next: 'omx_den_fecha_hora',
+                    next: 'omx_den_donde',
                 },
             ],
         },
         omx_den_done: {
             jelou: 'Cita dental confirmada',
             skipSay: true,
-            actions: [
-                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
-                { id: 'den', label: 'Menú dental', next: 'menu_dental' },
-            ],
+            actions: [],
         },
         omx_den_error: {
             jelou: 'Error Omniax dental',

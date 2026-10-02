@@ -1,3 +1,5 @@
+import { resolveIdServicioCrearGea } from './gea/geaServiceIds.js';
+
 export function slugify(text) {
     return String(text)
         .toLowerCase()
@@ -57,9 +59,8 @@ export function stubRegistered(serviceLabel, jelouRef, returnNode = 'menu_soluci
     return {
         jelou: jelouRef,
         say: [
-            `✅ Simulación: tu solicitud de **${serviceLabel}** fue registrada.`,
-            'En WhatsApp un asesor o proveedor continuaría el proceso por este chat.',
-            '(Sin integración API en esta webview de prueba.)',
+            `Tu solicitud de **${serviceLabel}** fue registrada.`,
+            'Un asesor continuará contigo por este chat.',
         ],
         actions: standardExitActions(returnNode),
     };
@@ -108,7 +109,7 @@ export function crearAsistenciaChain(
     options = {},
 ) {
     const {
-        idServicio = null,
+        idServicio: idServicioOpt = null,
         requiresPlaca = false,
         skipLocation = false,
         sinUbicacion = false,
@@ -116,7 +117,12 @@ export function crearAsistenciaChain(
         planAsistencia = 'ASISTENCIAS',
         crearJelouRef = 'V2 Crear asistencia',
         afterCrearNext = 'gea_crear_exit',
+        skipCabinaPreface = false,
     } = options;
+    const idServicio = resolveIdServicioCrearGea(serviceLabel, idServicioOpt);
+    if (!idServicio) {
+        throw new Error(`Falta id_servicio GEA en geaServiceIds para «${serviceLabel}».`);
+    }
     const base = slugify(`${jelouRef}_${serviceLabel}`);
     const locId = `asist_loc_${base}`;
     const dirId = `asist_dir_${base}`;
@@ -142,6 +148,12 @@ export function crearAsistenciaChain(
         };
     }
 
+    const geaTrail = {
+        serviceLabel,
+        tipoServicio,
+        exitReturnMenu: returnNode,
+    };
+
     if (!skipLocation) {
         nodes[locId] = {
             jelou: jelouRef,
@@ -152,16 +164,26 @@ export function crearAsistenciaChain(
             actions: [
                 { id: 'share_location', label: '📍 Compartir ubicación', type: 'location', next: dirId },
             ],
+            gea: geaTrail,
         };
 
         nodes[dirId] = {
             jelou: crearJelouRef,
             say: ['Ahora escribe la dirección o una referencia de esta ubicación.'],
-            input: { next: prefaceId, echoUser: true, geaField: 'direccion' },
+            input: {
+                next: skipCabinaPreface ? cabinaLoadId : prefaceId,
+                echoUser: true,
+                geaField: 'direccion',
+            },
+            gea: geaTrail,
         };
     }
 
-    nodes[prefaceId] = buildCabinaPrefaceNode(prefaceId, cabinaLoadId, 'servicio', serviceLabel);
+    if (!skipCabinaPreface) {
+        const prefaceNode = buildCabinaPrefaceNode(prefaceId, cabinaLoadId, 'servicio', serviceLabel);
+        prefaceNode.gea = geaTrail;
+        nodes[prefaceId] = prefaceNode;
+    }
 
     nodes[cabinaLoadId] = {
         jelou: crearJelouRef,
@@ -175,6 +197,8 @@ export function crearAsistenciaChain(
             planAsistencia,
             sinUbicacion,
             afterCrearNext,
+            exitReturnMenu: returnNode,
+            ...geaTrail,
         },
     };
 

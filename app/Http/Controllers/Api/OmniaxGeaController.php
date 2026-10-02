@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\Gea\GeaCrearAsistenciaGuard;
 use App\Services\Gea\OmniaxClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -96,6 +97,8 @@ class OmniaxGeaController extends Controller
         if (empty($data['plan_asistencia'])) {
             $data['plan_asistencia'] = config('services.gea_omniax.plan_asistencia', 'ASISTENCIAS');
         }
+
+        GeaCrearAsistenciaGuard::assertIdServicioPermitido($data['id_servicio']);
 
         $payload = $this->omniax->request('post', '/v1/chatbot/asistencias/gea', [
             'json' => array_filter($data, fn ($v) => $v !== null && $v !== ''),

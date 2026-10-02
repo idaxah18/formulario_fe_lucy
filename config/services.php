@@ -5,6 +5,10 @@ return [
         'project_id' => env('JELOU_PROJECT_ID', '01j5661e5gaf6330435zh3bzjx'),
         'api_base_url' => env('JELOU_API_BASE_URL', 'https://api.jelou.ai'),
         'api_token' => env('JELOU_API_TOKEN'),
+        'webview_callback_url' => env(
+            'JELOU_WEBVIEW_CALLBACK_URL',
+            'https://workflows.jelou.ai/v1/webview/callback',
+        ),
         /**
          * Datum v2: Bearer sk_ no autentica /v2/databases — usan HTTP Basic por cuenta Jelou.
          * venta_asistencias (1435) ≠ credenciales del tool 1942 (ver WF Venta Asistencias).
@@ -54,6 +58,9 @@ return [
         'client_secret' => env('GEA_OMNIAX_CLIENT_SECRET'),
         'id_servicio_medico' => (int) env('GEA_OMNIAX_ID_SERVICIO_MEDICO', 297),
         'id_servicio_dental' => (int) env('GEA_OMNIAX_ID_SERVICIO_DENTAL', 298),
+        /** Zonas/establecimientos (serv. 6/7 PDF). En test-ec a veces ≠ en-proceso/crear (298 vs 300). */
+        'id_servicio_dental_ubicacion' => (int) (env('GEA_OMNIAX_ID_SERVICIO_DENTAL_UBICACION')
+            ?: env('GEA_OMNIAX_ID_SERVICIO_DENTAL', 298)),
         'telefono_default' => env('GEA_OMNIAX_TELEFONO_DEFAULT', '0999999999'),
         'plan_asistencia' => env('GEA_OMNIAX_PLAN_ASISTENCIA', 'ASISTENCIAS'),
         'timeout' => (int) env('GEA_OMNIAX_TIMEOUT', 45),

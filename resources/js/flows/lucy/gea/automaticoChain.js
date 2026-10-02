@@ -1,15 +1,28 @@
 import { slugify } from '../flowHelpers.js';
 import { resolveAutomaticoConfig } from './automaticoCatalog.js';
 import { AUTO_COPY } from './automaticoFlowCopy.js';
-import { getAutomaticoQuestionPlan } from './automaticoQuestions.js';
+import {
+    getAutomaticoEarlyQuestionPlan,
+    getAutomaticoLateQuestionPlan,
+    HOGAR_DOMICILIO_PERMANENTE,
+} from './automaticoQuestions.js';
+import { resolveGeaIdServicio } from './geaServiceIds.js';
 
 function geaAutoMeta(serviceLabel, jelouRef) {
     const automatico = resolveAutomaticoConfig(serviceLabel, jelouRef);
+    /** POST /asistencias/gea (cabina). No usar id proceso-automatico (ej. 159). */
+    const idServicio = resolveGeaIdServicio(serviceLabel);
+    if (!idServicio) {
+        throw new Error(
+            `Falta id_servicio GEA (cabina) en geaServiceIds para «${serviceLabel}».`,
+        );
+    }
     return {
         serviceLabel,
         jelouRef,
         tipoServicio: automatico.tipo_servicio,
         planAsistencia: automatico.plan_asistencia,
+        idServicio,
         automatico,
     };
 }
@@ -37,25 +50,44 @@ function questionNode(q, nodeId, nextId, meta) {
     };
 }
 
-/** Pipeline idéntico Hogar/Vial (diagrama Lucy); ramas solo por placa/vehículo y preguntas por servicio. */
+function chainQuestions(plan, base, meta, nextId, nodes) {
+    let next = nextId;
+    for (let i = plan.length - 1; i >= 0; i--) {
+        const q = plan[i];
+        const qId = `auto_preg_${base}_${q.id}`;
+        nodes[qId] = questionNode(q, qId, next, meta);
+        next = qId;
+    }
+    return next;
+}
+
+/** Pipeline Hogar/Vial — LUCY_V3 (preguntas → S1/S2 → timing → ubicación → S3 → late → S5). */
 export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_solucion_24_7') {
     const base = slugify(`${jelouRef}_${serviceLabel}`);
     const meta = geaAutoMeta(serviceLabel, jelouRef);
+    meta.exitReturnMenu = returnNode;
     meta.chainBase = base;
     const cfg = meta.automatico;
 
     const timingId = `auto_timing_${base}`;
     const progFechaId = `auto_prog_fecha_${base}`;
     const progHoraId = `auto_prog_hora_${base}`;
+    const progLinkId = `auto_prog_link_${base}`;
+    const preCrearGateId = `auto_pre_crear_gate_${base}`;
     const placaId = `auto_placa_${base}`;
     const afiliacionId = `auto_afiliacion_${base}`;
     const vehiculoId = `auto_vehiculo_${base}`;
     const vehiculoPickId = `auto_vehiculo_pick_${base}`;
     const tipoVehiculoGateId = `auto_tipo_vehiculo_gate_${base}`;
     const tipoVehiculoMenuId = `auto_tipo_vehiculo_pick_${base}`;
+    const vehDatosGateId = `auto_veh_datos_gate_${base}`;
+    const vehMarcaId = `auto_veh_marca_${base}`;
+    const vehModeloId = `auto_veh_modelo_${base}`;
+    const vehAnioId = `auto_veh_anio_${base}`;
     const telId = `auto_tel_${base}`;
     const locId = `auto_loc_${base}`;
     const dirId = `auto_dir_${base}`;
+    const hogarDomicilioId = `auto_hogar_domicilio_${base}`;
     const hogarProblemaId = `auto_hogar_problema_${base}`;
     const ubicacionId = `auto_ubicacion_${base}`;
     const coberturaId = `auto_cobertura_${base}`;
@@ -64,18 +96,39 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
     const coordsId = `auto_coords_${base}`;
     const crearId = `auto_crear_${base}`;
     const cabinaRouteId = `auto_cabina_route_${base}`;
+    const locCabinaId = `auto_loc_cabina_${base}`;
+    const dirCabinaId = `auto_dir_cabina_${base}`;
+    const cabinaCrearId = `auto_cabina_crear_${base}`;
 
-    const afterUbicacion = coberturaId;
-    const afterCoberturaCombustible = cfg.requiresCombustible ? combustibleTipoId : coordsId;
-    const afterCombustible = cfg.requiresCoordValidation ? coordsId : crearId;
-    const afterCoords = crearId;
+    const afterCoberturaCombustible = cfg.requiresCombustible
+        ? combustibleTipoId
+        : cfg.requiresCoordValidation
+            ? coordsId
+            : preCrearGateId;
+    const afterCombustible = cfg.requiresCoordValidation ? coordsId : preCrearGateId;
+    const afterCoords = preCrearGateId;
 
     const isHogar = cfg.tipo_servicio === 'HOGAR';
-    let afterDir = isHogar ? hogarProblemaId : cfg.requiresUbicacionApi ? ubicacionId : coberturaId;
+    const afterDir = isHogar ? hogarDomicilioId : cfg.requiresUbicacionApi ? ubicacionId : coberturaId;
+    const afterProgUbicacion = isHogar ? hogarDomicilioId : coberturaId;
+
+    if (cfg.requiresVehiculo) {
+        meta.vehMarcaNodeId = vehMarcaId;
+        meta.vehModeloNodeId = vehModeloId;
+        meta.vehAnioNodeId = vehAnioId;
+        meta.vehDatosGateId = vehDatosGateId;
+    }
 
     const nodes = {};
 
-    let entry = timingId;
+    const afterLate = afterCoberturaCombustible;
+    const afterCobertura = chainQuestions(
+        getAutomaticoLateQuestionPlan(serviceLabel),
+        base,
+        meta,
+        afterLate,
+        nodes,
+    );
 
     nodes[timingId] = {
         jelou: jelouRef,
@@ -84,7 +137,7 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
             {
                 id: 'ahora',
                 label: AUTO_COPY.timing.ahora,
-                next: cfg.requiresPlaca ? placaId : telId,
+                next: locId,
                 meta: { gea: { esProgramado: 0 } },
             },
             {
@@ -106,28 +159,45 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
     nodes[progHoraId] = {
         jelou: jelouRef,
         say: [AUTO_COPY.programadaHora],
-        input: { next: cfg.requiresPlaca ? placaId : telId, echoUser: true, geaField: 'hora_programada' },
+        input: { next: progLinkId, echoUser: true, geaField: 'hora_programada' },
         gea: meta,
     };
 
-    const questionPlan = getAutomaticoQuestionPlan(serviceLabel);
-    let afterAfiliacion = cfg.requiresVehiculo ? vehiculoId : locId;
-    let pregNext = telId;
-    for (let i = questionPlan.length - 1; i >= 0; i--) {
-        const q = questionPlan[i];
-        const qId = `auto_preg_${base}_${q.id}`;
-        nodes[qId] = questionNode(q, qId, pregNext, meta);
-        pregNext = qId;
-    }
-    const afterPlacaOrTiming = pregNext;
-    nodes[timingId].actions[0].next = cfg.requiresPlaca ? placaId : afterPlacaOrTiming;
-    nodes[progHoraId].input.next = cfg.requiresPlaca ? placaId : afterPlacaOrTiming;
+    nodes[progLinkId] = {
+        jelou: jelouRef,
+        say: [AUTO_COPY.programadoLinkIntro, AUTO_COPY.programadoLinkHint],
+        actions: [
+            {
+                id: 'share_location',
+                label: AUTO_COPY.ubicacionBtn,
+                type: 'location',
+                next: dirId,
+            },
+            {
+                id: 'continue',
+                label: AUTO_COPY.programadoLinkContinue,
+                next: afterProgUbicacion,
+            },
+        ],
+        gea: meta,
+    };
+
+    const afterAfiliacion = cfg.requiresVehiculo ? vehiculoId : timingId;
+    const afterTel = afiliacionId;
+    const afterEarly = chainQuestions(
+        getAutomaticoEarlyQuestionPlan(serviceLabel),
+        base,
+        meta,
+        cfg.requiresPlaca ? placaId : afterTel,
+        nodes,
+    );
+    const entry = afterEarly;
 
     if (cfg.requiresPlaca) {
         nodes[placaId] = {
             jelou: jelouRef,
             say: [AUTO_COPY.placa],
-            input: { field: 'plate', next: afterPlacaOrTiming, echoUser: true },
+            input: { field: 'plate', next: afterTel, echoUser: true },
             gea: meta,
         };
     }
@@ -148,12 +218,43 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
 
     nodes[cabinaRouteId] = {
         jelou: jelouRef,
-        say: [
-            'Según tus respuestas, un **asesor de cabina** debe continuar contigo.',
-            'Continuemos con la ubicación para registrar tu solicitud.',
+        say: [AUTO_COPY.cabinaRuta],
+        actions: [{ id: 'ok', label: 'Continuar', next: locCabinaId }],
+        gea: { ...meta, cabinaFromAutomatico: true },
+    };
+
+    nodes[locCabinaId] = {
+        jelou: jelouRef,
+        say: [AUTO_COPY.ubicacion],
+        actions: [
+            { id: 'share_location', label: AUTO_COPY.ubicacionBtn, type: 'location', next: dirCabinaId },
         ],
-        actions: [{ id: 'ok', label: 'Continuar', next: locId }],
         gea: meta,
+    };
+
+    nodes[dirCabinaId] = {
+        jelou: jelouRef,
+        say: [AUTO_COPY.direccion],
+        input: { next: cabinaCrearId, echoUser: true, geaField: 'direccion' },
+        gea: meta,
+    };
+
+    nodes[cabinaCrearId] = {
+        jelou: jelouRef,
+        say: [AUTO_COPY.creandoCabina],
+        skipSay: true,
+        gea: {
+            enter: 'cabina_gate',
+            idServicio: meta.idServicio,
+            serviceLabel: meta.serviceLabel,
+            tipoServicio: meta.tipoServicio,
+            planAsistencia: meta.planAsistencia,
+            aplica_servicio_automatico: 0,
+            afterCrearNext: 'gea_crear_exit',
+            jelouRef: meta.jelouRef,
+            chainBase: meta.chainBase,
+            cabinaFromAutomatico: true,
+        },
     };
 
     if (cfg.requiresVehiculo) {
@@ -176,7 +277,9 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
             navAllowBack: true,
             useGeaMenu: true,
             gea: {
+                refreshMenuEnter: 'auto_vehiculo',
                 afterAutoNext: tipoVehiculoGateId,
+                afterVehiculoPickNext: vehiculoPickId,
                 afterTipoVehiculoMenuNext: tipoVehiculoMenuId,
                 ...meta,
             },
@@ -187,7 +290,7 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
             skipSay: true,
             gea: {
                 enter: 'auto_tipo_vehiculo_gate',
-                afterAutoNext: locId,
+                afterAutoNext: vehDatosGateId,
                 afterTipoVehiculoMenuNext: tipoVehiculoMenuId,
                 ...meta,
             },
@@ -199,10 +302,45 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
             navAllowBack: true,
             useGeaMenu: true,
             gea: {
-                afterAutoNext: locId,
+                refreshMenuEnter: 'auto_tipo_vehiculo_gate',
+                afterAutoNext: vehDatosGateId,
                 afterTipoVehiculoMenuNext: tipoVehiculoMenuId,
                 ...meta,
             },
+        };
+        nodes[vehDatosGateId] = {
+            jelou: jelouRef,
+            say: [AUTO_COPY.validandoVehiculo],
+            skipSay: true,
+            gea: {
+                enter: 'auto_veh_datos_gate',
+                afterAutoNext: timingId,
+                vehMarcaNodeId: vehMarcaId,
+                vehModeloNodeId: vehModeloId,
+                vehAnioNodeId: vehAnioId,
+                ...meta,
+            },
+        };
+        nodes[vehMarcaId] = {
+            jelou: jelouRef,
+            say: [AUTO_COPY.vehMarca],
+            input: { next: vehModeloId, echoUser: true, vehiculoField: 'marca_vehiculo' },
+            navAllowBack: true,
+            gea: meta,
+        };
+        nodes[vehModeloId] = {
+            jelou: jelouRef,
+            say: [AUTO_COPY.vehModelo],
+            input: { next: vehAnioId, echoUser: true, vehiculoField: 'modelo_vehiculo' },
+            navAllowBack: true,
+            gea: meta,
+        };
+        nodes[vehAnioId] = {
+            jelou: jelouRef,
+            say: [AUTO_COPY.vehAnio],
+            input: { next: timingId, echoUser: true, vehiculoField: 'anio_vehiculo' },
+            navAllowBack: true,
+            gea: meta,
         };
     }
 
@@ -223,6 +361,12 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
     };
 
     if (isHogar) {
+        nodes[hogarDomicilioId] = questionNode(
+            HOGAR_DOMICILIO_PERMANENTE,
+            hogarDomicilioId,
+            hogarProblemaId,
+            meta,
+        );
         nodes[hogarProblemaId] = {
             jelou: jelouRef,
             say: [AUTO_COPY.hogarProblema],
@@ -250,7 +394,7 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
         skipSay: true,
         gea: {
             enter: 'auto_cobertura',
-            afterAutoNext: afterCoberturaCombustible,
+            afterAutoNext: afterCobertura,
             afterCoberturaSinAplica: 'derivacion_asesor',
             afterTipoVehiculoMenuNext: cfg.requiresVehiculo ? tipoVehiculoMenuId : undefined,
             ...meta,
@@ -280,11 +424,18 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
     if (cfg.requiresCoordValidation) {
         nodes[coordsId] = {
             jelou: jelouRef,
-            say: ['Validando coordenadas del servicio…'],
+            say: [AUTO_COPY.validandoCoordenadas],
             skipSay: true,
             gea: { enter: 'auto_coordenadas', afterAutoNext: afterCoords, ...meta },
         };
     }
+
+    nodes[preCrearGateId] = {
+        jelou: jelouRef,
+        say: [AUTO_COPY.validandoCoordenadas],
+        skipSay: true,
+        gea: { enter: 'auto_pre_crear_gate', afterAutoNext: crearId, ...meta },
+    };
 
     nodes[crearId] = {
         jelou: 'Proceso automático — crear asistencia',
@@ -297,8 +448,7 @@ export function crearAutomaticoChain(serviceLabel, jelouRef, returnNode = 'menu_
 }
 
 export function automaticoChainEntry(jelouRef, serviceLabel) {
-    const base = slugify(`${jelouRef}_${serviceLabel}`);
-    return `auto_timing_${base}`;
+    return crearAutomaticoChain(serviceLabel, jelouRef).entry;
 }
 
 export function buildAutomaticoServiceChains(serviceDefs, jelouRef, returnNode) {

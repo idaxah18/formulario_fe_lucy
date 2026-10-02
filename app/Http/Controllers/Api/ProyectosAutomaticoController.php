@@ -69,14 +69,20 @@ class ProyectosAutomaticoController extends Controller
             'direccion' => 'nullable|string',
             'marca_vehiculo' => 'nullable|string',
             'modelo_vehiculo' => 'nullable|string',
-            'anio_vehiculo' => 'nullable|string',
+            'anio_vehiculo' => 'nullable',
             'tipo_vehiculo' => 'nullable|string',
             'datos_extra' => 'nullable|array',
             'telefono' => 'nullable|string',
+            'fecha_programada' => 'nullable|string',
+            'hora_programada' => 'nullable|string',
         ]);
 
         if (empty($data['plan_asistencia'])) {
             $data['plan_asistencia'] = config('services.gea_omniax.plan_asistencia', 'ASISTENCIAS');
+        }
+
+        if (isset($data['anio_vehiculo']) && $data['anio_vehiculo'] !== null && $data['anio_vehiculo'] !== '') {
+            $data['anio_vehiculo'] = (string) $data['anio_vehiculo'];
         }
 
         $payload = $this->proyectos->post('chatbot/proceso-automatico/cobertura', array_filter(
@@ -148,6 +154,10 @@ class ProyectosAutomaticoController extends Controller
             'plan_asistencia' => 'nullable|string',
             'tipo_combustible' => 'nullable|string',
             'id_lugar_destino' => 'nullable|integer',
+            'id_tipo_combustible' => 'nullable|integer',
+            'acepta_pago_combustible' => 'nullable',
+            'descripcion_falla' => 'nullable|string',
+            'fecha_hora_programada' => 'nullable|string',
         ]);
 
         if (empty($data['plan_asistencia'])) {

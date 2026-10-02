@@ -7,12 +7,6 @@
             <h2 class="chat-form-panel__headline">
                 Datos del beneficiario
             </h2>
-            <ChatBackButton
-                v-if="showBack"
-                variant="corner"
-                :disabled="disabled"
-                @click="$emit('back')"
-            />
         </div>
         <p class="chat-form-panel__hint">
             Información que Omniax requiere además del titular (cédula y nombre del afiliado ya están en el inicio del chat).
@@ -112,13 +106,14 @@
             {{ error }}
         </p>
 
-        <button
-            type="submit"
-            class="chat-btn chat-btn--primary"
-            :disabled="disabled"
-        >
-            Continuar
-        </button>
+        <ChatDualActionButton
+            :show-back="showBack"
+            continue-text="Continuar"
+            continue-type="submit"
+            :continue-disabled="disabled"
+            :back-disabled="disabled"
+            @back="$emit('back')"
+        />
     </form>
 </template>
 
@@ -128,7 +123,7 @@ import {
     OMX_PARENTESCO_OPTIONS,
     OMX_SEXO_OPTIONS,
 } from '@/flows/lucy/omniax/omniaxBeneficiarioOptions.js';
-import ChatBackButton from '@/components/chat/ChatBackButton.vue';
+import ChatDualActionButton from '@/components/chat/ChatDualActionButton.vue';
 
 defineProps({
     disabled: { type: Boolean, default: false },

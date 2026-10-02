@@ -4,6 +4,8 @@
  * asistencias en proceso; se complementa filtrando el listado estándar.
  */
 
+import { fetchListadoChatbotTelefono } from '@/api/omniaxGeaApi.js';
+
 export function parseAsistenciasResponse(res) {
     const raw = res?.data?.asistencias;
     return Array.isArray(raw) ? raw : [];
@@ -26,17 +28,72 @@ export function isReagendableAsistencia(asistencia, { requireEspecialidad = true
     return true;
 }
 
-export function asistenciaMenuLabel(asistencia) {
-    const detalle = String(asistencia.detalle || '').trim();
-    if (detalle) return detalle;
+const BARE_ASISTENCIA = /^asistencia\s*(no\.?|#|n[°º]\.?)?\s*\d+\s*$/i;
 
-    const parts = [`Asistencia No. ${asistencia.id_asistencia}`];
-    if (asistencia.nombre_especialidad) parts.push(asistencia.nombre_especialidad);
-    if (asistencia.nombre_paciente) parts.push(asistencia.nombre_paciente);
-    if (asistencia.fecha_cita && !String(asistencia.fecha_cita).startsWith('0000')) {
-        parts.push(asistencia.fecha_cita);
+export function isBareAsistenciaDetalle(detalle) {
+    const text = String(detalle || '').trim();
+    return !text || BARE_ASISTENCIA.test(text);
+}
+
+/** El listado médico/dental deja `detalle` vacío; el nombre vive en listado por teléfono (`solicitante`). */
+export function mergeListadoIntoAsistencias(asistencias, listadoRows) {
+    const byId = new Map();
+    for (const row of listadoRows || []) {
+        const id = Number(row?.id_asistencia);
+        if (id) byId.set(id, row);
     }
-    return parts.join(' - ');
+    return (asistencias || []).map((row) => {
+        const extra = byId.get(Number(row?.id_asistencia));
+        if (!extra) return row;
+        const nombre = String(
+            row?.nombre_paciente || extra.solicitante || extra.nombre_persona || extra.titular || '',
+        ).trim();
+        const fecha = String(row?.fecha_cita || extra.fecha || '').trim();
+        const hora = String(row?.hora_cita || extra.hora || '').trim();
+        return {
+            ...row,
+            nombre_paciente: nombre || row?.nombre_paciente || null,
+            fecha_cita: fecha && !fecha.startsWith('0000') ? fecha : row?.fecha_cita,
+            hora_cita: hora || row?.hora_cita || null,
+        };
+    });
+}
+
+export function applyListadoToEnProcesoResponse(apiRes, listadoRows) {
+    if (!apiRes?.data || !Array.isArray(apiRes.data.asistencias)) return apiRes;
+    apiRes.data.asistencias = mergeListadoIntoAsistencias(apiRes.data.asistencias, listadoRows);
+    return apiRes;
+}
+
+export async function enrichEnProcesoResponse(apiRes, cedula, telefono) {
+    if (!cedula || !telefono || !apiRes?.data?.asistencias?.length) return apiRes;
+    try {
+        const listado = await fetchListadoChatbotTelefono(cedula, telefono);
+        const rows = Array.isArray(listado?.data) ? listado.data : [];
+        return applyListadoToEnProcesoResponse(apiRes, rows);
+    } catch {
+        return apiRes;
+    }
+}
+
+export function asistenciaMenuLabel(asistencia) {
+    const detalle = String(asistencia?.detalle || '').trim();
+    const nombre = String(
+        asistencia?.nombre_paciente || asistencia?.solicitante || asistencia?.nombre_persona || '',
+    ).trim();
+    const especialidad = String(asistencia?.nombre_especialidad || '').trim();
+    const fecha = String(asistencia?.fecha_cita || '').trim();
+    const hora = String(asistencia?.hora_cita || '').trim();
+    const fechaOk = fecha && !fecha.startsWith('0000') ? fecha : '';
+
+    if (detalle && !isBareAsistenciaDetalle(detalle)) return detalle;
+
+    const parts = [];
+    if (nombre) parts.push(nombre);
+    if (especialidad) parts.push(especialidad);
+    if (fechaOk) parts.push(hora ? `${fechaOk} ${hora}` : fechaOk);
+    parts.push(`Asistencia No. ${asistencia?.id_asistencia ?? ''}`.trim());
+    return parts.filter(Boolean).join(' · ');
 }
 
 /**

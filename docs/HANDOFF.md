@@ -78,6 +78,7 @@ curl http://localhost:8000/api/health
 | `GEA_OMNIAX_CLIENT_SECRET` | Omniax OAuth |
 | `GEA_OMNIAX_ID_SERVICIO_MEDICO` | Default `297` |
 | `GEA_OMNIAX_ID_SERVICIO_DENTAL` | Default `298` |
+| `GEA_OMNIAX_ID_SERVICIO_DENTAL_UBICACION` | Zonas/establecimientos; en test-ec suele ser `300` |
 | `GEA_OMNIAX_TELEFONO_DEFAULT` | Fallback si no hay `?telefono=` |
 | `GEA_OMNIAX_PLAN_ASISTENCIA` | Crear GEA: `ASISTENCIAS` |
 | `GEA_OMNIAX_TIMEOUT` | Segundos HTTP (default 45) |
@@ -89,6 +90,7 @@ curl http://localhost:8000/api/health
 | `VITE_APP_NAME` | Título UI |
 | `VITE_OMNIAX_ID_SERVICIO_MEDICO` | `omniaxMedicoApi.js` |
 | `VITE_OMNIAX_ID_SERVICIO_DENTAL` | `omniaxDentalApi.js` |
+| `VITE_OMNIAX_ID_SERVICIO_DENTAL_UBICACION` | Ciudades/centros dental |
 | `VITE_GEA_ID_SERVICIO_DEFAULT` | Fallback `id_servicio` GEA |
 | `VITE_GEA_ID_<SERVICIO>` | Override por etiqueta (ver `geaServiceIds.js`) |
 

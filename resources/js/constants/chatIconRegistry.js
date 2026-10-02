@@ -11,6 +11,7 @@ export const CHAT_ICON_NAMES = new Set([
     'caravan',
     'toothbrush-sparkles',
     'arrow-left',
+    'arrow-right',
     'heart',
     'truck',
     'shield',

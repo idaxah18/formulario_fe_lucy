@@ -164,7 +164,7 @@ function buildCore() {
             auth_telefono: {
                 jelou: 'Telefono prueba webview',
                 say: [
-                    'Antes de continuar, ingresa tu **número de celular** (solo para pruebas en web; en WhatsApp se usa tu número automáticamente).',
+                    'Antes de continuar, ingresa tu **número de celular**.',
                 ],
                 input: { field: 'telefono', next: 'auth_cedula' },
             },
@@ -186,7 +186,7 @@ function buildCore() {
             },
             post_auth_gate_load: {
                 jelou: 'Truncal-inicio',
-                say: ['Revisando asistencias en curso…'],
+                say: ['Un momento…'],
                 skipSay: true,
                 gea: { enter: 'post_auth_asistencias_gate' },
             },
@@ -194,6 +194,7 @@ function buildCore() {
                 jelou: 'Asistencias en curso',
                 skipSay: true,
                 useGeaMenu: true,
+                navAllowBack: true,
                 gea: { refreshMenuEnter: 'asistencia_activa_list' },
             },
             asistencia_activa_list: {
@@ -238,12 +239,12 @@ function buildCore() {
 }
 
 function buildSolucion247() {
-    const hogar = buildHybridGeaServiceChains(HOGAR_SERVICE_MENU, '2.3 Hogar');
-    const vial = buildHybridGeaServiceChains(VIAL_SERVICE_MENU, '2.4 Vial');
+    const hogar = buildHybridGeaServiceChains(HOGAR_SERVICE_MENU, '2.3 Hogar', 'menu_hogar');
+    const vial = buildHybridGeaServiceChains(VIAL_SERVICE_MENU, '2.4 Vial', 'menu_vial');
     const vialLegalTelefonica = crearAsistenciaChain(
         'Asistencia Legal telefónica',
         '2.4 Vial',
-        'menu_solucion_24_7',
+        'menu_vial',
         {
             ...geaChainOptions('Asistencia Legal telefónica', '2.4 Vial'),
             skipLocation: true,
@@ -254,12 +255,10 @@ function buildSolucion247() {
     const otrasSolucionesGea = crearAsistenciaChain(
         'Otras soluciones',
         'Otras soluciones 2',
-        'menu_solucion_24_7',
+        'otras_soluciones',
         {
             ...geaChainOptions('Otras soluciones', 'Otras soluciones 2'),
-            skipLocation: true,
-            sinUbicacion: true,
-            crearJelouRef: 'V2 Crear asistencia sin dirección sin ubicación',
+            skipCabinaPreface: true,
             afterCrearNext: 'otras_soluciones_gea_done',
         },
     );
@@ -271,6 +270,8 @@ function buildSolucion247() {
             'Bienestar y nutrición',
         ],
         '2.2 Médico',
+        'menu_medico',
+        { skipCabinaPreface: true },
     );
 
     const dentalWiz = wizardTextSteps(
@@ -282,6 +283,28 @@ function buildSolucion247() {
     );
 
     return merge(
+        {
+            gea_hogar_segment_gate_load: {
+                jelou: '2.3 Hogar',
+                say: ['Revisando asistencias en curso…'],
+                skipSay: true,
+                gea: {
+                    enter: 'segment_en_curso_gate',
+                    segment: 'hogar',
+                    afterSegmentNext: 'menu_hogar',
+                },
+            },
+            gea_vial_segment_gate_load: {
+                jelou: '2.4 Vial',
+                say: ['Revisando asistencias en curso…'],
+                skipSay: true,
+                gea: {
+                    enter: 'segment_en_curso_gate',
+                    segment: 'vial',
+                    afterSegmentNext: 'menu_vial',
+                },
+            },
+        },
         menuNode(
             'menu_solucion_24_7',
             '2. Servicios Solución 24/7',
@@ -304,14 +327,14 @@ function buildSolucion247() {
                 {
                     id: 'hogar',
                     label: 'Hogar',
-                    next: 'menu_hogar',
+                    next: 'gea_hogar_segment_gate_load',
                     icon: 'house',
                     menuTone: 'tone-asist-hogar',
                 },
                 {
                     id: 'vial',
                     label: 'Vial',
-                    next: 'menu_vial',
+                    next: 'gea_vial_segment_gate_load',
                     icon: 'car',
                     menuTone: 'tone-asist-vial',
                 },
@@ -343,8 +366,8 @@ function buildSolucion247() {
             'reagendar asistencia',
             '¿Qué tipo de cita deseas reagendar?',
             [
-                { id: 'den', label: 'Dental', next: 'omx_den_reag_start' },
-                { id: 'med', label: 'Médico', next: 'omx_med_reag_start' },
+                { id: 'den', label: 'Dental', next: 'omx_den_plan_reag_load' },
+                { id: 'med', label: 'Médico', next: 'omx_med_plan_reag_load' },
                 { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
             ],
         ),
@@ -354,7 +377,7 @@ function buildSolucion247() {
             'Dental 🦷 ¿Qué deseas?',
             [
                 { id: 'ag', label: 'Agendar cita', next: 'omx_den_elegibilidad_load' },
-                { id: 're', label: 'Reagendar cita', next: 'omx_den_reag_cabina_preface' },
+                { id: 're', label: 'Reagendar cita', next: 'omx_den_plan_reag_load' },
                 { id: 'back', label: 'Salir del menú', next: 'menu_solucion_24_7' },
             ],
         ),
@@ -398,7 +421,7 @@ function buildSolucion247() {
                 {
                     id: 're',
                     label: 'Reagendar cita médica',
-                    next: 'omx_med_reag_cabina_preface',
+                    next: 'omx_med_plan_reag_load',
                     icon: 'calendar-clock',
                     menuTone: 'tone-asist-medica',
                 },
@@ -417,13 +440,6 @@ function buildSolucion247() {
                     menuTone: 'tone-asist-medica',
                 },
                 {
-                    id: 'edo',
-                    label: 'E-doctor',
-                    next: 'activar_edoctor_inicio',
-                    icon: 'globe-check',
-                    menuTone: 'tone-asist-medica',
-                },
-                {
                     id: 'back',
                     label: 'Salir del menú',
                     next: 'menu_solucion_24_7',
@@ -435,7 +451,7 @@ function buildSolucion247() {
         menuNode(
             'menu_hogar',
             '2.3 Hogar',
-            'Hogar 🏡 Elige el servicio:',
+            'Bienvenido a tu Solución Hogar. ¿Cuál de estos servicios necesitas?',
             [
                 ...hogar.actions,
                 {
@@ -452,7 +468,7 @@ function buildSolucion247() {
         menuNode(
             'menu_vial',
             '2.4 Vial',
-            'Bienvenid@ a tu solución vial 🚗',
+            'Bienvenido a tu Solución Vial. ¿Cuál de estos servicios necesitas?',
             [
                 ...vial.actions,
                 {
@@ -490,23 +506,24 @@ function buildSolucion247() {
         {
             otras_soluciones_gea_done: {
                 jelou: 'Otras soluciones 2',
-                say: advisorHandoffSay('otras_soluciones'),
-                actions: [
-                    {
-                        id: 'home',
-                        label: 'Menú principal',
-                        next: LUCY_HOME_NODE,
-                        icon: 'home',
-                        menuTone: 'tone-blue',
-                    },
-                ],
+                skipSay: true,
+                actions: [],
             },
         },
         {
             reportar_problema: {
                 jelou: '2.6 Reportar un problema',
                 say: ['Cuéntanos el problema que tuviste:'],
-                input: { next: 'reportar_problema_done', echoUser: true },
+                input: { next: 'reportar_problema_load', echoUser: true, comField: 'notas' },
+            },
+            reportar_problema_load: {
+                jelou: '2.6 Reportar un problema',
+                skipSay: true,
+                com: {
+                    enter: 'derivacion_asesor',
+                    producto: 'Reportar un problema',
+                    afterDerivacion: 'reportar_problema_done',
+                },
             },
             reportar_problema_done: {
                 jelou: '2.6 Reportar un problema',
@@ -877,12 +894,9 @@ function buildComercial() {
             },
             edoctor_info_done: {
                 jelou: 'Activar e-doctor - Quiero Más Información',
-                say: [
-                    '**E-doctor** es telemedicina GEA: consultas médicas en línea.',
-                    'App: bit.ly/app-e-doctor — Web: https://www.e-doctorgea.com/',
-                    'Para contratar el plan, vuelve al menú E-doctor y elige **Adquirir plan**.',
-                ],
-                actions: standardExitActions('menu_solucion_24_7'),
+                skipSay: true,
+                exitReturnMenu: 'menu_medico',
+                actions: [],
             },
             edoctor_registro: {
                 jelou: 'Activar e-doctor - Registrar Datos',
@@ -901,11 +915,9 @@ function buildComercial() {
             },
             edoctor_confirm: {
                 jelou: 'Activar e-doctor - Confirmacion',
-                say: [
-                    'Cuando el pago se confirme, recibirás instrucciones para usar e-doctor.',
-                    'App: bit.ly/app-e-doctor — Web: https://www.e-doctorgea.com/',
-                ],
-                actions: standardExitActions('menu_solucion_24_7'),
+                skipSay: true,
+                exitReturnMenu: 'menu_medico',
+                actions: [],
             },
         },
         menuNode('compra_viaja', 'Asis. Compra y Viaja Seguro - Inicio', 'Compra y viaja seguro:', [
@@ -1051,7 +1063,7 @@ function buildUtils() {
             },
             error_general: {
                 jelou: 'Error General',
-                say: ['Ocurrió un error inesperado (simulado).'],
+                say: ['Ocurrió un error inesperado. Intenta de nuevo en unos minutos.'],
                 actions: standardExitActions(),
             },
             expiracion: {

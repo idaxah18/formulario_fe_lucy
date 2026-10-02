@@ -4,12 +4,14 @@
 
 import { advisorHandoffSay } from '../advisorHandoffCopy.js';
 import { buildCabinaPrefaceNode } from '../flowHelpers.js';
+import { citaPlanNodes } from './omniaxEligibility.js';
 
 export const OMX_MED_FECHA_HORA_NODE = 'omx_med_fecha_hora';
 export const OMX_MED_BENEF_FORM_NODE = 'omx_med_benef_form';
 
 export function buildOmniaxMedicoNodes() {
     return {
+        ...citaPlanNodes('medico'),
         omx_med_elegibilidad_load: {
             jelou: '2.2 Agendar cita médica - elegibilidad',
             skipSay: true,
@@ -52,41 +54,41 @@ export function buildOmniaxMedicoNodes() {
                 enter: 'cabina_gate',
                 kind: 'medico',
                 tipoServicio: 'MEDICO',
-                afterCabinaNext: 'omx_med_reag_start',
+                afterCabinaNext: 'omx_med_reag_list_load',
             },
+        },
+        omx_med_en_proceso_load: {
+            jelou: '2.2 Agendar cita médica - en proceso',
+            skipSay: true,
+            omniax: { enter: 'en_proceso_agendar', kind: 'medico', reagendar: false },
+        },
+        omx_med_en_proceso_hub: {
+            jelou: 'Asistencias médicas en proceso',
+            skipSay: true,
+            useOmniaxMenu: true,
+            omniax: { refreshMenuEnter: 'en_proceso_hub', kind: 'medico', reagendar: false },
+        },
+        omx_med_en_proceso_pick_load: {
+            jelou: 'Detalle asistencia médica',
+            skipSay: true,
+            omniax: { enter: 'en_proceso_pick', kind: 'medico', reagendar: false },
         },
         omx_med_start: {
             jelou: '2.2 Agendar cita médica - Omniax',
             skipSay: true,
-            omniax: { enter: 'en_proceso', kind: 'medico', reagendar: false },
-        },
-        omx_med_reag_start: {
-            jelou: '2.2.4 Reagendar cita médica',
-            omniax: { kind: 'medico', reagendar: true },
-            say: ['Cuéntame, ¿para quién reagendamos la cita?'],
-            actions: [
-                {
-                    id: 'para_mi',
-                    label: 'Para mí',
-                    next: 'omx_med_reag_list_load',
-                    meta: { omx: true, para_beneficiario: false },
-                },
-                {
-                    id: 'benef',
-                    label: 'Beneficiario',
-                    next: 'omx_med_benef_form',
-                },
-            ],
+            omniax: { enter: 'long_flow_medico', kind: 'medico', reagendar: false },
         },
         omx_med_reag_list_load: {
             jelou: 'Listado reagendar',
             skipSay: true,
-            omniax: { enter: 'en_proceso_reagendar' },
+            useOmniaxMenu: true,
+            omniax: { enter: 'en_proceso_reagendar', kind: 'medico', reagendar: true },
         },
         omx_med_reag_pick: {
             jelou: 'Reagendar - elegir cita',
             skipSay: true,
             useOmniaxMenu: true,
+            omniax: { kind: 'medico', reagendar: true, refreshMenuEnter: 'en_proceso_reagendar' },
         },
         omx_med_reagendar_load: {
             jelou: 'Reagendar cita',
@@ -100,7 +102,7 @@ export function buildOmniaxMedicoNodes() {
                 {
                     id: 'para_mi',
                     label: 'Para mí',
-                    next: 'omx_med_especialidades_load',
+                    next: 'omx_med_start',
                     meta: { omx: true, para_beneficiario: false },
                 },
                 {
@@ -149,13 +151,13 @@ export function buildOmniaxMedicoNodes() {
             jelou: 'Ciudades',
             skipSay: true,
             useOmniaxMenu: true,
-            omniax: { enter: 'zonas_ciudades' },
+            omniax: { enter: 'zonas_ciudades', kind: 'medico', refreshMenuEnter: 'zonas_ciudades' },
         },
         omx_med_zonas_load: {
             jelou: 'Zonas',
             skipSay: true,
             useOmniaxMenu: true,
-            omniax: { enter: 'zonas_lista' },
+            omniax: { enter: 'zonas_lista', kind: 'medico', refreshMenuEnter: 'zonas_lista' },
         },
         omx_med_est_gps_load: {
             jelou: 'Establecimientos',
@@ -168,6 +170,12 @@ export function buildOmniaxMedicoNodes() {
             skipSay: true,
             useOmniaxMenu: true,
             omniax: { enter: 'establecimientos_zona' },
+        },
+        omx_med_franja_load: {
+            jelou: 'Franja horaria',
+            skipSay: true,
+            useOmniaxMenu: true,
+            omniax: { enter: 'disponibilidad_franja' },
         },
         omx_med_dias_load: {
             jelou: 'Fechas disponibles',
@@ -226,17 +234,14 @@ export function buildOmniaxMedicoNodes() {
                     id: 'share_location',
                     label: '📍 Compartir ubicación',
                     type: 'location',
-                    next: 'omx_med_fecha_hora',
+                    next: 'omx_med_donde',
                 },
             ],
         },
         omx_med_done: {
             jelou: 'Cita confirmada',
             skipSay: true,
-            actions: [
-                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
-                { id: 'med', label: 'Menú médico', next: 'menu_medico' },
-            ],
+            actions: [],
         },
         omx_med_error: {
             jelou: 'Error Omniax',
@@ -251,6 +256,18 @@ export function buildOmniaxMedicoNodes() {
             say: ['Lo sentimos. No existen fechas disponibles. Por favor, escoge otro establecimiento.'],
             actions: [
                 { id: 'volver', label: 'Elegir otro establecimiento', next: 'omx_med_donde' },
+                { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
+            ],
+        },
+        omx_med_reag_sin_fechas: {
+            jelou: 'Sin fechas reagendar',
+            say: ['Lo sentimos. No existen fechas disponibles.'],
+            actions: [
+                {
+                    id: 'volver',
+                    label: 'Volver al listado de citas',
+                    next: 'omx_med_reag_list_load',
+                },
                 { id: 'menu', label: 'Menú principal', next: 'menu_solucion_24_7' },
             ],
         },

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\GeaToolsController;
 use App\Http\Controllers\Api\IntegrationsController;
 use App\Http\Controllers\Api\JelouDatumController;
 use App\Http\Controllers\Api\JelouPayController;
+use App\Http\Controllers\Api\JelouWebviewCallbackController;
 use App\Http\Controllers\Api\LucyIaController;
 use App\Http\Controllers\Api\OmniaxDentalController;
 use App\Http\Controllers\Api\OmniaxGeaController;
@@ -22,6 +23,8 @@ Route::get('/health', function () {
 });
 
 Route::get('/v1/integrations/status', [IntegrationsController::class, 'status']);
+
+Route::post('/v1/jelou/webview/callback', JelouWebviewCallbackController::class);
 
 Route::prefix('v1/jelou/datum')->group(function () {
     // Flujos del chat: el controlador devuelve simulated:true si falta JELOU_API_TOKEN (ver PHASE3_TEST.md).

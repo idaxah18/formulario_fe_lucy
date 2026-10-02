@@ -82,29 +82,13 @@ export function buildGeaNodes() {
         gea_auto_sin_afiliacion_done: {
             jelou: 'Derivación a asesor',
             skipSay: true,
-            actions: [
-                {
-                    id: 'home',
-                    label: 'Menú principal',
-                    next: 'menu_solucion_24_7',
-                    icon: 'home',
-                    menuTone: 'tone-blue',
-                },
-            ],
+            actions: [],
         },
 
         gea_crear_exit: {
             jelou: 'V2 Crear asistencia',
             skipSay: true,
-            actions: [
-                {
-                    id: 'home',
-                    label: 'Menú principal',
-                    next: 'menu_solucion_24_7',
-                    icon: 'home',
-                    menuTone: 'tone-blue',
-                },
-            ],
+            actions: [],
         },
 
         gea_encuesta_id: idAsistenciaInput('gea_encuesta_load', 'Encuesta'),

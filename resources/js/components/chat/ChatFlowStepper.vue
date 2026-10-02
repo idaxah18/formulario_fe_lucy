@@ -28,11 +28,11 @@
                     />
                 </div>
                 <div class="chat-stepper__labels">
-                    <span class="chat-stepper__title">{{ item.title }}</span>
+                    <span class="chat-stepper__title">{{ rewriteLucySolucionCopy(item.title) }}</span>
                     <span
                         v-if="item.description"
                         class="chat-stepper__desc"
-                    >{{ item.description }}</span>
+                    >{{ rewriteLucySolucionCopy(item.description) }}</span>
                 </div>
             </li>
         </ol>
@@ -40,6 +40,8 @@
 </template>
 
 <script setup>
+import { rewriteLucySolucionCopy } from '@/lib/lucySolucionCopy.js';
+
 const props = defineProps({
     items: { type: Array, default: () => [] },
     currentIndex: { type: Number, default: 0 },

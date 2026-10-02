@@ -1,4 +1,5 @@
 import { LUCY_ENTRY_NODE, LUCY_FLOW_NODES } from './lucyFlowGraph.js';
+import { isValidLucyCedula } from '@/lib/lucyIdentificacion.js';
 import {
     applyLucyTelefonoToContext,
     getTelefonoFromQuery,
@@ -9,13 +10,15 @@ import {
     TELEFONO_EC_RE,
 } from '@/lib/lucyTelefono.js';
 
-import { openExternalUrl } from '@/lib/webviewBridge.js';
-import { advisorHandoffMenuActions, bot, user, LUCY_HOME_NODE, LUCY_LEGACY_ROOT_NODES } from './flowHelpers.js';
-import { CABINA_REGISTRO_HANDOFF_DONE } from './advisorHandoffCopy.js';
+import { bot, user, LUCY_HOME_NODE, LUCY_LEGACY_ROOT_NODES } from './flowHelpers.js';
+import { CABINA_REGISTRO_HANDOFF_DONE, isAdvisorHandoffDoneNode } from './advisorHandoffCopy.js';
+import { getFlowExitQuickActions } from './flowExitMenus.js';
 import {
     isComHandoffTerminalNode,
     isGeaServiceTerminalNode,
     isApiConsumerNode,
+    isDockMenuRoot,
+    canReplayDisplayEnter,
     resolveBackNodeId,
     resolveNavigateBackTarget,
     shouldShowBackButton,
@@ -41,6 +44,8 @@ import {
     getAsegMenuActions,
     syncAsegFromNode,
 } from './aseguradora/aseguradoraEngine.js';
+import { ANIO_VEHICULO_RE, mergeVehiculoDato } from './gea/automaticoVehiculoDatos.js';
+import { indexOfAsistenciaActiva } from './gea/asistenciasActivas.js';
 import {
     applyGeaQuickMeta,
     clearGeaMenu,
@@ -73,7 +78,6 @@ function packEnter(enter) {
 
 const PLATE_RE = /^(?:[A-Z]{3}\d{3,4}|[A-Z]{2}\d{3}[A-Z])$/i;
 
-const CEDULA_RE = /^\d{10}$/;
 
 
 
@@ -137,7 +141,7 @@ export function getComposerPlaceholder(state) {
 
         if (node.input.field === 'plate') return 'Ej: GYE1234';
 
-        if (node.input.field === 'cedula') return '10 dígitos';
+        if (node.input.field === 'cedula') return 'Ej: 1712345678 o pasaporte';
 
         if (node.input.field === 'telefono') return 'Ej: 0991234567';
 
@@ -166,15 +170,8 @@ export function isComposerEnabled(state) {
 
 
 export function getQuickActions(state) {
-    if (state.nodeId === CABINA_REGISTRO_HANDOFF_DONE) {
-        const returnNode = state.context?.cabinaHandoff?.returnNode || LUCY_HOME_NODE;
-        return advisorHandoffMenuActions(returnNode).map((a) => ({
-            id: a.id,
-            label: a.label,
-            next: a.next,
-            icon: a.icon,
-            menuTone: a.menuTone,
-        }));
+    if (isAdvisorHandoffDoneNode(state.nodeId)) {
+        return getFlowExitQuickActions(state);
     }
 
     const node = getNode(state.nodeId);
@@ -306,6 +303,19 @@ function enterNode(state, nodeId, messages, options = {}) {
         return enterNode(state, LUCY_HOME_NODE, messages, options);
     }
 
+    const legacyAgendaForm = {
+        omx_med_fecha_hora: 'omx_med_donde',
+        omx_den_fecha_hora: 'omx_den_donde',
+        omx_med_location_skip_load: 'omx_med_donde',
+        omx_den_location_skip_load: 'omx_den_donde',
+    };
+    if (legacyAgendaForm[nodeId]) {
+        const omx = state.context.omniax || {};
+        omx.agenda_completa = true;
+        state.context.omniax = omx;
+        return enterNode(state, legacyAgendaForm[nodeId], messages, options);
+    }
+
     if (nodeId === 'auth_telefono' && shouldSkipTelefonoPrompt()) {
         const next = node.input?.next || 'auth_cedula';
         return enterNode(state, next, messages, { recordHistory: false });
@@ -331,6 +341,11 @@ function enterNode(state, nodeId, messages, options = {}) {
 
     syncOmniaxKind(state, node);
     syncGeaFromNode(state, node);
+    if (node.exitReturnMenu) {
+        const gea = state.context.gea || {};
+        gea.exitReturnMenu = node.exitReturnMenu;
+        state.context.gea = gea;
+    }
     syncAsegFromNode(state, node);
     syncComFromNode(state, node);
     syncIaFromNode(state, node);
@@ -366,16 +381,24 @@ function enterNode(state, nodeId, messages, options = {}) {
         return enterNode(state, node.returnTo, messages, { recordHistory: false });
     }
 
-    const skipAsyncEnter = recordHistory === false;
+    const revisiting = recordHistory === false;
 
-    let omniaxEnter = skipAsyncEnter ? null : getOmniaxEnterTask(state, node);
-    let geaEnter = skipAsyncEnter ? null : getGeaEnterTask(state, node);
-    const asegEnter = skipAsyncEnter ? null : getAsegEnterTask(state, node);
-    const comEnter = skipAsyncEnter ? null : getComEnterTask(state, node);
-    const iaEnter = skipAsyncEnter ? null : getIaEnterTask(state, node);
+    let omniaxEnter = getOmniaxEnterTask(state, node);
+    let geaEnter = getGeaEnterTask(state, node);
+    let asegEnter = getAsegEnterTask(state, node);
+    let comEnter = getComEnterTask(state, node);
+    let iaEnter = getIaEnterTask(state, node);
+
+    if (revisiting) {
+        if (!canReplayDisplayEnter(state, omniaxEnter)) omniaxEnter = null;
+        if (!canReplayDisplayEnter(state, geaEnter)) geaEnter = null;
+        if (!canReplayDisplayEnter(state, asegEnter)) asegEnter = null;
+        if (!canReplayDisplayEnter(state, comEnter)) comEnter = null;
+        if (!canReplayDisplayEnter(state, iaEnter)) iaEnter = null;
+    }
 
     if (
-        !skipAsyncEnter
+        !revisiting
         && !geaEnter
         && node.gea?.refreshMenuEnter
         && node.useGeaMenu
@@ -386,16 +409,36 @@ function enterNode(state, nodeId, messages, options = {}) {
     }
 
     if (
-        !skipAsyncEnter
+        revisiting
+        && !geaEnter
+        && node.gea?.refreshMenuEnter
+        && node.useGeaMenu
+        && canReplayDisplayEnter(state, node.gea.refreshMenuEnter)
+    ) {
+        geaEnter = node.gea.refreshMenuEnter;
+    }
+
+    if (
+        !revisiting
         && !omniaxEnter
-        && node.omx?.refreshMenuEnter
+        && node.omniax?.refreshMenuEnter
         && node.useOmniaxMenu
         && !(getOmniaxMenuActions(state)?.length)
     ) {
-        omniaxEnter = node.omx.refreshMenuEnter;
+        omniaxEnter = node.omniax.refreshMenuEnter;
     }
 
-    if (nodeId === LUCY_HOME_NODE) {
+    if (
+        revisiting
+        && !omniaxEnter
+        && node.omniax?.refreshMenuEnter
+        && node.useOmniaxMenu
+        && canReplayDisplayEnter(state, node.omniax.refreshMenuEnter)
+    ) {
+        omniaxEnter = node.omniax.refreshMenuEnter;
+    }
+
+    if (isDockMenuRoot(nodeId)) {
         clearNavStack(state);
     }
 
@@ -462,6 +505,31 @@ export function reduceLucyChat(state, messages, event) {
 
         };
 
+    }
+
+    if (event.type === 'openAsistenciaActiva') {
+        const list = Array.isArray(event.items) ? event.items : [];
+        const idx = indexOfAsistenciaActiva(list, event.item);
+        const gea = { ...(nextState.context.gea || {}), asistenciasActivas: list };
+        gea.selectedAsistenciaIndex = idx;
+        gea.asistenciaDetalleFromNotif = true;
+        nextState.context.gea = gea;
+
+        if (idx < 0) {
+            newMessages.push(bot('No encontramos esa asistencia. Intenta actualizar el panel.'));
+            return {
+                state: nextState,
+                messages: [...messages, ...newMessages],
+                scroll: true,
+            };
+        }
+
+        const enter = enterNode(nextState, 'asistencia_activa_pick_load', newMessages);
+        return {
+            state: nextState,
+            messages: [...messages, ...newMessages],
+            ...packEnter(enter),
+        };
     }
 
     if (event.type === 'navigateBack') {
@@ -578,11 +646,7 @@ export function reduceLucyChat(state, messages, event) {
         newMessages.push(user(`Beneficiario: ${event.nombre_beneficiario || 'registrado'}`));
 
         const dental = String(nextState.nodeId || '').startsWith('omx_den_');
-        const reagendar = Boolean(nextState.context.omniax?.reagendar);
-        let nextId = dental ? 'omx_den_aplica_load' : 'omx_med_especialidades_load';
-        if (reagendar) {
-            nextId = dental ? 'omx_den_reag_list_load' : 'omx_med_reag_list_load';
-        }
+        const nextId = dental ? 'omx_den_start' : 'omx_med_start';
         const enter = enterNode(nextState, nextId, newMessages);
 
         return {
@@ -622,8 +686,17 @@ export function reduceLucyChat(state, messages, event) {
     if (event.type === 'geaError') {
         const detail = String(event.message || 'No pudimos completar la operación GEA.').trim();
         newMessages.push(bot(`⚠️ ${detail}`));
+        const tipo = String(nextState.context?.gea?.tipoServicio || '').toUpperCase();
+        const recover =
+            tipo === 'MEDICO'
+                ? 'menu_medico'
+                : tipo === 'HOGAR'
+                  ? 'menu_hogar'
+                  : tipo === 'VIAL'
+                    ? 'menu_vial'
+                    : LUCY_HOME_NODE;
         clearNavStack(nextState);
-        const enter = enterNode(nextState, LUCY_HOME_NODE, newMessages, { recordHistory: false });
+        const enter = enterNode(nextState, recover, newMessages, { recordHistory: false });
         return {
             state: nextState,
             messages: [...messages, ...newMessages],
@@ -670,7 +743,7 @@ export function reduceLucyChat(state, messages, event) {
         newMessages.push(bot(`⚠️ ${detail}`));
 
         const dentalFlow = String(nextState.nodeId || '').startsWith('omx_den_');
-        const fechaRecover = dentalFlow ? 'omx_den_fecha_hora' : 'omx_med_fecha_hora';
+        const fechaRecover = dentalFlow ? 'omx_den_dias_load' : 'omx_med_dias_load';
         const errorRecover = dentalFlow ? 'omx_den_error' : 'omx_med_error';
         const recoverNode =
             nextState.nodeId &&
@@ -747,9 +820,6 @@ export function reduceLucyChat(state, messages, event) {
 
         if (action.type === 'link' && action.url) {
             newMessages.push(user(action.label || 'Abrir enlace'));
-            if (typeof window !== 'undefined') {
-                openExternalUrl(action.url);
-            }
             return {
                 state: nextState,
                 messages: [...messages, ...newMessages],
@@ -781,13 +851,13 @@ export function reduceLucyChat(state, messages, event) {
 
         newMessages.push(user(action.label));
 
-        const goingHome = action.next === LUCY_HOME_NODE;
-        if (goingHome) {
+        const landingOnMenu = isDockMenuRoot(action.next);
+        if (landingOnMenu) {
             clearNavStack(nextState);
         }
 
         const enter = enterNode(nextState, action.next, newMessages, {
-            recordHistory: !goingHome,
+            recordHistory: !landingOnMenu,
         });
 
         return {
@@ -952,9 +1022,11 @@ export function reduceLucyChat(state, messages, event) {
 
 
 
-        if (node.input.field === 'cedula' && !CEDULA_RE.test(text)) {
+        if (node.input.field === 'cedula' && !isValidLucyCedula(text)) {
 
-            newMessages.push(bot('La cédula debe tener 10 dígitos. Intenta de nuevo.'));
+            newMessages.push(
+                bot('Ingresa tu número de cédula (solo dígitos, hasta 15).'),
+            );
 
             return {
 
@@ -1000,18 +1072,42 @@ export function reduceLucyChat(state, messages, event) {
             applyLucyTelefonoToContext(nextState.context, text);
         }
 
-        if (node.input.field === 'cedula') nextState.context.cedula = text;
+        if (node.input.field === 'cedula') {
+            nextState.context.cedula = text.trim();
+        }
 
-        if (node.input.field === 'plate') nextState.context.plate = text.toUpperCase();
+        if (node.input.field === 'plate') {
+            const placa = text.toUpperCase();
+            nextState.context.plate = placa;
+            const geaPlate = nextState.context.gea || {};
+            geaPlate.placa = placa;
+            nextState.context.gea = geaPlate;
+        }
 
         if (node.input.field === 'nombre') nextState.context.nombre = text;
+
+        if (node.input.vehiculoField === 'anio_vehiculo' && !ANIO_VEHICULO_RE.test(text.trim())) {
+            newMessages.push(bot('Ingresa un año válido de 4 dígitos (ej: 2020).'));
+            return {
+                state: nextState,
+                messages: [...messages, ...newMessages],
+                scroll: true,
+            };
+        }
+
+        if (node.input.vehiculoField) {
+            const gea = nextState.context.gea || {};
+            mergeVehiculoDato(gea, node.input.vehiculoField, text);
+            nextState.context.gea = gea;
+        }
 
         if (node.input.geaField) {
             const gea = nextState.context.gea || {};
             gea[node.input.geaField] = text;
             if (node.input.geaField === 'descripcion_problema') {
+                gea.descripcion_falla = text;
                 recordAutomaticoAnswer(gea, {
-                    pregunta: 'Cuéntanos brevemente cuál es el problema que presentas.',
+                    pregunta: 'Ahora, por favor ingresa una breve descripción de la falla',
                     respuesta: text,
                     aplicaAutomatico: true,
                 });
@@ -1039,6 +1135,15 @@ export function reduceLucyChat(state, messages, event) {
 
 
         let nextId = node.input.next;
+
+        if (
+            node.input.vehiculoField === 'anio_vehiculo'
+            && nextState.context.gea?.vehAnioCompletedNext
+        ) {
+            nextId = nextState.context.gea.vehAnioCompletedNext;
+            delete nextState.context.gea.vehAnioCompletedNext;
+            delete nextState.context.gea.pendingCoberturaRetry;
+        }
 
         if (
             nextState.context.skipToAseguradora

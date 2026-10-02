@@ -1,9 +1,22 @@
 {
   "workflowId": 70197,
-  "workflowName": "prueba_webview",
-  "workflowDescription": "Skill de prueba: abre la webview Laravel Lucy Ecuador cuando el usuario escribe prueba_webview o pide probar el chat web embebido.",
-  "workflowDefault": false,
+  "workflowName": "oyambaro - chat web Lucy",
+  "workflowDescription": "Abre el chat web embebido de Lucy Ecuador. Activar cuando el usuario escriba oyambaro, Oyambaro o prueba_webview, o pida probar el chat web. No usar para citas, hogar, vial, dental ni el menú general.",
   "nodes": [
+    {
+      "id": "-uog5bYxjxaQyjom9k4Xi",
+      "title": "URL pública webview",
+      "type": "MEMORY",
+      "position": [
+        360,
+        320
+      ],
+      "configuration": {
+        "variables": {
+          "lucy_webview_base_url": "https://0xod4x-ip-181-198-91-26.tunnelmole.net"
+        }
+      }
+    },
     {
       "id": "5omq9aQNoyzgJo9vN7AGi",
       "title": "Abrir webview Lucy",
@@ -15,34 +28,22 @@
       "configuration": {
         "messages": [
           {
-            "id": "tmp_wv_open_01",
+            "id": "mWvOpenLucyCta0000001",
             "type": "webview",
-            "text": "Chat Lucy Ecuador (prueba)",
-            "buttonText": "Abrir chat web",
-            "url": "{{$memory.lucy_webview_base_url}}/?embedded=1&telefono={{$memory.telefono_webview}}&intent={{$memory.lucy_webview_intent}}",
+            "text": "Toca *Abrir chat web* para continuar con Lucy. Si te pide celular, usa el de esta conversación.",
+            "url": "{{$memory.lucy_webview_base_url}}/?embedded=1&telefono={{$memory.telefono_webview}}",
+            "parameters": {
+              "display_text": "Abrir chat web",
+              "url": "{{$memory.lucy_webview_base_url}}/?embedded=1&telefono={{$memory.telefono_webview}}"
+            },
             "settings": {
               "isBlockingEnabled": true,
               "responseVariable": "lucyWebviewClose",
               "expirationTime": 900,
-              "pendingMessage": "Completa el flujo en la webview. Al cerrar con *Volver a WhatsApp*, continuamos aquí."
+              "pendingMessage": "Completa el flujo en el chat web. Si pides un asesor, al cerrar te conectamos con un ejecutivo aquí en WhatsApp."
             }
           }
         ]
-      }
-    },
-    {
-      "id": "96zLkwenwzOj3SP6uS8SY",
-      "title": "URL pública webview",
-      "type": "MEMORY",
-      "position": [
-        360,
-        320
-      ],
-      "configuration": {
-        "variables": {
-          "lucy_webview_base_url": "https://TU-TUNEL.ngrok-free.app",
-          "lucy_webview_intent": "medico"
-        }
       }
     },
     {
@@ -94,25 +95,7 @@
           {
             "id": "tmp_exp_txt_01",
             "type": "text",
-            "text": "La webview expiró por tiempo. Escribe *prueba_webview* para intentar de nuevo."
-          }
-        ]
-      }
-    },
-    {
-      "id": "Efducbwke119MT0VVdMiv",
-      "title": "Intro",
-      "type": "CHANNEL_MESSAGE",
-      "position": [
-        840,
-        320
-      ],
-      "configuration": {
-        "messages": [
-          {
-            "id": "tmp_intro_txt_01",
-            "type": "text",
-            "text": "Vamos a abrir la *webview de prueba* de Lucy (Laravel). Si no tienes celular en la URL, ingrésalo en el primer paso del chat."
+            "text": "La webview expiró por tiempo. Escribe *oyambaro* para intentar de nuevo."
           }
         ]
       }
@@ -127,7 +110,7 @@
       ],
       "configuration": {
         "title": "Normalizar teléfono",
-        "content": "const raw = String($user.get('id') || '');\nconst digits = raw.replace(/\\D+/g, '');\nlet local = '';\nif (digits.startsWith('593') && digits.length >= 12) {\n  local = '0' + digits.slice(3, 13);\n} else if (digits.length === 10 && digits.startsWith('09')) {\n  local = digits;\n} else if (digits.length === 9) {\n  local = '0' + digits;\n}\n$memory.set('telefono_webview', local, 86400);",
+        "content": "const rawUser = String($user.get('id') || '');\nconst rawMsg = String(($message && $message.get && $message.get('text')) || '');\nconst pick = (raw) => {\n  const digits = String(raw || '').replace(/\\D+/g, '');\n  if (digits.startsWith('593') && digits.length >= 12) return '0' + digits.slice(3, 13);\n  if (digits.length === 10 && digits.startsWith('09')) return digits;\n  if (digits.length === 9) return '0' + digits;\n  return '';\n};\nconst local = pick(rawUser) || pick(rawMsg);\n$memory.set('telefono_webview', local, 86400);",
         "memoryVersion": "v2"
       }
     },
@@ -139,37 +122,130 @@
         120,
         320
       ]
+    },
+    {
+      "id": "nWvIfDerivacionLucy01",
+      "title": "¿Derivación?",
+      "type": "CONDITIONAL",
+      "position": [
+        1560,
+        80
+      ],
+      "configuration": {
+        "conditions": [
+          {
+            "id": "cWvMotivoDerivacion01",
+            "name": "derivacion",
+            "terms": [
+              {
+                "id": "tWvMotivoEqualDer0001",
+                "type": "",
+                "value1": "{{$memory.webview_motivo}}",
+                "value2": "derivacion",
+                "operator": "equal",
+                "inputDisplayName": {
+                  "value1": "{{$memory.webview_motivo}}",
+                  "value2": "derivacion"
+                }
+              }
+            ],
+            "conditionPanelCollapsed": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "nWvParseCloseLucy0001",
+      "title": "Leer cierre webview",
+      "type": "CODE",
+      "position": [
+        1320,
+        80
+      ],
+      "configuration": {
+        "title": "Leer lucyWebviewClose",
+        "memoryVersion": "v2",
+        "content": "let raw = {};\ntry { raw = $memory.getJson(\"lucyWebviewClose\") || {}; } catch (e) { raw = {}; }\nif (typeof raw === \"string\") {\n  try { raw = JSON.parse(raw); } catch (e2) { raw = {}; }\n}\nconst nested = raw && typeof raw === \"object\" && raw.data && typeof raw.data === \"object\" ? raw.data : {};\nconst motivo = String(nested.motivo || raw.motivo || \"\");\n$memory.set(\"webview_motivo\", motivo, 86400);\n$memory.set(\"webview_tipo\", String(nested.tipo || raw.tipo || \"operacion\"), 86400);\n$memory.set(\"webview_producto\", String(nested.producto || raw.producto || \"\"), 86400);\n$memory.set(\"webview_notas\", String(nested.notas || raw.notas || \"\"), 86400);\n$memory.set(\"webview_cedula\", String(nested.cedula || raw.cedula || \"\"), 86400);\n$memory.set(\"webview_nodo\", String(nested.nodo || raw.nodo || \"\"), 86400);"
+      }
+    },
+    {
+      "id": "nWvSkillDer8681Lucy01",
+      "title": "Derivación a asesor",
+      "type": "SKILL",
+      "position": [
+        2040,
+        40
+      ],
+      "configuration": {
+        "skillId": "26261"
+      }
+    },
+    {
+      "id": "nWvTxtHandoffLucy0001",
+      "title": "Avisar handoff",
+      "type": "CHANNEL_MESSAGE",
+      "position": [
+        1800,
+        40
+      ],
+      "configuration": {
+        "messages": [
+          {
+            "id": "mWvTxtHandoffLucy0001",
+            "type": "text",
+            "text": "Un ejecutivo va a retomar este chat (*{{$memory.webview_tipo}}*). Motivo: *{{$memory.webview_producto}}*."
+          }
+        ]
+      }
     }
   ],
   "edges": [
     {
-      "id": "9OB_5TRShYAl-7ZSTRndK",
-      "sourceId": "96zLkwenwzOj3SP6uS8SY",
-      "targetId": "I9K-_jIOFJ2lgGVwMZMxQ",
-      "branch": "default"
-    },
-    {
-      "id": "DWVRITIu3slwB-a_5T4RI",
+      "id": "9TFF4i2grKVToxYmr3DuV",
       "sourceId": "I9K-_jIOFJ2lgGVwMZMxQ",
-      "targetId": "Efducbwke119MT0VVdMiv",
+      "targetId": "5omq9aQNoyzgJo9vN7AGi",
       "branch": "success"
     },
     {
-      "id": "eu-8a1fnfQTU6JPq2QXj6",
-      "sourceId": "5omq9aQNoyzgJo9vN7AGi",
-      "targetId": "CqdVp2_DGT5Gzg2gnnPeL",
-      "branch": "exit"
+      "id": "eWvIfDerToTxtLucy0001",
+      "sourceId": "nWvIfDerivacionLucy01",
+      "targetId": "nWvTxtHandoffLucy0001",
+      "branch": "condition:cWvMotivoDerivacion01"
     },
     {
-      "id": "LbuJQ2BT06RFtP3M7MrGF",
-      "sourceId": "Efducbwke119MT0VVdMiv",
-      "targetId": "5omq9aQNoyzgJo9vN7AGi",
+      "id": "eWvIfElseCierreLucy01",
+      "sourceId": "nWvIfDerivacionLucy01",
+      "targetId": "CqdVp2_DGT5Gzg2gnnPeL",
+      "branch": "else"
+    },
+    {
+      "id": "eWvParseFailCierre001",
+      "sourceId": "nWvParseCloseLucy0001",
+      "targetId": "CqdVp2_DGT5Gzg2gnnPeL",
+      "branch": "failed"
+    },
+    {
+      "id": "eWvParseToIfLucy00001",
+      "sourceId": "nWvParseCloseLucy0001",
+      "targetId": "nWvIfDerivacionLucy01",
+      "branch": "success"
+    },
+    {
+      "id": "eWvTxtToSkill8681Luc1",
+      "sourceId": "nWvTxtHandoffLucy0001",
+      "targetId": "nWvSkillDer8681Lucy01",
       "branch": "default"
     },
     {
-      "id": "Uz2B2H2BH1tscQtsorzqm",
-      "sourceId": "MIi20zvJMBAxComZIK_9b",
-      "targetId": "96zLkwenwzOj3SP6uS8SY",
+      "id": "OiFoWUJpCoroIa086jvzW",
+      "sourceId": "I9K-_jIOFJ2lgGVwMZMxQ",
+      "targetId": "5omq9aQNoyzgJo9vN7AGi",
+      "branch": "failed"
+    },
+    {
+      "id": "sfvFTzz6qut0DEup9qA26",
+      "sourceId": "-uog5bYxjxaQyjom9k4Xi",
+      "targetId": "I9K-_jIOFJ2lgGVwMZMxQ",
       "branch": "default"
     },
     {
@@ -183,6 +259,18 @@
       "sourceId": "5omq9aQNoyzgJo9vN7AGi",
       "targetId": "AjuM9hjKvlSzbNe_2264Y",
       "branch": "error"
+    },
+    {
+      "id": "yM07k3rMHVjkRBNjyINEB",
+      "sourceId": "5omq9aQNoyzgJo9vN7AGi",
+      "targetId": "nWvParseCloseLucy0001",
+      "branch": "exit"
+    },
+    {
+      "id": "zS6WDuUEXhGsq-EKhM9X1",
+      "sourceId": "MIi20zvJMBAxComZIK_9b",
+      "targetId": "-uog5bYxjxaQyjom9k4Xi",
+      "branch": "default"
     }
   ]
 }

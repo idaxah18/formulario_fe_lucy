@@ -104,9 +104,42 @@ jelou project publish --project-id 01j5661e5gaf6330435zh3bzjx --workflow prueba-
 
 ---
 
-## 5. Cierre webview → WhatsApp
+## 5. Cierre webview → WhatsApp (derivación)
 
-La webview envía `postMessage` `jelou:webview:close` (ver `docs/PHASE4_TEST.md`). El skill `prueba_webview` espera el callback en la rama **exit** del nodo webview.
+Solo si Lucy termina en **derivación**, el front hace `POST /api/v1/jelou/webview/callback` (Laravel reenvía a `https://workflows.jelou.ai/v1/webview/callback`) con:
+
+```json
+{
+  "executionId": "<query de la URL que inyecta Jelou>",
+  "success": true,
+  "data": {
+    "motivo": "derivacion",
+    "producto": "Agendar cita médica | Reportar un problema | …",
+    "notas": "",
+    "cedula": "",
+    "nombre": "",
+    "telefono": "",
+    "nodo": "omx_med_asesor_done"
+  }
+}
+```
+
+Eso desbloquea el nodo webview (rama **exit**). En el skill `51025` la rama exit debe:
+
+1. CODE — leer `lucyWebviewClose` y guardar `webview_motivo`.
+2. CONDITIONAL — si `webview_motivo == derivacion` → texto + **SKILL 8681 Derivación a asesor** (Human Handoff / CONNECT del flujo original).
+3. Si no es derivación → **Cierre OK** (no CONNECT).
+
+Sin `executionId` (prueba local en el navegador) Lucy no llama al callback; solo registra Datum.
+
+Publicar el draft de `51025` después de este cableado:
+
+```powershell
+cd jelou/lucy-prueba-webview
+jelou push --workflow prueba-webview --agent
+```
+
+Hasta que eso esté publicado, WhatsApp sigue en “Cierre OK” y el ejecutivo **no** retoma el chat.
 
 ---
 

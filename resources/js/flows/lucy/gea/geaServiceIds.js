@@ -11,6 +11,8 @@ const ID_BY_SERVICE_LABEL = {
     'Spa y peluquería': '512',
     Handyman: '515',
     'Grúa (otro motivo)': '256',
+    'Grúa por avería': '256',
+    'Remolque por avería': '256',
     Grúa: '256',
     'Cambio de llanta': '258',
     'Suministro de gasolina': '258',
@@ -46,7 +48,45 @@ export function resolveGeaIdServicio(serviceLabel) {
     if (fromMap) return fromMap;
     const fromEnv = envOverride(serviceLabel);
     if (fromEnv) return fromEnv;
-    return import.meta.env.VITE_GEA_ID_SERVICIO_DEFAULT || null;
+    return import.meta.env?.VITE_GEA_ID_SERVICIO_DEFAULT || null;
+}
+
+/**
+ * IDs solo válidos en POST proceso-automatico (afiliación/cobertura/crear automático).
+ * En POST /chatbot/asistencias/gea provocan «El servicio solicitado no existe».
+ * 299 es GEA válido (cerrajería) y también id automático cerrajería — no bloquear.
+ */
+export const PROCESO_AUTOMATICO_SUBSERVICIO_IDS = new Set(['2', '3', '4', '57', '159', '163']);
+
+export function isProcesoAutomaticoOnlyId(id) {
+    const s = String(id ?? '').trim();
+    return s !== '' && PROCESO_AUTOMATICO_SUBSERVICIO_IDS.has(s);
+}
+
+/**
+ * Único id permitido para crear asistencia GEA (cabina / legacy chain).
+ * Ignora hints erróneos (p. ej. id_servicio_subservicio 159).
+ */
+export function resolveIdServicioCrearGea(serviceLabel, hintedId = null) {
+    const label = String(serviceLabel || '').trim();
+    const mapped = label ? resolveGeaIdServicio(label) : null;
+    const hint = String(hintedId ?? '').trim();
+
+    if (mapped) {
+        if (hint && hint !== mapped && isProcesoAutomaticoOnlyId(hint)) {
+            return mapped;
+        }
+        if (hint && hint !== mapped && !isProcesoAutomaticoOnlyId(hint)) {
+            return hint;
+        }
+        return mapped;
+    }
+
+    if (hint && !isProcesoAutomaticoOnlyId(hint)) {
+        return hint;
+    }
+
+    return null;
 }
 
 const TIPO_SERVICIO_BY_JELOU_REF = {
@@ -65,5 +105,6 @@ export function geaChainOptions(serviceLabel, jelouRef, extra = {}) {
         serviceLabel,
         tipoServicio: extra.tipoServicio || TIPO_SERVICIO_BY_JELOU_REF[jelouRef] || 'HOGAR',
         planAsistencia: extra.planAsistencia || 'ASISTENCIAS',
+        skipCabinaPreface: Boolean(extra.skipCabinaPreface),
     };
 }

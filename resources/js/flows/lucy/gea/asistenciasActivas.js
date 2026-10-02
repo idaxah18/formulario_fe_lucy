@@ -19,7 +19,9 @@ export function resolveTipoAsistencia(row, source) {
     const desc = String(
         row?.servicio_descripcion ?? row?.servicio ?? row?.detalle ?? row?.descripcion ?? '',
     ).toLowerCase();
-    if (/\bvial\b|grúa|grua|llanta/.test(desc)) return 'Vial';
+    if (/\bvial\b|grúa|grua|remolque|llanta|gasolina|corriente|cerrajer[ií]a vial/.test(desc)) {
+        return 'Vial';
+    }
     if (/hogar|plomer|electric|cerraj/.test(desc)) return 'Hogar';
     if (/dental|odont/.test(desc)) return 'Dental';
     if (/médic|medic|consulta|cita/.test(desc)) return 'Médica';
@@ -58,16 +60,16 @@ export function mergeAsistenciasActivas({ geaTool, medicoRes, dentalRes }) {
         if (id != null) seen.add(key);
 
         const tipo = resolveTipoAsistencia(row, source);
+        const nombre = String(row.solicitante || row.nombre_persona || row.nombre_paciente || '').trim();
+        const servicio = String(
+            row.servicio_descripcion ?? row.servicio ?? row.descripcion ?? '',
+        ).trim();
         const detalle =
             source === 'medico' || source === 'dental'
                 ? asistenciaMenuLabel(row)
-                : String(
-                      row.servicio_descripcion ??
-                          row.servicio ??
-                          row.detalle ??
-                          row.descripcion ??
-                          '',
-                  ).trim() || `Asistencia #${id ?? '?'}`;
+                : nombre
+                  ? [nombre, servicio].filter(Boolean).join(' · ')
+                  : servicio || asistenciaMenuLabel({ ...row, id_asistencia: id });
 
         merged.push({
             source,
@@ -85,7 +87,28 @@ export function mergeAsistenciasActivas({ geaTool, medicoRes, dentalRes }) {
     return merged;
 }
 
-export const ASISTENCIAS_ACTIVAS_PAGE_SIZE = 6;
+/**
+ * Tras login / campana de notificaciones: solo médico y dental.
+ * Hogar/vial (API GEA 2678) se listan al entrar al menú del segmento.
+ */
+export function filterAsistenciasForPostAuth(merged) {
+    return (merged || []).filter((item) => {
+        if (item?.source === 'gea') return false;
+        const family = resolveAsistenciaFamilyId(item);
+        return family !== 'hogar' && family !== 'vial';
+    });
+}
+
+/** Solo asistencias GEA del segmento hogar o vial. */
+export function filterAsistenciasBySegment(merged, segment) {
+    const family = segment === 'hogar' ? 'hogar' : segment === 'vial' ? 'vial' : null;
+    if (!family) return [];
+    return (merged || []).filter(
+        (item) => item.source === 'gea' && resolveAsistenciaFamilyId(item) === family,
+    );
+}
+
+export { CHAT_MENU_PAGE_SIZE as ASISTENCIAS_ACTIVAS_PAGE_SIZE } from '@/lib/menuListPagination.js';
 
 function itemSortTimestamp(item) {
     const row = item?.row ?? {};
@@ -121,6 +144,92 @@ export function asistenciaActivaMenuStyle(item) {
     if (tipo === 'Vial') return { icon: 'car', menuTone: 'tone-asist-vial' };
     if (tipo === 'Asistencia GEA') return { icon: 'cog', menuTone: 'tone-blue' };
     return { icon: 'cog', menuTone: 'tone-blue' };
+}
+
+/** Familias del panel de notificaciones (Fase 1). Aseguradora y GEA sin tipo claro → otras. */
+export const ASISTENCIA_FAMILY_ORDER = ['medico', 'dental', 'vial', 'hogar', 'otras'];
+
+export const ASISTENCIA_FAMILY_META = {
+    medico: {
+        label: 'Médico',
+        hint: 'Soluciones médicas',
+        icon: 'heart',
+        menuTone: 'tone-asist-medica',
+    },
+    dental: {
+        label: 'Dental',
+        hint: 'Soluciones dentales',
+        icon: 'toothbrush-sparkles',
+        menuTone: 'tone-asist-dental',
+    },
+    vial: {
+        label: 'Vial',
+        hint: 'Soluciones viales',
+        icon: 'car',
+        menuTone: 'tone-asist-vial',
+    },
+    hogar: {
+        label: 'Hogar',
+        hint: 'Solución de Hogar',
+        icon: 'house',
+        menuTone: 'tone-asist-hogar',
+    },
+    otras: {
+        label: 'Otras soluciones',
+        hint: 'Aseguradora y otros servicios',
+        icon: 'link',
+        menuTone: 'tone-green',
+    },
+};
+
+/** Familia para hub / filtros (re-clasifica GEA si el listado vino como «Asistencia GEA»). */
+export function resolveAsistenciaFamilyId(item) {
+    let tipo = String(item?.tipo || '').trim();
+    if (item?.source === 'gea' && item?.row) {
+        const refined = resolveTipoAsistencia(item.row, 'gea');
+        if (refined !== 'Asistencia GEA' || tipo === 'Asistencia GEA' || !tipo) {
+            tipo = refined;
+        }
+    }
+    if (tipo === 'Médica') return 'medico';
+    if (tipo === 'Dental') return 'dental';
+    if (tipo === 'Vial') return 'vial';
+    if (tipo === 'Hogar') return 'hogar';
+    return 'otras';
+}
+
+/** @param {ReturnType<typeof mergeAsistenciasActivas>} items */
+/** Índice en el listado plano usado por `asistencia_activa_pick`. */
+export function indexOfAsistenciaActiva(items, item) {
+    if (!item || !Array.isArray(items) || !items.length) return -1;
+    const direct = items.indexOf(item);
+    if (direct >= 0) return direct;
+    return items.findIndex(
+        (row) =>
+            row.source === item.source
+            && row.id === item.id
+            && row.detalle === item.detalle,
+    );
+}
+
+export function groupAsistenciasByFamily(items) {
+    const buckets = Object.fromEntries(ASISTENCIA_FAMILY_ORDER.map((id) => [id, []]));
+    for (const item of items || []) {
+        const familyId = resolveAsistenciaFamilyId(item);
+        buckets[familyId].push(item);
+    }
+    return ASISTENCIA_FAMILY_ORDER.map((id) => {
+        const familyItems = sortAsistenciasActivasDesc(buckets[id]);
+        const meta = ASISTENCIA_FAMILY_META[id];
+        const preview = familyItems[0]?.detalle || meta.hint;
+        return {
+            id,
+            ...meta,
+            items: familyItems,
+            count: familyItems.length,
+            preview,
+        };
+    }).filter((g) => g.count > 0);
 }
 
 export function buildDerivacionAsistenciaPayload(item, { cedula, nombre, telefono }) {

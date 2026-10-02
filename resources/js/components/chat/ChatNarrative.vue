@@ -51,6 +51,7 @@
 import { computed } from 'vue';
 import { parseBotMessage } from '@/flows/lucy/uiMeta.js';
 import ChatIcon from '@/components/chat/ChatIcon.vue';
+import { rewriteLucySolucionCopy } from '@/lib/lucySolucionCopy.js';
 
 const props = defineProps({
     text: { type: String, required: true },
@@ -61,16 +62,16 @@ const parsed = computed(() => parseBotMessage(props.text));
 const variant = computed(() => parsed.value.variant);
 const displayTitle = computed(() => {
     if (parsed.value.variant === 'success') {
-        return parsed.value.title || '¡Tu solicitud ha sido registrada!';
+        return rewriteLucySolucionCopy(parsed.value.title || '¡Tu solicitud ha sido registrada!');
     }
-    return parsed.value.title;
+    return rewriteLucySolucionCopy(parsed.value.title);
 });
 const displayBody = computed(() => {
     if (parsed.value.variant === 'success' && parsed.value.title) {
-        return parsed.value.body;
+        return rewriteLucySolucionCopy(parsed.value.body);
     }
-    if (parsed.value.variant === 'muted') return parsed.value.text;
-    return parsed.value.title ? parsed.value.body : parsed.value.text;
+    if (parsed.value.variant === 'muted') return rewriteLucySolucionCopy(parsed.value.text);
+    return rewriteLucySolucionCopy(parsed.value.title ? parsed.value.body : parsed.value.text);
 });
 
 const infoText = computed(() => {

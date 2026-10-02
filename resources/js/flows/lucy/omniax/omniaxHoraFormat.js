@@ -24,7 +24,11 @@ export function minutesFromUser24(hora) {
 }
 
 export function minutesFromOmniaxHora(label) {
-    const s = String(label).trim();
+    let s = String(label).trim();
+    const rangeSplit = /\s+a\s+/i.exec(s);
+    if (rangeSplit) {
+        s = s.slice(0, rangeSplit.index).trim();
+    }
     const twelve = /^(\d{1,2}):(\d{2})(?::\d{2})?\s*(a\.?\s*m\.?|p\.?\s*m\.?|AM|PM)$/i.exec(s);
     if (twelve) {
         let h = Number.parseInt(twelve[1], 10);
@@ -48,6 +52,25 @@ export function formatOmniaxHora24FromMinutes(mins) {
     const h = Math.floor(mins / 60);
     const min = mins % 60;
     return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
+/** Etiqueta amigable 12 h (API sigue en 24 h). */
+export function formatHora12LabelFrom24(hhmm) {
+    const mins = minutesFromUser24(hhmm);
+    if (mins == null) return String(hhmm ?? '').trim();
+    const h24 = Math.floor(mins / 60);
+    const min = mins % 60;
+    const pm = h24 >= 12;
+    let h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    const suffix = pm ? 'p. m.' : 'a. m.';
+    return `${h12}:${String(min).padStart(2, '0')} ${suffix}`;
+}
+
+/** Servicios 7–9: solo validar contra slots cuando hay agenda con establecimiento o es reagendar. */
+export function mustValidateOmniaxSlots(omx) {
+    if (omx?.reagendar) return true;
+    return omx?.agenda_completa !== false;
 }
 
 /** Normaliza entrada del usuario (24 h o 12 h AM/PM) → "HH:mm" para la API. */

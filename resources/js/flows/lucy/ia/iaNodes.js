@@ -53,7 +53,7 @@ export function buildIaNodes() {
             'reagendar_cita_ia',
             'reagendar',
             'reagendar cita IA',
-            'omx_med_reag_cabina_preface',
+            'omx_med_reag_list_load',
             ['Modo **Reagendar cita IA**.'],
         ),
         ...iaChatNode(

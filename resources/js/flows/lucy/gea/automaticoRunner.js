@@ -7,10 +7,27 @@ import {
     postValidacionCoordenadasAutomatico,
     postVehiculoAfiliacionAutomatico,
 } from '@/api/proyectosAutomaticoApi.js';
+import { isAdvisorHandoffDoneNode } from '../advisorHandoffCopy.js';
+import { inferGeaExitReturnMenu } from '../flowExitMenus.js';
 import { LUCY_HOME_NODE, bot } from '../flowHelpers.js';
 import { botFromOmniaxResponse } from '../omniax/omniaxNoticias.js';
 import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
 import { AUTO_COPY } from './automaticoFlowCopy.js';
+import {
+    isAsistenciaProgramada,
+    mergeProgramadoForApi,
+    requiereUbicacionGps,
+} from './automaticoProgramado.js';
+import {
+    nextVehiculoDatoStep,
+    normalizeVehiculoFromApi,
+    resolvedAnioVehiculo,
+    resolveVehAnioNodeId,
+    resolveVehDatosGateId,
+    resolveVehMarcaNodeId,
+    resolveVehModeloNodeId,
+    vehiculoDatosCompletos,
+} from './automaticoVehiculoDatos.js';
 import {
     aplicaAutomaticoFlag,
     buildPreguntasRespuestasJson,
@@ -56,6 +73,17 @@ function locationBundle(ctx, gea) {
     return { lat, lng, direccion, referencia: direccion };
 }
 
+function vehiculoDatoNodeId(gea) {
+    const step = nextVehiculoDatoStep(gea);
+    if (!step) return null;
+    const byStep = {
+        marca: resolveVehMarcaNodeId(gea),
+        modelo: resolveVehModeloNodeId(gea),
+        anio: resolveVehAnioNodeId(gea),
+    };
+    return byStep[step] || resolveVehDatosGateId(gea) || null;
+}
+
 function vehicleFields(gea, ctx) {
     const v = gea.vehiculo || {};
     const extra = v.datos_extra || v.datosExtra || {};
@@ -65,12 +93,30 @@ function vehicleFields(gea, ctx) {
         motor: extra.motor || v.motor || '',
     };
     if (placa) datosExtra.placa = String(placa).trim().toUpperCase();
-    return {
-        marca_vehiculo: v.marca_vehiculo || v.marca || '',
-        modelo_vehiculo: v.modelo_vehiculo || v.modelo || '',
-        anio_vehiculo: String(v.anio_vehiculo || v.anio || v.año || ''),
+    const anioDigits = resolvedAnioVehiculo(gea);
+    const anioInt = anioDigits ? Number.parseInt(anioDigits, 10) : NaN;
+    const fields = {
+        marca_vehiculo: String(v.marca_vehiculo || v.marca || '').trim(),
+        modelo_vehiculo: String(v.modelo_vehiculo || v.modelo || '').trim(),
         tipo_vehiculo: resolvedTipoVehiculo(gea),
         datos_extra: datosExtra,
+    };
+    if (Number.isFinite(anioInt)) {
+        fields.anio_vehiculo = String(anioDigits);
+    } else {
+        throw new Error('Falta el año del vehículo para validar cobertura.');
+    }
+    return fields;
+}
+
+function redirectVehiculoDatosIfNeeded(gea, tipo) {
+    if (tipo !== 'VIAL' || vehiculoDatosCompletos(gea)) return null;
+    const nextNodeId = vehiculoDatoNodeId(gea);
+    if (!nextNodeId) return null;
+    return {
+        messages: [bot('Necesitamos completar los datos del vehículo antes de validar cobertura.')],
+        nextNodeId,
+        patchContext: { gea },
     };
 }
 
@@ -99,6 +145,51 @@ function isSinAfiliacionError(err) {
         || msg.includes('no se encuentra afiliación')
         || msg.includes('no se encuentra afiliacion')
     );
+}
+
+/** Placa sin historial en afiliación (S1 con placa o S2 vehículo-afiliación). */
+function isHistorialPlacaAfiliacionError(err) {
+    const msg = omniaxErrorMessage(err).toLowerCase();
+    return (
+        msg.includes('no se encontró historial de asistencias')
+        || msg.includes('no se encontro historial de asistencias')
+        || (msg.includes('historial de asistencias') && msg.includes('placa'))
+    );
+}
+
+function rememberPlaca(ctx, gea) {
+    const placa = String(ctx?.plate || gea?.placa || '').trim().toUpperCase();
+    if (placa) gea.placa = placa;
+    return placa;
+}
+
+function continueSinHistorialVehiculo(gea, placa) {
+    const placaNorm = String(placa || gea.placa || '').trim().toUpperCase();
+    if (placaNorm) gea.placa = placaNorm;
+    gea.vehiculo = placaNorm ? { placa: placaNorm } : {};
+    gea.vehiculoManual = true;
+    return {
+        messages: [
+            bot(
+                'No encontramos historial de asistencias con esa **placa** en tu afiliación. Indica el **tipo de vehículo** y luego marca, modelo y año.',
+            ),
+        ],
+        nextNodeId: gea.afterAutoNext,
+        patchContext: { gea },
+    };
+}
+
+async function postAfiliacionAutomaticoResilient(body, placa) {
+    const placaNorm = placa ? String(placa).trim().toUpperCase() : '';
+    if (!placaNorm) {
+        return postAfiliacionAutomatico(body);
+    }
+    try {
+        return await postAfiliacionAutomatico({ ...body, placa: placaNorm });
+    } catch (err) {
+        if (!isHistorialPlacaAfiliacionError(err)) throw err;
+        return postAfiliacionAutomatico(body);
+    }
 }
 
 function sinAfiliacionHandoff(ctx, gea, tipo, serviceLabel) {
@@ -151,7 +242,7 @@ export async function runAutomaticoEnter(task, state) {
                         `No hay id_servicio_subservicio para «${gea.serviceLabel || 'servicio'}».`,
                     );
                 }
-                const placa = ctx.plate || gea.placa;
+                const placa = rememberPlaca(ctx, gea);
                 const body = {
                     telefono,
                     cveafiliado: cedula,
@@ -161,9 +252,8 @@ export async function runAutomaticoEnter(task, state) {
                     plan_asistencia: plan,
                     chasis: '',
                 };
-                if (placa) body.placa = String(placa).trim().toUpperCase();
 
-                const res = await postAfiliacionAutomatico(body);
+                const res = await postAfiliacionAutomaticoResilient(body, placa);
                 mergeTiposVehiculoPermitidosFromApi(gea, res);
                 mergeDetalle(gea, res);
                 const detalle = pickDetalle(res, gea);
@@ -181,19 +271,31 @@ export async function runAutomaticoEnter(task, state) {
             }
 
             case 'auto_vehiculo': {
-                const placa = ctx.plate || gea.placa;
+                const placa = rememberPlaca(ctx, gea);
                 if (!placa) throw new Error('Indica la placa del vehículo.');
-                const res = await postVehiculoAfiliacionAutomatico({
-                    id_detalle_proceso_automatico_chatbot: requireDetalle(gea),
-                    placa: String(placa).trim().toUpperCase(),
-                    chasis: '',
-                    plan_asistencia: plan,
-                });
+                let res;
+                try {
+                    res = await postVehiculoAfiliacionAutomatico({
+                        id_detalle_proceso_automatico_chatbot: requireDetalle(gea),
+                        placa,
+                        chasis: '',
+                        plan_asistencia: plan,
+                    });
+                } catch (vehErr) {
+                    if (isHistorialPlacaAfiliacionError(vehErr)) {
+                        return continueSinHistorialVehiculo(gea, placa);
+                    }
+                    throw vehErr;
+                }
                 mergeTiposVehiculoPermitidosFromApi(gea, res);
                 mergeDetalle(gea, res);
                 const raw = res?.data;
                 const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
-                if (list.length > 1) {
+                if (!list.length) {
+                    return continueSinHistorialVehiculo(gea, placa);
+                }
+                const stayOnPick = state.nodeId && state.nodeId === gea.afterVehiculoPickNext;
+                if (list.length > 1 || (stayOnPick && list.length >= 1)) {
                     gea.vehiculosOpciones = list;
                     gea.menuActions = [
                         ...list.map((v, index) => ({
@@ -202,7 +304,7 @@ export async function runAutomaticoEnter(task, state) {
                                 .filter(Boolean)
                                 .join(' — '),
                             next: gea.afterAutoNext,
-                            meta: { gea: { vehiculo: v } },
+                            meta: { gea: { vehiculo: normalizeVehiculoFromApi(v) } },
                         })),
                         {
                             id: 'veh_otros',
@@ -219,7 +321,7 @@ export async function runAutomaticoEnter(task, state) {
                         patchContext: { gea },
                     };
                 }
-                if (list[0]) gea.vehiculo = list[0];
+                if (list[0]) gea.vehiculo = normalizeVehiculoFromApi(list[0]);
                 return {
                     messages: [],
                     nextNodeId: gea.afterAutoNext,
@@ -237,7 +339,9 @@ export async function runAutomaticoEnter(task, state) {
 
             case 'auto_tipo_vehiculo_gate': {
                 const locNext = gea.afterAutoNext;
-                if (!needsTipoVehiculoCategorization(gea)) {
+                const menuNodeId = resolveTipoVehiculoMenuNodeId(gea);
+                const stayOnMenu = Boolean(menuNodeId) && state.nodeId === menuNodeId;
+                if (!stayOnMenu && !needsTipoVehiculoCategorization(gea)) {
                     return {
                         messages: [],
                         nextNodeId: locNext,
@@ -247,7 +351,14 @@ export async function runAutomaticoEnter(task, state) {
                 gea.menuActions = buildTipoVehiculoMenuActions(gea, locNext);
                 gea.dockHeadline = AUTO_COPY.tipoVehiculo;
                 gea.dockHint = '';
-                const menuNodeId = resolveTipoVehiculoMenuNodeId(gea);
+                const datosNode = vehiculoDatoNodeId(gea);
+                if (!stayOnMenu && !needsTipoVehiculoCategorization(gea) && datosNode) {
+                    return {
+                        messages: [],
+                        nextNodeId: datosNode,
+                        patchContext: { gea },
+                    };
+                }
                 return {
                     messages: [],
                     nextNodeId: menuNodeId || locNext,
@@ -255,9 +366,36 @@ export async function runAutomaticoEnter(task, state) {
                 };
             }
 
+            case 'auto_veh_datos_gate': {
+                const step = nextVehiculoDatoStep(gea);
+                const byStep = {
+                    marca: resolveVehMarcaNodeId(gea),
+                    modelo: resolveVehModeloNodeId(gea),
+                    anio: resolveVehAnioNodeId(gea),
+                };
+                let nextNodeId = step ? (byStep[step] || gea.afterAutoNext) : gea.afterAutoNext;
+                if (!step && gea.pendingCoberturaRetry) {
+                    nextNodeId = gea.pendingCoberturaRetry;
+                    delete gea.pendingCoberturaRetry;
+                    delete gea.vehAnioCompletedNext;
+                }
+                return {
+                    messages: [],
+                    nextNodeId,
+                    patchContext: { gea },
+                };
+            }
+
             case 'auto_ubicacion': {
                 const { lat, lng, direccion, referencia } = locationBundle(ctx, gea);
                 if (lat == null || lng == null) {
+                    if (isAsistenciaProgramada(gea)) {
+                        return {
+                            messages: [],
+                            nextNodeId: gea.afterAutoNext,
+                            patchContext: { gea },
+                        };
+                    }
                     throw new Error('Falta la ubicación GPS.');
                 }
                 await postUbicacionAutomatico({
@@ -276,6 +414,9 @@ export async function runAutomaticoEnter(task, state) {
             }
 
             case 'auto_cobertura': {
+                const datosRedirect = redirectVehiculoDatosIfNeeded(gea, tipo);
+                if (datosRedirect) return datosRedirect;
+
                 const detalle = requireDetalle(gea);
                 const { lat, lng, direccion, referencia } = locationBundle(ctx, gea);
                 const esProgramado = Number(gea.esProgramado) === 1 ? 1 : 0;
@@ -288,21 +429,18 @@ export async function runAutomaticoEnter(task, state) {
                     tipo_servicio: tipo,
                     telefono,
                 };
-                if (esProgramado === 1 && gea.fecha_programada) {
-                    body.fecha_programada = gea.fecha_programada;
-                }
-                if (esProgramado === 1 && gea.hora_programada) {
-                    body.hora_programada = gea.hora_programada;
-                }
+                Object.assign(body, mergeProgramadoForApi(gea));
 
                 if (tipo === 'VIAL') {
-                    if (lat == null || lng == null) {
+                    if (requiereUbicacionGps(gea, tipo) && (lat == null || lng == null)) {
                         throw new Error('Falta la ubicación GPS para validar cobertura.');
                     }
-                    body.latitud = String(lat);
-                    body.longitud = String(lng);
-                    body.referencia = referencia;
-                    body.direccion = direccion;
+                    if (lat != null && lng != null) {
+                        body.latitud = String(lat);
+                        body.longitud = String(lng);
+                        body.referencia = referencia;
+                        body.direccion = direccion;
+                    }
                     Object.assign(body, vehicleFields(gea, ctx));
                 } else {
                     body.fecha_emergencia = todayIso();
@@ -351,10 +489,27 @@ export async function runAutomaticoEnter(task, state) {
             }
 
             case 'auto_coordenadas': {
+                const tipoCoord = isAsistenciaProgramada(gea)
+                    ? 'PROGRAMADA'
+                    : auto.tipo_coordenada || 'TRASLADO';
                 await postValidacionCoordenadasAutomatico({
                     id_detalle_proceso_automatico_chatbot: requireDetalle(gea),
-                    tipo_coordenada: auto.tipo_coordenada || 'TRASLADO',
+                    tipo_coordenada: tipoCoord,
                 });
+                return {
+                    messages: [],
+                    nextNodeId: gea.afterAutoNext,
+                    patchContext: { gea },
+                };
+            }
+
+            case 'auto_pre_crear_gate': {
+                if (isAsistenciaProgramada(gea) && !auto.requiresCoordValidation) {
+                    await postValidacionCoordenadasAutomatico({
+                        id_detalle_proceso_automatico_chatbot: requireDetalle(gea),
+                        tipo_coordenada: 'PROGRAMADA',
+                    });
+                }
                 return {
                     messages: [],
                     nextNodeId: gea.afterAutoNext,
@@ -364,30 +519,36 @@ export async function runAutomaticoEnter(task, state) {
 
             case 'auto_crear': {
                 const { lat, lng, direccion, referencia } = locationBundle(ctx, gea);
-                if (lat == null || lng == null) {
+                const esProgramado = Number(gea.esProgramado) === 1 ? 1 : 0;
+                if (requiereUbicacionGps(gea, tipo) && (lat == null || lng == null)) {
                     throw new Error('Falta la ubicación GPS para crear la asistencia.');
                 }
-                const esProgramado = Number(gea.esProgramado) === 1 ? 1 : 0;
                 const preguntasJson = buildPreguntasRespuestasJson(gea);
                 const body = {
                     telefono,
                     id_detalle_proceso_automatico_chatbot: requireDetalle(gea),
                     fecha_emergencia: todaySlash(),
-                    latitud: String(lat),
-                    longitud: String(lng),
-                    referencia,
-                    direccion,
                     es_programado: esProgramado,
                     aplica_servicio_automatico: aplicaAutomaticoFlag(gea),
                     plan_asistencia: plan,
                     tipo_servicio: tipo,
                 };
-                if (preguntasJson) body.preguntas_respuestas = preguntasJson;
-                if (esProgramado === 1 && gea.fecha_programada) {
-                    body.fecha_programada = gea.fecha_programada;
+                if (lat != null && lng != null) {
+                    body.latitud = String(lat);
+                    body.longitud = String(lng);
+                    body.referencia = referencia;
+                    body.direccion = direccion;
                 }
-                if (esProgramado === 1 && gea.hora_programada) {
-                    body.hora_programada = gea.hora_programada;
+                const descripcionFalla = String(
+                    gea.descripcion_falla || gea.descripcion_problema || '',
+                ).trim();
+                if (descripcionFalla) {
+                    body.descripcion_falla = descripcionFalla;
+                }
+                if (preguntasJson) body.preguntas_respuestas = preguntasJson;
+                Object.assign(body, mergeProgramadoForApi(gea));
+                if (gea.acepta_pago_combustible != null) {
+                    body.acepta_pago_combustible = Number(gea.acepta_pago_combustible);
                 }
                 if (gea.id_lugar_destino != null) {
                     body.id_lugar_destino = Number(gea.id_lugar_destino);
@@ -406,10 +567,22 @@ export async function runAutomaticoEnter(task, state) {
                 const extra = [];
                 if (caso) extra.push(`Número de caso: ${caso}`);
                 if (idAsist) extra.push(`ID asistencia: ${idAsist}`);
+                const urlMon = res.data?.url_monitoreo ?? res.data?.urlMonitoreo;
+                if (urlMon) {
+                    extra.push(
+                        'Puedes consultar el estado de tu solicitud en el enlace de monitoreo que te enviaremos.',
+                    );
+                }
 
+                if (!gea.exitReturnMenu) {
+                    gea.exitReturnMenu = inferGeaExitReturnMenu(gea.tipoServicio);
+                }
+                const nextNodeId = gea.afterCrearNext || 'gea_crear_exit';
                 return {
-                    messages: [botFromOmniaxResponse(res, extra)],
-                    nextNodeId: gea.afterCrearNext || 'gea_crear_exit',
+                    messages: isAdvisorHandoffDoneNode(nextNodeId)
+                        ? []
+                        : [botFromOmniaxResponse(res, extra)],
+                    nextNodeId,
                     patchContext: { gea },
                 };
             }
@@ -422,6 +595,10 @@ export async function runAutomaticoEnter(task, state) {
         if (task === 'auto_afiliacion' && isSinAfiliacionError(err)) {
             return sinAfiliacionHandoff(ctx, gea, tipo, serviceLabel);
         }
+        if (task === 'auto_vehiculo' && isHistorialPlacaAfiliacionError(err)) {
+            const placa = rememberPlaca(ctx, gea);
+            if (placa) return continueSinHistorialVehiculo(gea, placa);
+        }
         const msg = omniaxErrorMessage(err);
         if (
             task === 'auto_cobertura'
@@ -431,11 +608,14 @@ export async function runAutomaticoEnter(task, state) {
             )
         ) {
             const retryCoberturaNodeId = state.nodeId;
+            gea.pendingCoberturaRetry = retryCoberturaNodeId;
+            gea.vehAnioCompletedNext = retryCoberturaNodeId;
             const menuNodeId = resolveTipoVehiculoMenuNodeId(gea);
             if (/no está permitido/i.test(msg)) {
                 clearVehiculoTipoCategorization(gea);
             }
-            gea.menuActions = buildTipoVehiculoMenuActions(gea, retryCoberturaNodeId);
+            const afterTipoNext = resolveVehDatosGateId(gea) || retryCoberturaNodeId;
+            gea.menuActions = buildTipoVehiculoMenuActions(gea, afterTipoNext);
             gea.dockHeadline = AUTO_COPY.tipoVehiculo;
             gea.dockHint = '';
             if (!menuNodeId) {
@@ -454,6 +634,13 @@ export async function runAutomaticoEnter(task, state) {
                 nextNodeId: menuNodeId,
                 patchContext: { gea },
             };
+        }
+        if (
+            task === 'auto_cobertura'
+            && (/anio_vehiculo/i.test(msg) || /año del vehículo/i.test(msg))
+        ) {
+            const datosRedirect = redirectVehiculoDatosIfNeeded(gea, tipo);
+            if (datosRedirect) return datosRedirect;
         }
         if (task === 'auto_cobertura' && /configuraci[oó]n de cobertura para el servicio/i.test(msg)) {
             return {

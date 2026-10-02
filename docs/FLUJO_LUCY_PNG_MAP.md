@@ -13,20 +13,22 @@ Ambiente API: `GEA_OMNIAX_BASE_URL` → `https://api.geainternacional.com/test-e
 
 ## Pipeline automático compartido (Hogar/Vial)
 
-Orden de nodos (misma estructura; vial incluye placa/vehículo):
+Orden de nodos (draw.io Hogar/Vial automático):
 
-1. `auto_timing_*` — ahora / programada  
-2. `auto_prog_fecha_*` / `auto_prog_hora_*` — si programada  
+1. `auto_preg_*` — cuestionario **early** (`getAutomaticoEarlyQuestionPlan`)  
 3. `auto_placa_*` — solo vial  
-4. `auto_afiliacion_*` — API afiliación  
-5. `auto_preg_*` — cuestionario (ver `automaticoQuestions.js`)  
-6. `auto_vehiculo_*` / `auto_vehiculo_pick_*` — API vehículo + menú si hay varios  
-7. `auto_loc_*` / `auto_dir_*` / `auto_hogar_problema_*` (hogar)  
-8. `auto_ubicacion_*` — API ubicación (vial)  
-9. `auto_tel_*` — confirmar teléfono  
-10. `auto_cobertura_*` — API cobertura  
-11. Combustible / coordenadas — según servicio  
-12. `auto_crear_*` — API asistencia  
+4. `auto_tel_*` — confirmar teléfono  
+5. `auto_afiliacion_*` — S1 afiliación  
+6. `auto_vehiculo_*` / pick / tipo / datos marca-modelo-año — S2 (vial)  
+7. `auto_timing_*` — inmediato / programado + fecha/hora + `auto_prog_link_*` (ubicación programada / HSM)  
+8. `auto_loc_*` / `auto_dir_*` / `auto_hogar_problema_*` (hogar)  
+9. `auto_ubicacion_*` — API ubicación (vial)  
+10. `auto_cobertura_*` — S3 cobertura  
+11. `auto_preg_*` — cuestionario **late** (`getAutomaticoLateQuestionPlan`)  
+12. Combustible / coordenadas — según servicio  
+13. `auto_pre_crear_gate_*` — SERVICIO 6 (`PROGRAMADA` si aplica)  
+14. `auto_crear_*` — S5 crear asistencia  
+15. Rama cabina: `auto_cabina_route_*` → ubicación → `cabina_gate` (GEA legacy)  
 
 Sin afiliación: `gea_auto_sin_afiliacion_hogar|vial` → asesor.
 

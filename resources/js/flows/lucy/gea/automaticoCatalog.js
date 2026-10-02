@@ -42,7 +42,7 @@ function envAutoId(serviceLabel) {
         .replace(/[^a-zA-Z0-9]+/g, '_')
         .replace(/^_|_$/g, '')
         .toUpperCase()}`;
-    const raw = import.meta.env[key];
+    const raw = import.meta.env?.[key];
     return raw ? Number(raw) : null;
 }
 

@@ -5,7 +5,7 @@ workflows:
     channel: WHATSAPP
     default: false
     description: "Asistencias viales y servicios automotores GEA Ecuador"
-    hash: "sha256:47dfbf54f54f321236396b5dd3123d68b616a35fa44c8533bd4fa1aed62208b0"
+    hash: "sha256:932ef7d0a143448da1a9d9c7a751b72b73aebdcf41d56fd7617602bef758ddcf"
     lastPulledAt: "2026-09-28T16:10:05.359Z"
     name: "2.4 Vial"
     skillId: 4225
@@ -59,7 +59,7 @@ workflows:
     channel: WHATSAPP
     default: false
     description: "Derivación a asesor en caso de ayuda."
-    hash: "sha256:b21fa6c911c3f360247de7eb55fca77b7ffbea863ccd198b3f65b5ca6f598e49"
+    hash: "sha256:3c74e8a238186e1d3267d23dfd13c17c317eb9e81e3b440a444ebb9e6b18ac55"
     lastPulledAt: "2026-09-28T17:22:16.655Z"
     name: "Derivación a asesor"
     skillId: 26261
@@ -77,7 +77,7 @@ workflows:
     channel: WHATSAPP
     default: false
     description: "Otras soluciones y servicios alternativos GEA Ecuador"
-    hash: "sha256:cc58ab176f6144403b249930020658bf969fa6d0dd3d270d76664b9b1c84e426"
+    hash: "sha256:a3c2382fb2f2fae43e487d9afc94484bbc932679ca68ed87e42a8d7c7e44d830"
     lastPulledAt: "2026-09-28T16:29:48.486Z"
     name: "Otras soluciones 2"
     skillId: 5573
@@ -95,8 +95,8 @@ workflows:
     channel: WHATSAPP
     default: false
     description: "Skill de prueba: abre la webview Laravel Lucy Ecuador cuando el usuario escribe prueba_webview o pide probar el chat web embebido."
-    hash: "sha256:1be6eac0f6f4e76e22dfb23ae8398d689f8c5d24c5209028a48c4d343400bc2d"
-    lastPulledAt: "2026-09-28T14:56:56.331Z"
+    hash: "sha256:910d49bfabb5ee593ce0222a4cae2857f2d40ded560bcbb39032191eb237a64b"
+    lastPulledAt: "2026-10-02T22:28:45.199Z"
     name: prueba_webview
     skillId: 51025
     workflowId: 70197
@@ -104,7 +104,7 @@ workflows:
     channel: WHATSAPP
     default: false
     description: "V2 Crear asistencia sin dirección sin ubicación"
-    hash: "sha256:c449670c49523e09b50b32790d7f7e77d44619209239c01d6945990db4e6aaea"
+    hash: "sha256:255927880aa710d6131a24aa4abdb914f1d253126eb52a456baa8e76d8044883"
     lastPulledAt: "2026-09-28T16:11:39.152Z"
     name: "V2 Crear asistencia sin dirección sin ubicación"
     skillId: 5231
@@ -122,7 +122,7 @@ workflows:
     channel: WHATSAPP
     default: false
     description: "Skill para contratar la asistencia"
-    hash: "sha256:ddb3cb2b68539f429ff3a3f008487aa12db73a305791094abf36910f79dea5a8"
+    hash: "sha256:7c98f4a1cb6b5dcc865ddfd69e920e5a416dd16b7e39f6948fa616bf41f7061b"
     lastPulledAt: "2026-09-28T17:21:43.234Z"
     name: "Venta Asistencias - Contratar"
     skillId: 10090
@@ -131,7 +131,7 @@ workflows:
     channel: WHATSAPP
     default: false
     description: "Skill de inicio para ventas de asistencias"
-    hash: "sha256:b44acfce7b1e99671ec4fed629358c18d92d419e14faa40fa2a269efa8700f93"
+    hash: "sha256:1492b9d95df6714d2d7a42f01b07b44188958fa7fce056379f1ce947f20c08bf"
     lastPulledAt: "2026-09-28T17:23:24.681Z"
     name: "Venta Asistencias - Inicio"
     skillId: 10089

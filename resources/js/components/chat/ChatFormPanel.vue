@@ -5,24 +5,18 @@
     >
         <div class="chat-panel-title-row">
             <h2 class="chat-form-panel__headline">
-                {{ config.headline }}
+                {{ rewriteLucySolucionCopy(config.headline) }}
             </h2>
-            <ChatBackButton
-                v-if="showBack"
-                variant="corner"
-                :disabled="disabled"
-                @click="$emit('back')"
-            />
         </div>
         <p
             v-if="config.hint"
             class="chat-form-panel__hint"
         >
-            {{ config.hint }}
+            {{ rewriteLucySolucionCopy(config.hint) }}
         </p>
 
         <label class="chat-field">
-            <span class="chat-field__label">{{ config.label }}</span>
+            <span class="chat-field__label">{{ rewriteLucySolucionCopy(config.label) }}</span>
             <input
                 v-model="draft"
                 :type="config.type"
@@ -35,20 +29,21 @@
             >
         </label>
 
-        <button
-            type="submit"
-            class="chat-btn chat-btn--primary"
-            :disabled="disabled || !draft.trim()"
-        >
-            {{ config.submitLabel }}
-        </button>
+        <ChatDualActionButton
+            :show-back="showBack"
+            :continue-text="config.submitLabel || 'Continuar'"
+            continue-type="submit"
+            :continue-disabled="disabled || !draft.trim()"
+            :back-disabled="disabled"
+            @back="$emit('back')"
+        />
     </form>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue';
-
-import ChatBackButton from '@/components/chat/ChatBackButton.vue';
+import ChatDualActionButton from '@/components/chat/ChatDualActionButton.vue';
+import { rewriteLucySolucionCopy } from '@/lib/lucySolucionCopy.js';
 
 const props = defineProps({
     config: { type: Object, required: true },

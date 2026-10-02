@@ -4,6 +4,7 @@ import {
     fetchMenuProveedorValida,
 } from '@/api/geaToolsApi.js';
 import { crearDerivacionLead } from '@/api/comercialApi.js';
+import { notifyJelouDerivacionCallback } from '@/lib/webviewBridge.js';
 import { fetchAsistenciasEnProceso as fetchDentalEnProceso } from '@/api/omniaxDentalApi.js';
 import { fetchAsistenciasEnProceso as fetchMedicoEnProceso } from '@/api/omniaxMedicoApi.js';
 import {
@@ -11,9 +12,16 @@ import {
     asistenciaActivaMenuStyle,
     buildDerivacionAsistenciaPayload,
     labelAsistenciaActiva,
+    filterAsistenciasBySegment,
     mergeAsistenciasActivas,
     sortAsistenciasActivasDesc,
 } from './asistenciasActivas.js';
+import { normalizeVehiculoFromApi } from './automaticoVehiculoDatos.js';
+import {
+    isProcesoAutomaticoOnlyId,
+    resolveIdServicioCrearGea,
+} from './geaServiceIds.js';
+import { inferGeaExitReturnMenu } from '../flowExitMenus.js';
 import { isAdvisorHandoffDoneNode } from '../advisorHandoffCopy.js';
 import { runCabinaGateOrBlock } from './cabinaGate.js';
 import { buildCabinaBlockedTransition } from '../cabinaHandoff.js';
@@ -109,6 +117,9 @@ export function applyGeaQuickMeta(state, action) {
         gea.tipoVehiculoMenuActive = false;
         delete patch.setTipoVehiculo;
     }
+    if (patch.vehiculo) {
+        patch.vehiculo = normalizeVehiculoFromApi(patch.vehiculo);
+    }
     Object.assign(ensureGea(state.context), patch);
 }
 
@@ -149,16 +160,10 @@ function showAsistenciasActivasHub(ctx, gea, merged, { resetPage = false } = {})
     if (resetPage) {
         gea.asistenciasActivasPage = 0;
     }
-    const page = Number(gea.asistenciasActivasPage) || 0;
     const sorted = sortAsistenciasActivasDesc(merged);
     gea.asistenciasActivas = sorted;
 
-    const pageSize = ASISTENCIAS_ACTIVAS_PAGE_SIZE;
-    const start = page * pageSize;
-    const pageItems = sorted.slice(start, start + pageSize);
-
-    const actions = pageItems.map((item, i) => {
-        const globalIndex = start + i;
+    const actions = sorted.map((item, globalIndex) => {
         const style = asistenciaActivaMenuStyle(item) || {};
         return {
             id: `asig_${globalIndex}`,
@@ -170,30 +175,27 @@ function showAsistenciasActivasHub(ctx, gea, merged, { resetPage = false } = {})
         };
     });
 
-    if (start + pageSize < sorted.length) {
+    if (gea.asistenciasHubReturnNode) {
         actions.push({
-            id: 'more',
-            label: 'Ver más',
-            next: 'asistencia_activa_list',
-            meta: { gea: { asistenciasActivasPage: page + 1 } },
-            icon: 'chevron-right',
+            id: 'segment_continue',
+            label: gea.asistenciasHubContinueLabel || 'Continuar con el servicio',
+            next: gea.asistenciasHubReturnNode,
+            icon: 'arrow-right',
             menuTone: 'tone-blue',
+            meta: { menuPinned: true },
         });
+    } else {
+        actions.push(buildAsistenciasHubExitAction(ctx));
     }
 
-    actions.push(buildAsistenciasHubExitAction(ctx));
-
-    let hint =
-        sorted.length > pageSize
-            ? `Mostrando ${start + 1}–${Math.min(start + pageSize, sorted.length)} de ${sorted.length} (más recientes primero).`
-            : `${sorted.length} asistencia(s), más recientes primero.`;
-    if (resolveWebviewIntent(ctx)) {
-        hint += ' También puedes escribir Menú principal para volver al inicio.';
-    }
+    const hint =
+        sorted.length === 1
+            ? '1 asistencia en curso.'
+            : `${sorted.length} asistencias en curso (más recientes primero). Desliza la lista si no caben en pantalla.`;
 
     setMenu(
         ctx,
-        'Tienes asistencias en curso',
+        gea.asistenciasHubHeadline || 'Tienes asistencias en curso',
         hint,
         actions,
     );
@@ -270,7 +272,7 @@ export async function runGeaEnter(task, state) {
                     e.response?.data?.noticias?.mensaje
                     || e.response?.data?.message
                     || e.message
-                    || 'Configura GEA_LOPDP_API_KEY en el servidor (.env).';
+                    || 'No pudimos registrar la aceptación de datos. Intenta de nuevo en unos minutos.';
                 lopdpMessages.push(bot(`⚠️ LOPDP: ${msg}`));
             }
             return {
@@ -293,33 +295,56 @@ export async function runGeaEnter(task, state) {
                 throw new Error('Falta la cédula del titular.');
             }
 
-            const [geaToolRes, medicoRes, dentalRes] = await Promise.allSettled([
-                fetchAsistenciaEnCurso(telefono),
-                fetchMedicoEnProceso(cedula, false),
-                fetchDentalEnProceso(cedula, false),
-            ]);
+            delete gea.asistenciasActivas;
+            delete gea.asistenciasActivasPage;
+            delete gea.asistenciasHubReturnNode;
+            delete gea.asistenciasHubContinueLabel;
+            delete gea.asistenciasHubHeadline;
 
-            const merged = mergeAsistenciasActivas({
-                geaTool: geaToolRes.status === 'fulfilled' ? geaToolRes.value : null,
-                medicoRes: medicoRes.status === 'fulfilled' ? medicoRes.value : null,
-                dentalRes: dentalRes.status === 'fulfilled' ? dentalRes.value : null,
-            });
+            const intentNode = getPostAuthIntentTargetNode(ctx);
+            return {
+                messages: [],
+                nextNodeId: intentNode || 'menu_solucion_24_7',
+                patchContext: { gea },
+            };
+        }
+
+        case 'segment_en_curso_gate': {
+            const segment = String(gea.segment || '').toLowerCase();
+            const returnMenu = gea.afterSegmentNext || 'menu_solucion_24_7';
+            if (!cedula) throw new Error('Falta la cédula del titular.');
+
+            const geaToolRes = await fetchAsistenciaEnCurso(telefono);
+            const merged = filterAsistenciasBySegment(
+                mergeAsistenciasActivas({
+                    geaTool: geaToolRes,
+                    medicoRes: null,
+                    dentalRes: null,
+                }),
+                segment,
+            );
+
+            delete gea.asistenciasHubReturnNode;
+            delete gea.asistenciasHubContinueLabel;
+            delete gea.asistenciasHubHeadline;
 
             if (!merged.length) {
-                const intentNode = getPostAuthIntentTargetNode(ctx);
                 return {
                     messages: [],
-                    nextNodeId: intentNode || 'menu_solucion_24_7',
+                    nextNodeId: returnMenu,
                     patchContext: { gea },
                 };
             }
 
+            const segmentLabel = segment === 'hogar' ? 'Hogar' : 'Vial';
+            gea.asistenciasHubReturnNode = returnMenu;
+            gea.asistenciasHubContinueLabel = `Continuar al menú ${segmentLabel}`;
+            gea.asistenciasHubHeadline = `Tienes asistencias en curso (${segmentLabel})`;
             showAsistenciasActivasHub(ctx, gea, merged, { resetPage: true });
             return {
                 messages: [],
                 nextNodeId: 'asistencias_activas_hub',
                 patchContext: { gea },
-                clearNavStack: true,
             };
         }
 
@@ -387,14 +412,26 @@ export async function runGeaEnter(task, state) {
                     patchContext: { gea },
                 };
             }
-            const derivacion = await crearDerivacionLead(
-                buildDerivacionAsistenciaPayload(item, { cedula, nombre, telefono }),
-            );
+            const leadPayload = buildDerivacionAsistenciaPayload(item, {
+                cedula,
+                nombre,
+                telefono,
+            });
+            const derivacion = await crearDerivacionLead(leadPayload);
             const simulated = Boolean(derivacion?.simulated);
             clearGeaMenu(ctx);
             if (simulated) {
                 gea.advisorHandoffSimulated = true;
             }
+            await notifyJelouDerivacionCallback({
+                tipo: 'operacion',
+                producto: leadPayload.producto,
+                notas: leadPayload.notas,
+                cedula,
+                nombre: nombre || '',
+                telefono,
+                nodo: 'asistencia_activa_asesor_done',
+            });
             return {
                 messages: [],
                 nextNodeId: 'asistencia_activa_asesor_done',
@@ -403,10 +440,14 @@ export async function runGeaEnter(task, state) {
         }
 
         case 'cabina_gate': {
+            const tipoCabina = gea.tipoServicio || 'HOGAR';
+            const returnCabina =
+                gea.exitReturnMenu
+                || inferGeaExitReturnMenu(tipoCabina);
             const gate = await runCabinaGateOrBlock(
                 ctx,
-                gea.tipoServicio || 'HOGAR',
-                'menu_solucion_24_7',
+                tipoCabina,
+                returnCabina,
                 gea.planAsistencia || 'ASISTENCIAS',
             );
             if (gate.blocked) {
@@ -443,12 +484,21 @@ export async function runGeaEnter(task, state) {
         }
 
         case 'crear': {
-            const serviceId = String(gea.idServicio || '').trim();
+            const serviceId = String(
+                resolveIdServicioCrearGea(gea.serviceLabel, gea.idServicio) || '',
+            ).trim();
             if (!cedula || !nombre) {
                 throw new Error('Completa cédula y nombre antes de solicitar la asistencia.');
             }
             if (!serviceId) {
-                throw new Error('No hay id_servicio configurado para este tipo de asistencia.');
+                throw new Error(
+                    `No hay id_servicio GEA (cabina) para «${gea.serviceLabel || 'servicio'}».`,
+                );
+            }
+            if (isProcesoAutomaticoOnlyId(serviceId)) {
+                throw new Error(
+                    `Configuración incorrecta: el id ${serviceId} es de proceso automático, no de crear GEA.`,
+                );
             }
             let lat = gea.latitud || ctx.omniax?.latitud || ctx.lastLocation?.latitude;
             let lng = gea.longitud || ctx.omniax?.longitud || ctx.lastLocation?.longitude;
@@ -471,6 +521,10 @@ export async function runGeaEnter(task, state) {
             };
             const placa = ctx.plate || gea.placa;
             if (placa) body.placa = String(placa).trim();
+
+            if (!gea.exitReturnMenu) {
+                gea.exitReturnMenu = inferGeaExitReturnMenu(gea.tipoServicio);
+            }
 
             const res = await crearAsistenciaGea(body);
             const caso = res.data?.numero_caso;

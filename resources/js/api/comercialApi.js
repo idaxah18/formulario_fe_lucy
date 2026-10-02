@@ -32,6 +32,15 @@ export function crearDerivacionLead(payload) {
     return datum.post('/derivacion', payload).then(unwrap);
 }
 
+/** POST al gateway Jelou vía Laravel (cierre de webview bloqueante). */
+export function postJelouWebviewCallback(payload) {
+    return axios
+        .post('/api/v1/jelou/webview/callback', payload, {
+            headers: { Accept: 'application/json' },
+        })
+        .then(unwrap);
+}
+
 export function createPayCheckoutLink(payload) {
     return pay.post('/checkout-link', payload).then(unwrap);
 }

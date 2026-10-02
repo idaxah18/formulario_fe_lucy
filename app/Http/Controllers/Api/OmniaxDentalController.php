@@ -58,7 +58,7 @@ class OmniaxDentalController extends Controller
             'id_zona' => 'nullable|integer',
         ]);
 
-        $json = ['id_servicio' => $data['id_servicio']];
+        $json = ['id_servicio' => $this->resolveIdServicioUbicacion($data['id_servicio'])];
         if (! empty($data['id_zona'])) {
             $json['id_zona'] = $data['id_zona'];
         } elseif (! empty($data['latitud']) && ! empty($data['longitud'])) {
@@ -71,9 +71,7 @@ class OmniaxDentalController extends Controller
             ], 422);
         }
 
-        $payload = $this->omniax->request('post', '/v1/chatbot/medico-dental/establecimientos', [
-            'json' => $json,
-        ]);
+        $payload = $this->requestEstablecimientos($json);
 
         return response()->json($payload);
     }
@@ -84,11 +82,12 @@ class OmniaxDentalController extends Controller
             'id_servicio' => 'required|integer',
         ]);
 
-        $payload = $this->omniax->request('get', '/v1/chatbot/zonas-por-ciudad', [
-            'query' => ['id_servicio' => $data['id_servicio']],
-        ]);
+        $idUbicacion = $this->resolveIdServicioUbicacion($data['id_servicio']);
+        $payload = $this->requestZonasPorCiudad($idUbicacion);
 
-        return response()->json($payload);
+        return response()
+            ->json($payload)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     public function disponibilidadDias(Request $request): JsonResponse
@@ -175,5 +174,73 @@ class OmniaxDentalController extends Controller
         ]);
 
         return response()->json($payload, $payload['estado'] ?? 200);
+    }
+
+    private function idServicioDentalUbicacionConfig(): int
+    {
+        return (int) config('services.gea_omniax.id_servicio_dental_ubicacion');
+    }
+
+    private function resolveIdServicioUbicacion(int $requested): int
+    {
+        $catalog = $this->idServicioDentalUbicacionConfig();
+        $flow = (int) config('services.gea_omniax.id_servicio_dental');
+
+        if ($requested === $flow && $catalog !== $flow) {
+            return $catalog;
+        }
+
+        return $requested;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function requestZonasPorCiudad(int $idServicio): array
+    {
+        $payload = $this->omniax->request('get', '/v1/chatbot/zonas-por-ciudad', [
+            'query' => ['id_servicio' => $idServicio],
+        ]);
+
+        $list = $payload['data'] ?? null;
+        if (is_array($list) && $list !== []) {
+            return $payload;
+        }
+
+        $fallback = $this->idServicioDentalUbicacionConfig();
+        if ($idServicio === $fallback) {
+            return $payload;
+        }
+
+        return $this->omniax->request('get', '/v1/chatbot/zonas-por-ciudad', [
+            'query' => ['id_servicio' => $fallback],
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $json
+     * @return array<string, mixed>
+     */
+    private function requestEstablecimientos(array $json): array
+    {
+        $payload = $this->omniax->request('post', '/v1/chatbot/medico-dental/establecimientos', [
+            'json' => $json,
+        ]);
+
+        $list = $payload['data'] ?? null;
+        if (is_array($list) && $list !== []) {
+            return $payload;
+        }
+
+        $fallback = $this->idServicioDentalUbicacionConfig();
+        if ((int) $json['id_servicio'] === $fallback) {
+            return $payload;
+        }
+
+        $json['id_servicio'] = $fallback;
+
+        return $this->omniax->request('post', '/v1/chatbot/medico-dental/establecimientos', [
+            'json' => $json,
+        ]);
     }
 }

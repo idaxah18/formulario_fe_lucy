@@ -10,22 +10,43 @@ import {
     reagendarAsistencia,
 } from '@/api/omniaxDentalApi.js';
 import {
+    formatHora12LabelFrom24,
+    mustValidateOmniaxSlots,
     normalizeOmniaxHorasList,
     normalizeToOmniaxHora24,
     resolveOmniaxHoraSlot24,
 } from './omniaxHoraFormat.js';
-import { buildDiasMenuActions, buildHorasMenuActions } from './omniaxDisponibilidadMenus.js';
+import {
+    runOmniaxDisponibilidadDias,
+    runOmniaxDisponibilidadFranja,
+    runOmniaxDisponibilidadHoras,
+} from './omniaxScheduleEnter.js';
+import {
+    establecimientoMenuLabel,
+    normalizeEstablecimientosList,
+} from './omniaxEstablecimientos.js';
+import { pickEstablecimientoHorarioFromRecord } from './omniaxScheduleSlots.js';
 import { buildReagendarPayload, resolveCrearCoordenadas, withBeneficiarioFields } from './omniaxPayload.js';
-import { idServicioDental } from '@/api/omniaxDentalApi.js';
 import { fetchAsistenciasEnProceso as fetchMedicoAsistenciasEnProceso } from '@/api/omniaxMedicoApi.js';
 import {
     asistenciaMenuLabel,
     loadAsistenciasParaReagendar,
     mensajeSinCitasReagendar,
+    enrichEnProcesoResponse,
 } from './omniaxAsistencias.js';
+import { botOmniaxCitaConfirm } from './omniaxCitaConfirm.js';
 import { botFromOmniaxResponse } from './omniaxNoticias.js';
 import { bot } from '../flowHelpers.js';
 import { buildSinCoberturaTransition, routeAfterAplicaAsignacion } from './omniaxEligibility.js';
+import { resolveCitaPlanGate } from './omniaxPlanGate.js';
+import {
+    beginNuevaCitaAgendar,
+    buildEnProcesoHubMenu,
+    buildReagendarPickActions,
+    buildEnProcesoHubTransition,
+    buildEnProcesoPickTransition,
+    routeAfterEnProcesoFetch,
+} from './omniaxEnProcesoAgendar.js';
 import { requireLucyTelefono } from '@/lib/lucyTelefono.js';
 import { runCabinaGateOrBlock } from '../gea/cabinaGate.js';
 import { buildCabinaBlockedTransition } from '../cabinaHandoff.js';
@@ -47,11 +68,43 @@ function ensureOmx(ctx) {
     return ctx.omniax;
 }
 
+const OMX_DEN_SCHEDULE_NODES = {
+    franjaLoad: 'omx_den_franja_load',
+    diasLoad: 'omx_den_dias_load',
+    horasLoad: 'omx_den_horas_load',
+    verifyLoad: 'omx_den_verificar_disponibilidad_load',
+    sinFechas: 'omx_den_sin_fechas',
+    sinFechasReag: 'omx_den_reag_sin_fechas',
+    reagPick: 'omx_den_reag_pick',
+};
+
+function denScheduleFetchers(omx) {
+    const idAsistencia = omx.reagendar ? omx.id_asistencia : null;
+    return {
+        fetchDias: () => fetchDisponibilidadDias(omx.id_establecimiento, idAsistencia),
+        fetchHoras: (fecha) =>
+            fetchDisponibilidadHoras({
+                idEstablecimiento: omx.id_establecimiento,
+                fecha,
+                idAsistencia,
+            }),
+    };
+}
+
 function setMenu(ctx, headline, hint, actions) {
     const omx = ensureOmx(ctx);
     omx.dockHeadline = headline;
     omx.dockHint = hint || '';
     omx.menuActions = actions;
+}
+
+function applyEnProcesoMenu(ctx, result) {
+    if (!result?.enProcesoMenu) return result;
+    const { headline, hint, actions } = result.enProcesoMenu;
+    setMenu(ctx, headline, hint, actions);
+    const next = { ...result };
+    delete next.enProcesoMenu;
+    return next;
 }
 
 function clearMenu(ctx) {
@@ -76,23 +129,29 @@ export async function runOmniaxDentalEnter(task, state) {
     clearMenu(ctx);
 
     switch (task) {
+        case 'plan_cita': {
+            const blocked = await resolveCitaPlanGate(ctx, 'dental');
+            if (blocked) return blocked;
+            return {
+                messages: [],
+                nextNodeId: omx.afterPlanNext || 'omx_den_reag_cabina_preface',
+                patchContext: { omniax: omx },
+            };
+        }
+
         case 'elegibilidad_agendar': {
+            const blocked = await resolveCitaPlanGate(ctx, 'dental');
+            if (blocked) return blocked;
             try {
-                const res = await fetchAsistenciasEnProceso(cedula, false);
-                omx.aplica_seguimiento_dental = Boolean(res.data?.aplica_seguimiento_dental);
-                const list = res.data?.asistencias || [];
-                const intro = list.length
-                    ? [botFromOmniaxResponse(res), bot('Puedes generar una nueva cita dental a continuación.')]
-                    : [];
                 const apRes = await fetchAplicaAsignacion(cedula, null);
                 omx.aplica_asignacion_establecimiento = parseOmniaxBool(
                     apRes.data?.aplica_asignacion_establecimiento,
                 );
-                omx.agenda_completa = omx.aplica_asignacion_establecimiento;
+                omx.agenda_completa = true;
                 omx.elegibilidad_ok = true;
                 return {
-                    nextNodeId: 'omx_den_cabina_preface',
-                    messages: intro,
+                    nextNodeId: 'omx_den_en_proceso_load',
+                    messages: [],
                     patchContext: { omniax: omx },
                 };
             } catch {
@@ -118,23 +177,77 @@ export async function runOmniaxDentalEnter(task, state) {
             };
         }
 
-        case 'en_proceso': {
-            const res = await fetchAsistenciasEnProceso(cedula, false);
-            omx.aplica_seguimiento_dental = Boolean(res.data?.aplica_seguimiento_dental);
-            const list = res.data?.asistencias || [];
-            const intro = list.length
-                ? [
-                      botFromOmniaxResponse(res),
-                      bot('Puedes generar una nueva cita dental a continuación.'),
-                  ]
-                : [];
-            return { nextNodeId: 'omx_den_who', messages: intro };
+        case 'en_proceso_agendar': {
+            const res = await enrichEnProcesoResponse(
+                await fetchAsistenciasEnProceso(cedula, false),
+                cedula,
+                requireLucyTelefono(ctx),
+            );
+            return applyEnProcesoMenu(ctx, routeAfterEnProcesoFetch(omx, 'dental', res));
+        }
+
+        case 'en_proceso_hub':
+        case 'en_proceso_hub_after_seguimiento': {
+            if (task === 'en_proceso_hub_after_seguimiento') {
+                omx.usuario_acepta_seguimiento = false;
+            }
+            if (!omx.enProcesoList?.length) {
+                return beginNuevaCitaAgendar(omx, 'dental', {});
+            }
+            const menu = buildEnProcesoHubMenu(omx, 'dental');
+            setMenu(ctx, menu.headline, menu.hint, menu.actions);
+            return {
+                nextNodeId: menu.hubNodeId,
+                messages: [],
+                stayOnNode: true,
+                patchContext: { omniax: omx },
+            };
+        }
+
+        case 'en_proceso_pick': {
+            const idx = Number(omx.en_proceso_pick_index);
+            delete omx.en_proceso_pick_index;
+            return buildEnProcesoPickTransition(ctx, omx, 'dental', idx);
+        }
+
+        case 'long_flow_dental': {
+            return { nextNodeId: 'omx_den_aplica_load', messages: [] };
+        }
+
+        case 'crear_seguimiento_dental': {
+            const coords = resolveCrearCoordenadas(omx, ctx);
+            omx.latitud = coords.latitud;
+            omx.longitud = coords.longitud;
+            const payload = withBeneficiarioFields(
+                {
+                    telefono: requireLucyTelefono(ctx),
+                    identificacion_titular: cedula,
+                    nombre_titular: nombre,
+                    latitud: coords.latitud,
+                    longitud: coords.longitud,
+                    aplica_seguimiento_dental: true,
+                },
+                omx,
+            );
+            const res = await crearAsistenciaDental(payload);
+            const d = res.data || {};
+            clearMenu(ctx);
+            omx.usuario_acepta_seguimiento = false;
+            return {
+                nextNodeId: 'omx_den_done',
+                messages: [botOmniaxCitaConfirm(res, d, { kind: 'crear' })],
+            };
         }
 
         case 'en_proceso_reagendar': {
             omx.reagendar = true;
             const { res, list, usedFallback } = await loadAsistenciasParaReagendar(
-                (c, paraReagendar) => fetchAsistenciasEnProceso(c, paraReagendar),
+                async (c, paraReagendar) =>
+                    enrichEnProcesoResponse(
+                        await fetchAsistenciasEnProceso(c, paraReagendar),
+                        c,
+                        requireLucyTelefono(ctx),
+                    ),
                 cedula,
                 { requireEspecialidad: false },
             );
@@ -166,26 +279,19 @@ export async function runOmniaxDentalEnter(task, state) {
                       ),
                   ]
                 : [];
+            const headline =
+                list.length === 1
+                    ? 'Tienes esta cita dental para reagendar. ¿La confirmamos?'
+                    : 'Tienes estos servicios en proceso. ¿Cuál quieres reagendar?';
             setMenu(
                 ctx,
-                '¿Cuál quieres reagendar?',
+                headline,
                 res.noticias?.mensaje || '',
-                list.map((a) => ({
-                    id: `reag_${a.id_asistencia}`,
-                    label: asistenciaMenuLabel(a),
-                    next: 'omx_den_fecha_hora',
-                    meta: {
-                        omx: true,
-                        id_asistencia: a.id_asistencia,
-                        id_establecimiento: a.id_establecimiento,
-                        reagendar: true,
-                    },
-                })),
+                buildReagendarPickActions(list, 'dental'),
             );
             return {
                 nextNodeId: 'omx_den_reag_pick',
                 messages: intro,
-                stayOnNode: true,
             };
         }
 
@@ -198,62 +304,40 @@ export async function runOmniaxDentalEnter(task, state) {
             return routeAfterAplicaAsignacion(omx, 'dental');
         }
 
+        case 'disponibilidad_franja': {
+            const back = omx.reagendar ? 'omx_den_reag_pick' : 'omx_den_donde';
+            const msg = omx.reagendar
+                ? 'No pudimos cargar el establecimiento de esa cita. Elige otra asistencia.'
+                : 'Primero elige un establecimiento.';
+            const { fetchHoras } = denScheduleFetchers(omx);
+            return runOmniaxDisponibilidadFranja(ctx, omx, setMenu, {
+                nodes: OMX_DEN_SCHEDULE_NODES,
+                fetchHoras,
+                backNodeId: back,
+                backMessage: msg,
+            });
+        }
+
         case 'disponibilidad_dias': {
-            if (!omx.id_establecimiento) {
-                return {
-                    nextNodeId: 'omx_den_donde',
-                    messages: [bot('Primero elige un establecimiento.')],
-                };
-            }
-            const idAsistencia = omx.reagendar ? omx.id_asistencia : null;
-            const diasRes = await fetchDisponibilidadDias(omx.id_establecimiento, idAsistencia);
-            const dias = diasRes.data || [];
-            if (!dias.length) {
-                return {
-                    nextNodeId: 'omx_den_sin_fechas',
-                    messages: [bot('No hay fechas disponibles en este establecimiento.')],
-                };
-            }
-            setMenu(
-                ctx,
-                '¿En qué fecha deseas la cita?',
-                '',
-                buildDiasMenuActions(dias, 'omx_den_horas_load'),
-            );
-            return { nextNodeId: 'omx_den_dias_load', messages: [], stayOnNode: true };
+            const back = omx.reagendar ? 'omx_den_reag_pick' : 'omx_den_donde';
+            const msg = omx.reagendar
+                ? 'No pudimos cargar el establecimiento de esa cita. Elige otra asistencia.'
+                : 'Primero elige un establecimiento.';
+            const { fetchDias } = denScheduleFetchers(omx);
+            return runOmniaxDisponibilidadDias(ctx, omx, setMenu, {
+                nodes: OMX_DEN_SCHEDULE_NODES,
+                fetchDias,
+                backNodeId: back,
+                backMessage: msg,
+            });
         }
 
         case 'disponibilidad_horas': {
-            if (!omx.id_establecimiento || !omx.fecha) {
-                return {
-                    nextNodeId: 'omx_den_dias_load',
-                    messages: [bot('Elige primero la fecha de la cita.')],
-                };
-            }
-            const idAsistencia = omx.reagendar ? omx.id_asistencia : null;
-            const page = omx.horas_page || 0;
-            if (!omx.horas_slots?.length || omx._horas_fecha !== omx.fecha) {
-                const horasRes = await fetchDisponibilidadHoras({
-                    idEstablecimiento: omx.id_establecimiento,
-                    fecha: omx.fecha,
-                    idAsistencia,
-                });
-                omx.horas_slots = horasRes.data || [];
-                omx._horas_fecha = omx.fecha;
-            }
-            if (!omx.horas_slots.length) {
-                return {
-                    nextNodeId: 'omx_den_dias_load',
-                    messages: [bot('No hay horarios para esa fecha. Elige otra fecha.')],
-                };
-            }
-            const actions = buildHorasMenuActions(omx.horas_slots, page, {
-                nextVerifyNode: 'omx_den_verificar_disponibilidad_load',
-                nextHorasNode: 'omx_den_horas_load',
-                fecha: omx.fecha,
+            const { fetchHoras } = denScheduleFetchers(omx);
+            return runOmniaxDisponibilidadHoras(ctx, omx, setMenu, {
+                nodes: OMX_DEN_SCHEDULE_NODES,
+                fetchHoras,
             });
-            setMenu(ctx, 'Elige el horario disponible:', omx.fecha, actions);
-            return { nextNodeId: 'omx_den_horas_load', messages: [], stayOnNode: true };
         }
 
         case 'establecimientos_gps': {
@@ -263,7 +347,7 @@ export async function runOmniaxDentalEnter(task, state) {
             omx.latitud = lat;
             omx.longitud = lng;
             const res = await fetchEstablecimientosPorGps({ latitud: lat, longitud: lng });
-            return buildEstablecimientosMenu(ctx, res.data || []);
+            return buildEstablecimientosMenu(ctx, normalizeEstablecimientosList(res.data));
         }
 
         case 'zonas_ciudades': {
@@ -308,16 +392,20 @@ export async function runOmniaxDentalEnter(task, state) {
 
         case 'establecimientos_zona': {
             const res = await fetchEstablecimientosPorZona({ idZona: omx.id_zona });
-            return buildEstablecimientosMenu(ctx, res.data || [], true);
+            return buildEstablecimientosMenu(ctx, normalizeEstablecimientosList(res.data), true);
         }
 
         case 'verificar_disponibilidad': {
             const fecha = omx.fecha;
             const hora = omx.hora;
+            const validateSlots = mustValidateOmniaxSlots(omx);
+            const fechaBack = 'omx_den_dias_load';
+            const horaBack = 'omx_den_horas_load';
+
             if (!fecha || !hora) {
                 return {
-                    nextNodeId: 'omx_den_fecha_hora',
-                    messages: [bot('Ingresa fecha y hora antes de continuar.')],
+                    nextNodeId: fechaBack,
+                    messages: [bot('Elige fecha y hora antes de continuar.')],
                 };
             }
 
@@ -325,22 +413,26 @@ export async function runOmniaxDentalEnter(task, state) {
             let horaApi = normalizeToOmniaxHora24(hora);
             if (!horaApi) {
                 return {
-                    nextNodeId: 'omx_den_fecha_hora',
-                    messages: [bot('Formato de hora inválido. Usa HH:mm (ej. 08:30).')],
+                    nextNodeId: horaBack,
+                    messages: [bot('Hora inválida. Elige un horario de la lista o usa formato 12 h con a. m. / p. m.')],
                 };
             }
 
             const idAsistencia = omx.reagendar ? omx.id_asistencia : null;
             const nextLoad = omx.reagendar ? 'omx_den_reagendar_load' : 'omx_den_crear_load';
 
-            if (omx.id_establecimiento) {
+            if (validateSlots && omx.id_establecimiento) {
                 const diasRes = await fetchDisponibilidadDias(omx.id_establecimiento, idAsistencia);
                 const dias = diasRes.data || [];
                 const diaMatch = dias.find((d) => d.valor === fecha);
                 if (!diaMatch) {
                     return {
-                        nextNodeId: 'omx_den_fecha_hora',
-                        messages: [bot('La fecha no tiene disponibilidad. Prueba otra fecha.')],
+                        nextNodeId: fechaBack,
+                        messages: [
+                            bot(
+                                'Esa fecha no tiene cupo en este establecimiento. Elige un día de la lista (solo días con disponibilidad en Omniax).',
+                            ),
+                        ],
                     };
                 }
                 fechaApi = diaMatch.valor;
@@ -354,13 +446,13 @@ export async function runOmniaxDentalEnter(task, state) {
                 const resolved = resolveOmniaxHoraSlot24(hora, horasRes.data);
                 if (!resolved) {
                     const muestra = horas
-                        .slice(0, 8)
-                        .map((h) => normalizeToOmniaxHora24(h) || h)
+                        .slice(0, 6)
+                        .map((h) => formatHora12LabelFrom24(normalizeToOmniaxHora24(h) || h))
                         .join(', ');
                     return {
-                        nextNodeId: 'omx_den_fecha_hora',
+                        nextNodeId: horaBack,
                         messages: [
-                            bot(`Esa hora no está disponible. Ejemplos (HH:mm): ${muestra || '08:30'}.`),
+                            bot(`Esa hora no está disponible. Ejemplos con cupo: ${muestra || '10:00 a. m.'}.`),
                         ],
                     };
                 }
@@ -369,12 +461,13 @@ export async function runOmniaxDentalEnter(task, state) {
 
             omx.fecha = fechaApi;
             omx.hora = horaApi;
+            delete omx.fechaHoraError;
 
             return {
                 nextNodeId: nextLoad,
                 messages: [
                     bot(
-                        `Disponibilidad validada para ${fechaApi} a las ${horaApi}. ${
+                        `Disponibilidad validada para ${fechaApi} a las ${formatHora12LabelFrom24(horaApi)}. ${
                             omx.reagendar ? 'Reagendando…' : 'Registrando…'
                         }`,
                     ),
@@ -418,12 +511,7 @@ export async function runOmniaxDentalEnter(task, state) {
             clearMenu(ctx);
             return {
                 nextNodeId: 'omx_den_done',
-                messages: [
-                    botFromOmniaxResponse(res, [
-                        d.establecimiento_y_url || d.proveedor ? `📍 ${d.establecimiento_y_url || d.proveedor}` : '',
-                        d.fecha && d.hora ? `📅 ${d.fecha} a las ${d.hora}` : '',
-                    ]),
-                ],
+                messages: [botOmniaxCitaConfirm(res, d, { kind: 'crear' })],
             };
         }
 
@@ -438,11 +526,7 @@ export async function runOmniaxDentalEnter(task, state) {
             clearMenu(ctx);
             return {
                 nextNodeId: 'omx_den_done',
-                messages: [
-                    botFromOmniaxResponse(res, [
-                        d.fecha && d.hora ? `📅 ${d.fecha} a las ${d.hora}` : '',
-                    ]),
-                ],
+                messages: [botOmniaxCitaConfirm(res, d, { kind: 'reagendar' })],
             };
         }
 
@@ -458,18 +542,27 @@ function buildEstablecimientosMenu(ctx, list, fromZona = false) {
             messages: [bot('No encontramos establecimientos disponibles.')],
         };
     }
-    const actions = list.map((e) => ({
-        id: `est_${e.id}`,
-        label: e.nombre_establecimiento,
-        next: 'omx_den_dias_load',
-        meta: { omx: true, id_establecimiento: e.id, url_mapa: e.url_mapa },
-    }));
+    const actions = list.map((e) => {
+        const horario = pickEstablecimientoHorarioFromRecord(e);
+        return {
+            id: `est_${e.id}`,
+            label: establecimientoMenuLabel(e),
+            next: 'omx_den_dias_load',
+            meta: {
+                omx: true,
+                id_establecimiento: e.id,
+                url_mapa: e.url_mapa,
+                hora_apertura_establecimiento: horario.open,
+                hora_cierre_establecimiento: horario.close,
+            },
+        };
+    });
     if (!fromZona) {
         actions.push({
             id: 'otra_ubic',
             label: 'Otra ubicación',
             next: 'omx_den_ciudades_load',
-            meta: { omx: true },
+            meta: { omx: true, menuPinned: true },
         });
     }
     setMenu(

@@ -90,13 +90,8 @@ export async function runIaUserMessage(state, text) {
     ia.messages.push({ role: 'assistant', content: reply });
     ia.lastMode = res.mode;
 
-    const suffix =
-        res.mode === 'guided'
-            ? '\n\n_(Modo guiado — configura LUCY_IA_API_KEY para el agente completo.)_'
-            : '';
-
     return {
-        messages: [bot(reply + suffix)],
+        messages: [bot(reply)],
         stayOnNode: true,
         patchContext: { ia },
     };

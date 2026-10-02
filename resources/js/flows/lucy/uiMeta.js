@@ -47,15 +47,40 @@ export function getDockPrompt(state) {
         return { headline: lines[0] || '', hint: lines.slice(1).join('\n') };
     }
 
+    if (state.nodeId === 'edoctor_info_done') {
+        return {
+            headline: 'E-doctor es telemedicina GEA: consultas médicas en línea.',
+            hint:
+                'Abre la app o la web con los botones de abajo. Para contratar el plan, vuelve al menú E-doctor y elige Adquirir plan.',
+        };
+    }
+    if (state.nodeId === 'edoctor_confirm') {
+        return {
+            headline: 'Pago e-doctor registrado',
+            hint:
+                'Cuando se confirme el pago, recibirás instrucciones. Mientras tanto puedes abrir la app o la web.',
+        };
+    }
+
     if (isAdvisorHandoffDoneNode(state.nodeId)) {
         let variant = 'comercial';
         if (state.nodeId === CABINA_REGISTRO_HANDOFF_DONE) {
             variant = state.context?.cabinaHandoff?.variant || 'cabina_vigente';
+        } else if (
+            state.nodeId === 'omx_med_sin_afiliacion_done'
+            || state.nodeId === 'omx_den_sin_afiliacion_done'
+        ) {
+            variant = 'sin_afiliacion';
         } else if (isDerivacionTerminalNode(state.nodeId)) {
             variant = 'derivacion_registrada';
         } else if (state.nodeId === 'reportar_problema_done') variant = 'problema';
         else if (state.nodeId === 'otras_soluciones_gea_done') variant = 'otras_soluciones';
         else if (state.nodeId === 'gea_crear_exit') variant = 'asistencia_en_curso';
+        else if (state.nodeId === 'omx_med_done' || state.nodeId === 'omx_den_done') {
+            variant = 'cita_agenda';
+        } else if (state.nodeId === 'edoctor_info_done' || state.nodeId === 'edoctor_confirm') {
+            variant = 'comercial';
+        }
         else if (state.nodeId === 'venta_contratar_ok') variant = 'comercial';
         else if (/_asesor_done$/.test(state.nodeId)) variant = 'cita_agenda';
 

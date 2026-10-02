@@ -31,6 +31,14 @@ export function idServicioDental() {
     return Number.parseInt(raw || '298', 10);
 }
 
+/** Catálogo ciudad/zona/centros (GET zonas-por-ciudad, POST establecimientos). */
+export function idServicioDentalUbicacion() {
+    const raw =
+        import.meta.env.VITE_OMNIAX_ID_SERVICIO_DENTAL_UBICACION ||
+        import.meta.env.VITE_OMNIAX_ID_SERVICIO_DENTAL;
+    return Number.parseInt(raw || '298', 10);
+}
+
 export async function fetchAsistenciasEnProceso(identificacionTitular, paraReagendar = false) {
     const { data } = await http.post('/asistencias/en-proceso', {
         identificacion_titular: identificacionTitular,
@@ -51,7 +59,7 @@ export async function fetchAplicaAsignacion(identificacionTitular, identificacio
 
 export async function fetchEstablecimientosPorGps({ latitud, longitud }) {
     const { data } = await http.post('/establecimientos', {
-        id_servicio: idServicioDental(),
+        id_servicio: idServicioDentalUbicacion(),
         latitud: String(latitud),
         longitud: String(longitud),
     });
@@ -60,7 +68,7 @@ export async function fetchEstablecimientosPorGps({ latitud, longitud }) {
 
 export async function fetchEstablecimientosPorZona({ idZona }) {
     const { data } = await http.post('/establecimientos', {
-        id_servicio: idServicioDental(),
+        id_servicio: idServicioDentalUbicacion(),
         id_zona: Number(idZona),
     });
     return unwrap({ data });
@@ -68,7 +76,7 @@ export async function fetchEstablecimientosPorZona({ idZona }) {
 
 export async function fetchZonasPorCiudad() {
     const { data } = await http.get('/zonas-por-ciudad', {
-        params: { id_servicio: idServicioDental() },
+        params: { id_servicio: idServicioDentalUbicacion() },
     });
     return unwrap({ data });
 }

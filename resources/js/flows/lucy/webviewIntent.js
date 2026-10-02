@@ -15,12 +15,12 @@ const INTENT_REGISTRY = {
     solucion_24_7: { targetNode: 'menu_solucion_24_7', continueLabel: 'Solución 24/7' },
     medico: { targetNode: 'menu_medico', continueLabel: 'Médico' },
     medico_agendar: { targetNode: 'omx_med_elegibilidad_load', continueLabel: 'cita médica' },
-    medico_reagendar: { targetNode: 'omx_med_reag_cabina_preface', continueLabel: 'reagendar cita médica' },
+    medico_reagendar: { targetNode: 'omx_med_reag_list_load', continueLabel: 'reagendar cita médica' },
     dental: { targetNode: 'menu_dental', continueLabel: 'Dental' },
     dental_agendar: { targetNode: 'omx_den_elegibilidad_load', continueLabel: 'cita dental' },
-    dental_reagendar: { targetNode: 'omx_den_reag_cabina_preface', continueLabel: 'reagendar cita dental' },
-    hogar: { targetNode: 'menu_hogar', continueLabel: 'Hogar' },
-    vial: { targetNode: 'menu_vial', continueLabel: 'Vial' },
+    dental_reagendar: { targetNode: 'omx_den_reag_list_load', continueLabel: 'reagendar cita dental' },
+    hogar: { targetNode: 'gea_hogar_segment_gate_load', continueLabel: 'Hogar' },
+    vial: { targetNode: 'gea_vial_segment_gate_load', continueLabel: 'Vial' },
     grua: { targetNode: geaServiceEntry('2.4 Vial', 'Grúa (otro motivo)'), continueLabel: 'Grúas' },
     aseguradora: { targetNode: 'menu_aseguradora', continueLabel: 'Vial aseguradora' },
     agendar_cita: { targetNode: 'agendar_cita_tipo', continueLabel: 'agendar cita' },
@@ -100,6 +100,7 @@ export function buildAsistenciasHubExitAction(context) {
             next: intent.targetNode,
             icon: 'arrow-right',
             menuTone: 'tone-blue',
+            meta: { menuPinned: true },
         };
     }
     return {
@@ -108,6 +109,7 @@ export function buildAsistenciasHubExitAction(context) {
         next: 'menu_solucion_24_7',
         icon: 'home',
         menuTone: 'tone-blue',
+        meta: { menuPinned: true },
     };
 }
 

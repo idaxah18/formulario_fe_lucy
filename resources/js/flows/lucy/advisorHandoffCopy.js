@@ -29,35 +29,35 @@ const VARIANTS = {
     cabina_preface_servicio: {
         headline: '¡Perfecto! Vamos a registrar tu solicitud. 🙂',
         hint:
-            'Al continuar, notificaremos a cabina para que un ejecutivo atienda tu requerimiento y coordine la asistencia contigo por este mismo canal.',
+            'Al continuar, un asesor atenderá tu requerimiento y coordinará la asistencia contigo por este mismo canal.',
     },
     cabina_preface_cita_medica: {
         headline: '¡Genial! Continuemos con tu cita médica. 🙂',
         hint:
-            'Al continuar notificaremos a cabina y seguirás el agendamiento según tu plan (con o sin elección de centro en la app).',
+            'Al continuar un asesor te acompañará y seguirás el agendamiento según tu plan.',
     },
     cabina_preface_cita_dental: {
         headline: '¡Genial! Continuemos con tu cita dental. 🙂',
         hint:
-            'Al continuar notificaremos a cabina y seguirás el agendamiento según tu plan (con o sin elección de centro en la app).',
+            'Al continuar un asesor te acompañará y seguirás el agendamiento según tu plan.',
     },
     cabina_preface_cita_reagendar: {
         headline: 'Entendido, reagendemos tu cita. 🙂',
         hint:
-            'Al continuar notificaremos a cabina para que un ejecutivo te ayude con el cambio de fecha u hora.',
+            'Al continuar un asesor te ayudará con el cambio de fecha u hora.',
     },
     cabina_preface_aseguradora: {
         headline: '¡Listo! Validemos tu asistencia vial. 🙂',
         hint:
-            'Al continuar notificaremos a cabina para que un ejecutivo atienda tu requerimiento de aseguradora.',
+            'Al continuar un asesor atenderá tu requerimiento de aseguradora.',
     },
     cabina_vigente: {
         headline: 'Tu solicitud ya está en proceso. 🙂',
         hint:
-            'Un ejecutivo de cabina o un asesor se comunicará contigo pronto para darte seguimiento. No necesitas volver a registrar el mismo requerimiento.',
+            'Un asesor se comunicará contigo pronto para darte seguimiento. No necesitas volver a registrar el mismo requerimiento.',
     },
     cabina_error: {
-        headline: 'No pudimos notificar a cabina en este momento. 😕',
+        headline: 'No pudimos registrar tu solicitud en este momento. 😕',
         hint:
             'Tu información quedó en este chat. Intenta de nuevo en unos minutos o escribe a un asesor desde el menú.',
     },
@@ -67,7 +67,7 @@ const VARIANTS = {
             'Un asesor puede revisar tu plan y tus datos para ayudarte a continuar o indicarte cómo contratar cobertura.',
     },
     derivacion_registrada: {
-        headline: '¡Listo! Un ejecutivo de GEA se comunicará contigo.',
+        headline: '¡Listo! Un asesor se comunicará contigo.',
         hint: 'Revisa este chat o tu teléfono en los próximos minutos.',
     },
 };
@@ -80,11 +80,6 @@ const VARIANTS = {
 export function advisorHandoffSay(variant = 'comercial', options = {}) {
     const v = VARIANTS[variant] || VARIANTS.comercial;
     const lines = [v.headline, v.hint];
-    if (options.simulated) {
-        lines.push(
-            '(Modo prueba: configura JELOU_DATUM_VENTA_BASIC_* en el servidor para derivación real.)',
-        );
-    }
     return lines;
 }
 
@@ -137,9 +132,12 @@ export function isAdvisorHandoffDoneNode(nodeId) {
     if (nodeId === 'solicitar_factura_done') return true;
     if (nodeId === 'otras_soluciones_gea_done') return true;
     if (nodeId === 'gea_crear_exit') return true;
+    if (nodeId === 'omx_med_done' || nodeId === 'omx_den_done') return true;
+    if (nodeId === 'edoctor_info_done' || nodeId === 'edoctor_confirm') return true;
     if (nodeId === 'venta_contratar_ok') return true;
     if (nodeId === 'venta_derivacion_done') return true;
     if (nodeId === 'gea_auto_sin_afiliacion_done') return true;
+    if (nodeId === 'omx_med_sin_afiliacion_done' || nodeId === 'omx_den_sin_afiliacion_done') return true;
     if (/_asesor_done$/.test(nodeId)) return true;
     if (/^leaf_info_\w+_done$/.test(nodeId)) return true;
     if (nodeId.endsWith('_done') && nodeId.startsWith('leaf_')) return true;
